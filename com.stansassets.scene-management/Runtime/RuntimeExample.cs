@@ -2,7 +2,7 @@
 // Runtime C# Script Sample
 // -----------------------------------------------------------------------------
 
-namespace StansAssets.PackageSample
+namespace StansAssets.SceneManagment
 {
     /// <summary>
     /// Make sure you have documentation for ALL public Package APIs.

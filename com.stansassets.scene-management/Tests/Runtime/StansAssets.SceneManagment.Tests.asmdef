@@ -1,5 +1,5 @@
 {
-    "name": "StansAssets.PackageSample.Tests",
+    "name": "StansAssets.SceneManagment.Tests",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
