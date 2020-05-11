@@ -1,5 +1,5 @@
-# Package Sample
-<!-- Describe your package -->
+# Scene Management
+Provides a set of tools to organize scene loading and management in the Unity project.
 
 [![NPM Package](https://img.shields.io/npm/v/com.stansassets.package-sample)](https://www.npmjs.com/package/com.stansassets.package-sample)
 [![openupm](https://img.shields.io/npm/v/com.stansassets.package-sample?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.stansassets.package-sample/)
