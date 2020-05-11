@@ -1,9 +1,11 @@
+using System;
+
 namespace StansAssets.SceneManagement
 {
     public interface IApplicationState
     {
-        void Activate();
-        void Pause();
-        void Deactivate();
+        void Activate(Action onComplete);
+        void Pause(Action onComplete);
+        void Deactivate(Action onComplete);
     }
 }

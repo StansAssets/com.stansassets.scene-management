@@ -1,28 +1,22 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using StansAssets.Foundation.Async;
 using UnityEngine;
 
 namespace StansAssets.SceneManagement
 {
     public class SceneActionsQueue
     {
-        public enum ActionType
-        {
-            Load,
-            Unload,
-            Deactivate,
-        }
-
-        struct ActionData
-        {
-            public string SceneName;
-            public ActionType Type;
-        }
-
         IScenePreloader m_Preloader;
+        AsyncOperation m_CurrentAsyncOperation;
+        bool m_IsRunning;
         readonly ISceneLoadService m_SceneLoadService;
-        readonly Stack<ActionData> m_ActionsStack = new Stack<ActionData>();
+        readonly Stack<SceneAction> m_ActionsStack = new Stack<SceneAction>();
         readonly List<ISceneManager> m_SceneManagers = new List<ISceneManager>();
+
+
+        public IEnumerable<SceneAction> ScheduledActions => m_ActionsStack;
 
         public SceneActionsQueue(ISceneLoadService sceneLoadService)
         {
@@ -34,9 +28,9 @@ namespace StansAssets.SceneManagement
             m_Preloader = preloader;
         }
 
-        public void AddAction(ActionType type, string sceneName)
+        public void AddAction(SceneActionType type, string sceneName)
         {
-            var data = new ActionData
+            var data = new SceneAction
             {
                 Type = type,
                 SceneName = sceneName
@@ -53,7 +47,7 @@ namespace StansAssets.SceneManagement
             {
                 m_Preloader.FadeIn(() =>
                 {
-                    ExecuteActionsStack(() =>
+                    StartActionsStack(() =>
                     {
                         m_Preloader.FadeOut(() =>
                         {
@@ -64,7 +58,7 @@ namespace StansAssets.SceneManagement
             }
             else
             {
-                ExecuteActionsStack(onComplete);
+                StartActionsStack(onComplete);
             }
         }
 
@@ -79,10 +73,32 @@ namespace StansAssets.SceneManagement
             return default;
         }
 
+        public IEnumerator OnStackProgress()
+        {
+            while (m_IsRunning)
+            {
+                if (m_CurrentAsyncOperation != null)
+                {
+                    m_Preloader?.OnProgress(m_CurrentAsyncOperation.progress);
+                }
+
+                yield return new WaitForEndOfFrame();
+            }
+        }
+
+        void StartActionsStack(Action onComplete)
+        {
+            m_IsRunning = true;
+            CoroutineUtility.Start(OnStackProgress());
+            ExecuteActionsStack(onComplete);
+        }
+
         void ExecuteActionsStack(Action onComplete)
         {
             if (m_ActionsStack.Count == 0)
             {
+                m_IsRunning = false;
+                CoroutineUtility.Stop(OnStackProgress());
                 onComplete?.Invoke();
                 return;
             }
@@ -90,7 +106,7 @@ namespace StansAssets.SceneManagement
             var actionData = m_ActionsStack.Pop();
             switch (actionData.Type)
             {
-                case ActionType.Load:
+                case SceneActionType.Load:
                     m_SceneLoadService.Load(actionData.SceneName, sceneManager =>
                     {
                         if(sceneManager != null)
@@ -98,14 +114,16 @@ namespace StansAssets.SceneManagement
 
                         ExecuteActionsStack(onComplete);
                     });
+
+                    m_CurrentAsyncOperation = AdditiveScenesLoader.GetSceneAsyncOperation(actionData.SceneName);
                     break;
-                case ActionType.Deactivate:
+                case SceneActionType.Deactivate:
                     m_SceneLoadService.Deactivate(actionData.SceneName, () =>
                     {
                         ExecuteActionsStack(onComplete);
                     });
                     break;
-                case ActionType.Unload:
+                case SceneActionType.Unload:
                     m_SceneLoadService.Unload(actionData.SceneName, () =>
                     {
                         ExecuteActionsStack(onComplete);
@@ -115,5 +133,6 @@ namespace StansAssets.SceneManagement
                     throw new ArgumentOutOfRangeException();
             }
         }
+
     }
 }

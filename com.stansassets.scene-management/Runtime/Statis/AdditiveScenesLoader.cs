@@ -66,6 +66,18 @@ namespace StansAssets.SceneManagement
         }
 
         /// <summary>
+        /// Use GetSceneAsyncOperation to retrieve info about scene load progress.
+        /// </summary>
+        /// <param name="sceneName">Name of the scene.</param>
+        /// <returns>Additive scene <see cref="AsyncOperation"/> or `null` if scene load was never requested. </returns>
+        public static AsyncOperation GetSceneAsyncOperation(string sceneName)
+        {
+            return s_LoadSceneOperations.ContainsKey(sceneName)
+                ? s_LoadSceneOperations[sceneName]
+                : null;
+        }
+
+        /// <summary>
         /// Unload scene.
         /// <param name="scene">The scene to be loaded.</param>
         /// <param name="unloadCompleted">Unload Completed callback.</param>
