@@ -46,10 +46,10 @@ sysinfo.txt
 # Crashlytics generated file
 crashlytics-build.properties
 
-PackageSampleProject/.idea
-PackageSampleProject/obj
-PackageSampleProject/Logs
-PackageSampleProject/Temp
-PackageSampleProject/UserSettings
-PackageSampleProject/ProjectSettings
-PackageSampleProject/Library
+SceneManagmentProject/.idea
+SceneManagmentProject/obj
+SceneManagmentProject/Logs
+SceneManagmentProject/Temp
+SceneManagmentProject/UserSettings
+SceneManagmentProject/ProjectSettings
+SceneManagmentProject/Library
