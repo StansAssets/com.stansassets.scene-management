@@ -23,6 +23,11 @@ namespace StansAssets.SceneManagement
             m_SceneLoadService = sceneLoadService;
         }
 
+        /// <summary>
+        /// Sets preloader implementation.
+        /// The `1f` will be artificially sent to <see cref="IScenePreloader.OnProgress"/> once scene load completed.
+        /// </summary>
+        /// <param name="preloader">Preloader implementation</param>
         public void SetPreloader(IScenePreloader preloader)
         {
             m_Preloader = preloader;
@@ -49,6 +54,7 @@ namespace StansAssets.SceneManagement
                 {
                     StartActionsStack(() =>
                     {
+                        m_Preloader.OnProgress(1f);
                         m_Preloader.FadeOut(() =>
                         {
                             onComplete?.Invoke();
