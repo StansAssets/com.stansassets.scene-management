@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:VisualElement name="tab-root">
+        <Style src="SettingsTab.uss" />
+        <uie:ObjectField label="Landing Scene" name="landing-scene" />
+
+    </ui:VisualElement>
+</ui:UXML>

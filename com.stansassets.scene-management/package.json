@@ -1,11 +1,12 @@
 {
   "name": "com.stansassets.scene-management",
   "displayName": "Stans Assets - Scene Management",
-  "version": "0.0.1-preview",
+  "version": "0.0.3-preview",
   "unity": "2019.3",
-  "description": "rovides a set of tools to organize scenes loading and management.",
+  "description": "Provides a set of tools to organize scenes loading and management.",
   "dependencies": {
-    "com.stansassets.foundation": "1.0.2"
+    "com.stansassets.foundation": "1.0.2",
+    "com.stansassets.plugins-dev-kit": "0.0.1-preview"
   },
   "keywords": [
     "unity",
@@ -23,7 +24,7 @@
     "email": "stan@stansassets.com",
     "url": "https://stansassets.com/"
   },
-  
+
   "homepage": "https://api.stansassets.com/",
   "bugs": {
     "url": "https://github.com/StansAssets/com.stansassets.foundation/issues",
