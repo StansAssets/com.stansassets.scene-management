@@ -68,7 +68,7 @@ namespace StansAssets.SceneManagement
             }
             else
             {
-                //TODO error and optional param with scene action stack
+                // TODO error and optional param with scene action stack
                 onComplete?.Invoke();
             }
         }

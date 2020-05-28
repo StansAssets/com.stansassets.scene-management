@@ -45,12 +45,6 @@ namespace StansAssets.SceneManagement
 
     public class ApplicationStateStack
     {
-        enum StackCommand
-        {
-            Pause,
-            Deactivate,
-        }
-
         public event Action OnApplicationStateChanged;
 
         readonly IList<IApplicationState> m_StatesStack;
@@ -71,15 +65,14 @@ namespace StansAssets.SceneManagement
                 return;
             }
 
-            InvokeActionsInStack(StackCommand.Pause, () =>
+            InvokeActionsInStack(StackAction.Paused, () =>
             {
                 m_StatesStack.Add(applicationState);
-                applicationState.Activate(() =>
+                applicationState.ChangeState(StackAction.Added,() =>
                 {
                     onComplete.Invoke();
                     OnApplicationStateChanged?.Invoke();
                 });
-
             });
         }
 
@@ -95,12 +88,12 @@ namespace StansAssets.SceneManagement
             }
 
             var applicationState = m_StatesStack.Last();
-            applicationState.Deactivate(() =>
+            applicationState.ChangeState(StackAction.Removed,() =>
             {
                 m_StatesStack.Remove(applicationState);
                 if (m_StatesStack.Count > 0)
                 {
-                    m_StatesStack.Last().Activate(() =>
+                    m_StatesStack.Last().ChangeState(StackAction.Resumed, () =>
                     {
                         onComplete.Invoke(applicationState);
                         OnApplicationStateChanged?.Invoke();
@@ -124,16 +117,16 @@ namespace StansAssets.SceneManagement
                 return;
             }
 
-            InvokeActionsInStack(StackCommand.Deactivate, () =>
+            InvokeActionsInStack(StackAction.Removed, () =>
             {
                 m_StatesStack.Clear();
                 m_StatesStack.Add(applicationState);
-                applicationState.Activate(onComplete);
-                 OnApplicationStateChanged?.Invoke();
+                applicationState.ChangeState(StackAction.Added, onComplete);
+                OnApplicationStateChanged?.Invoke();
             });
         }
 
-        void InvokeActionsInStack(StackCommand command, Action onComplete, int index = 0)
+        void InvokeActionsInStack(StackAction stackAction, Action onComplete, int index = 0)
         {
             if (index >= m_StatesStack.Count)
             {
@@ -143,23 +136,11 @@ namespace StansAssets.SceneManagement
 
             var state = m_StatesStack[index];
             index++;
-            switch (command)
+
+            state.ChangeState(stackAction, () =>
             {
-                case  StackCommand.Pause:
-                    state.Pause(() =>
-                    {
-                        InvokeActionsInStack(command, onComplete, index);
-                    });
-                    break;
-                case  StackCommand.Deactivate:
-                    state.Deactivate(() =>
-                    {
-                        InvokeActionsInStack(command, onComplete, index);
-                    });
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(command), command, $"The {command} is not supported");
-            }
+                InvokeActionsInStack(stackAction, onComplete, index);
+            });
         }
     }
 }
