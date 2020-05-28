@@ -5,8 +5,8 @@
   "unity": "2019.3",
   "description": "Provides a set of tools to organize scenes loading and management.",
   "dependencies": {
-    "com.stansassets.foundation": "1.0.2",
-    "com.stansassets.plugins-dev-kit": "0.0.1-preview"
+    "com.stansassets.foundation": "1.0.4",
+    "com.stansassets.plugins-dev-kit": "0.0.2-preview"
   },
   "keywords": [
     "unity",
