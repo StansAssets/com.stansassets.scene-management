@@ -31,7 +31,6 @@ namespace StansAssets.SceneManagement
         public void Push(T applicationState) => Push(applicationState, () => { });
         public void Push(T applicationState, [NotNull] Action onComplete) => m_StatesStack.Push(m_EnumToState[applicationState], onComplete);
 
-
         public void Pop() => Pop(applicationState => { });
         public void Pop([NotNull] Action<T> onComplete) => m_StatesStack.Pop(applicationState =>
         {
@@ -41,6 +40,16 @@ namespace StansAssets.SceneManagement
 
         public void Set(T applicationState) => Set(applicationState, () => { });
         public void Set(T applicationState,  [NotNull] Action onComplete) =>  m_StatesStack.Set(m_EnumToState[applicationState], onComplete);
+
+        public bool IsCurrent(T applicationState)
+        {
+            return States.Any() && States.Last().Equals(applicationState);
+        }
+
+        public IEnumerable<T> States
+        {
+            get { return m_StatesStack.States.Select(applicationState => m_StateToEnum[applicationState]); }
+        }
     }
 
     public class ApplicationStateStack
@@ -125,6 +134,8 @@ namespace StansAssets.SceneManagement
                 OnApplicationStateChanged?.Invoke();
             });
         }
+
+        public IEnumerable<IApplicationState> States => m_StatesStack;
 
         void InvokeActionsInStack(StackAction stackAction, Action onComplete, int index = 0)
         {

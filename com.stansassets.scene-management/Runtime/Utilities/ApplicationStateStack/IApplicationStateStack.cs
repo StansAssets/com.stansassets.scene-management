@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace StansAssets.SceneManagement
 {
@@ -14,5 +15,7 @@ namespace StansAssets.SceneManagement
 
         void Push(T state);
         void Push(T state, Action onComplete);
+
+        IEnumerable<T> States { get; }
     }
 }
