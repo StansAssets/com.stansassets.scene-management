@@ -12,11 +12,11 @@ namespace StansAssets.SceneManagement
         AsyncOperation m_CurrentAsyncOperation;
         bool m_IsRunning;
         readonly ISceneLoadService m_SceneLoadService;
-        readonly Stack<SceneAction> m_ActionsStack = new Stack<SceneAction>();
+        readonly Queue<SceneAction> m_ActionsQueue = new Queue<SceneAction>();
         readonly List<ISceneManager> m_SceneManagers = new List<ISceneManager>();
 
 
-        public IEnumerable<SceneAction> ScheduledActions => m_ActionsStack;
+        public IEnumerable<SceneAction> ScheduledActions => m_ActionsQueue;
 
         public SceneActionsQueue(ISceneLoadService sceneLoadService)
         {
@@ -35,13 +35,14 @@ namespace StansAssets.SceneManagement
 
         public void AddAction(SceneActionType type, string sceneName)
         {
+            Debug.Log("AddAction: " + type);
             var data = new SceneAction
             {
                 Type = type,
                 SceneName = sceneName
             };
 
-            m_ActionsStack.Push(data);
+            m_ActionsQueue.Enqueue(data);
         }
 
 
@@ -94,6 +95,7 @@ namespace StansAssets.SceneManagement
 
         void StartActionsStack(Action onComplete)
         {
+            Debug.Log("StartActionsStack:" + m_ActionsQueue.Count);
             m_IsRunning = true;
             CoroutineUtility.Start(OnStackProgress());
             ExecuteActionsStack(onComplete);
@@ -101,7 +103,7 @@ namespace StansAssets.SceneManagement
 
         void ExecuteActionsStack(Action onComplete)
         {
-            if (m_ActionsStack.Count == 0)
+            if (m_ActionsQueue.Count == 0)
             {
                 m_IsRunning = false;
                 CoroutineUtility.Stop(OnStackProgress());
@@ -109,7 +111,8 @@ namespace StansAssets.SceneManagement
                 return;
             }
 
-            var actionData = m_ActionsStack.Pop();
+            var actionData = m_ActionsQueue.Dequeue();
+            Debug.Log("ExecuteActionsStack: " + actionData.Type);
             switch (actionData.Type)
             {
                 case SceneActionType.Load:
