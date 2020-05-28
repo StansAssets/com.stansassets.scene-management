@@ -35,7 +35,6 @@ namespace StansAssets.SceneManagement
 
         public void AddAction(SceneActionType type, string sceneName)
         {
-            Debug.Log("AddAction: " + type);
             var data = new SceneAction
             {
                 Type = type,
@@ -95,7 +94,6 @@ namespace StansAssets.SceneManagement
 
         void StartActionsStack(Action onComplete)
         {
-            Debug.Log("StartActionsStack:" + m_ActionsQueue.Count);
             m_IsRunning = true;
             CoroutineUtility.Start(OnStackProgress());
             ExecuteActionsStack(onComplete);
@@ -112,7 +110,6 @@ namespace StansAssets.SceneManagement
             }
 
             var actionData = m_ActionsQueue.Dequeue();
-            Debug.Log("ExecuteActionsStack: " + actionData.Type);
             switch (actionData.Type)
             {
                 case SceneActionType.Load:
