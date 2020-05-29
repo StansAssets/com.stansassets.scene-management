@@ -7,16 +7,16 @@ namespace StansAssets.SceneManagement
     {
         static readonly DefaultPool<StackChangeEvent> s_EventsPool = new DefaultPool<StackChangeEvent>();
 
-        StackAction m_Action;
-        IReadOnlyList<IApplicationState> m_OldStackValue;
-        IReadOnlyList<IApplicationState> m_NewStackValue;
+        public StackAction Action { get; private set; }
+        public IReadOnlyList<IApplicationState>  OldStackValue { get; private set; }
+        public IReadOnlyList<IApplicationState>  NewStackValue { get; private set; }
 
         public static StackChangeEvent GetPooled(StackAction action, IReadOnlyList<IApplicationState> oldStackValue, IReadOnlyList<IApplicationState> newStackValue)
         {
             var e = s_EventsPool.Get();
-            e.m_Action = action;
-            e.m_OldStackValue = oldStackValue;
-            e.m_NewStackValue = newStackValue;
+            e.Action = action;
+            e.OldStackValue = oldStackValue;
+            e.NewStackValue = newStackValue;
 
             return e;
         }
