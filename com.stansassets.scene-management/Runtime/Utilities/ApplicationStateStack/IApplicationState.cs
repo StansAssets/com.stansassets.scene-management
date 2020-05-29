@@ -4,6 +4,6 @@ namespace StansAssets.SceneManagement
 {
     public interface IApplicationState
     {
-        void ChangeState(StackAction stackAction, Action onComplete);
+        void ChangeState(StackChangeEvent evt, Action onComplete);
     }
 }

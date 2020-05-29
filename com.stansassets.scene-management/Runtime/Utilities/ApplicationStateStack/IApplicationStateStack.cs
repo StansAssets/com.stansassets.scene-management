@@ -17,5 +17,6 @@ namespace StansAssets.SceneManagement
         void Push(T state, Action onComplete);
 
         IEnumerable<T> States { get; }
+        bool IsBusy { get; }
     }
 }
