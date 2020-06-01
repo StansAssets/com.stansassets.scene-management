@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using StansAssets.Plugins;
 using UnityEditor;
@@ -12,6 +13,7 @@ namespace StansAssets.SceneManagement
         public SceneAsset LandingScene;
 
         internal List<SceneStateInfo> OpenScenesBeforeLandingStart;
-      //  internal int ActiveSceneIndex;
+        internal int LastActiveSceneIndex;
+        internal SceneViewInfo LastSceneView;
     }
 }
