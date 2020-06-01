@@ -74,14 +74,15 @@ namespace StansAssets.SceneManagement
                 {
                     int startIndex = 0;
                     var landingScenePath = AssetDatabase.GetAssetPath(SceneManagementSettings.Instance.LandingScene);
-                    var sceneStateInfo = SceneManagementSettings.Instance.OpenScenesBeforeLandingStart[0];
+                    var firstSceneInfo = SceneManagementSettings.Instance.OpenScenesBeforeLandingStart[0];
 
                     // The 1st scene in hierarchy should be landing scene, and we need to unload it (to re-open saved scenes). 
                     // But we can't unload active scene, so we switch active scene to 2nd, and then unload 1st.
                     // (Except the case when 1st saved scene is landing itself)
-                    if (sceneStateInfo.Path != landingScenePath)
+                    if (firstSceneInfo.Path != landingScenePath)
                     {
-                        OpenScene(sceneStateInfo);
+                        // Forced open scene additive, so it can be set as active
+                        EditorSceneManager.OpenScene(firstSceneInfo.Path, OpenSceneMode.Additive);
                         SceneManager.SetActiveScene(SceneManager.GetSceneAt(1));
                         EditorSceneManager.CloseScene(SceneManager.GetSceneAt(0), true);
                         startIndex = 1;
@@ -94,6 +95,9 @@ namespace StansAssets.SceneManagement
                     }
 
                     SceneManager.SetActiveScene(SceneManager.GetSceneAt(SceneManagementSettings.Instance.LastActiveSceneIndex));
+                    // If first scene isn't actually loaded, we unload it
+                    if (!firstSceneInfo.WasLoaded) 
+                        EditorSceneManager.CloseScene(SceneManager.GetSceneAt(0), false);
 
                     var info = SceneManagementSettings.Instance.LastSceneView;
                     SceneView.lastActiveSceneView.in2DMode = info.is2D;
