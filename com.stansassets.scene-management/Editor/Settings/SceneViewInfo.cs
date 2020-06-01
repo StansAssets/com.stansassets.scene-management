@@ -6,21 +6,21 @@ namespace StansAssets.SceneManagement
     [Serializable]
     class SceneViewInfo
     {
-        public Vector3 Position;
-        public Quaternion Rotation;
-        public Vector3 Pivot;
-        public float Size;
-        public bool is2D;
-        public bool isOrtho;
+        public Vector3 Position { get; private set; }
+        public Quaternion Rotation { get; private set; }
+        public Vector3 Pivot { get; private set; }
+        public float Size { get; private set; }
+        public bool Is2D { get; private set; }
+        public bool IsOrtho { get; private set; }
 
-        public SceneViewInfo(UnityEngine.Vector3 Position, Vector3 Pivot, Quaternion Rotation, float Size, bool is2D, bool isOrtho)
+        public SceneViewInfo(Vector3 position, Vector3 pivot, Quaternion rotation, float size, bool is2D, bool isOrtho)
         {
-            this.Position = Position;
-            this.Rotation = Rotation;
-            this.Pivot = Pivot;
-            this.Size = Size;
-            this.is2D = is2D;
-            this.isOrtho = isOrtho;
+            this.Position = position;
+            this.Rotation = rotation;
+            this.Pivot = pivot;
+            this.Size = size;
+            this.Is2D = is2D;
+            this.IsOrtho = isOrtho;
         }
     }
 }

@@ -100,8 +100,8 @@ namespace StansAssets.SceneManagement
                         EditorSceneManager.CloseScene(SceneManager.GetSceneAt(0), false);
 
                     var info = SceneManagementSettings.Instance.LastSceneView;
-                    SceneView.lastActiveSceneView.in2DMode = info.is2D;
-                    SceneView.lastActiveSceneView.LookAt(info.Pivot, info.Rotation, info.Size, info.isOrtho);
+                    SceneView.lastActiveSceneView.in2DMode = info.Is2D;
+                    SceneView.lastActiveSceneView.LookAt(info.Pivot, info.Rotation, info.Size, info.IsOrtho);
 
                     SceneManagementSettings.Instance.OpenScenesBeforeLandingStart = null;
                 }
