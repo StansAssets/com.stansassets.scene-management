@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using StansAssets.Plugins;
 using UnityEditor;
@@ -9,7 +8,6 @@ namespace StansAssets.SceneManagement
     {
         protected override bool IsEditorOnly => true;
         public override string PackageName => SceneManagementPackage.PackageName;
-
         public SceneAsset LandingScene;
 
         internal List<SceneStateInfo> OpenScenesBeforeLandingStart;

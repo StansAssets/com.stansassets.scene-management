@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -24,10 +23,10 @@ namespace StansAssets.SceneManagement
                 return;
             }
 
-            if(!Application.isPlaying)
+            if (!Application.isPlaying)
             {
                 var userFinishedOperation = EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
-                if(!userFinishedOperation)
+                if (!userFinishedOperation)
                     return;
 
                 SceneManagementSettings.Instance.OpenScenesBeforeLandingStart = new List<SceneStateInfo>();
@@ -36,9 +35,17 @@ namespace StansAssets.SceneManagement
                 {
                     SceneManagementSettings.Instance.OpenScenesBeforeLandingStart.Add(new SceneStateInfo(scene));
                 }
+
                 SceneManagementSettings.Instance.LastActiveSceneIndex = loadedBeforeScenes.IndexOf(SceneManager.GetActiveScene());
-                SceneView lastView = SceneView.lastActiveSceneView;
-                SceneManagementSettings.Instance.LastSceneView = new SceneViewInfo
+
+                var lastView = SceneView.lastActiveSceneView;
+                if (lastView == null)
+                {
+                    SceneManagementSettings.Instance.LastSceneView = new SceneViewInfo();
+                }
+                else
+                {
+                    SceneManagementSettings.Instance.LastSceneView = new SceneViewInfo
                     (
                         lastView.camera.transform.position,
                         lastView.pivot,
@@ -47,6 +54,7 @@ namespace StansAssets.SceneManagement
                         lastView.in2DMode,
                         lastView.orthographic
                     );
+                }
 
                 var landingScenePath = AssetDatabase.GetAssetPath(SceneManagementSettings.Instance.LandingScene);
                 EditorSceneManager.OpenScene(landingScenePath);
@@ -62,12 +70,13 @@ namespace StansAssets.SceneManagement
             {
                 scenes.Add(SceneManager.GetSceneAt(i));
             }
+
             return scenes;
         }
 
         static void OnPlayModeStateChanged(PlayModeStateChange playModeStateChange)
         {
-            if (playModeStateChange == PlayModeStateChange.EnteredEditMode )
+            if (playModeStateChange == PlayModeStateChange.EnteredEditMode)
             {
                 if (SceneManagementSettings.Instance.OpenScenesBeforeLandingStart != null
                     && SceneManagementSettings.Instance.OpenScenesBeforeLandingStart.Count > 0)
@@ -76,7 +85,7 @@ namespace StansAssets.SceneManagement
                     var landingScenePath = AssetDatabase.GetAssetPath(SceneManagementSettings.Instance.LandingScene);
                     var firstSceneInfo = SceneManagementSettings.Instance.OpenScenesBeforeLandingStart[0];
 
-                    // The 1st scene in hierarchy should be landing scene, and we need to unload it (to re-open saved scenes). 
+                    // The 1st scene in hierarchy should be landing scene, and we need to unload it (to re-open saved scenes).
                     // But we can't unload active scene, so we switch active scene to 2nd, and then unload 1st.
                     // (Except the case when 1st saved scene is landing itself)
                     if (firstSceneInfo.Path != landingScenePath)
@@ -88,20 +97,24 @@ namespace StansAssets.SceneManagement
                         startIndex = 1;
                     }
 
-                    // Next, we load all scenes in order 
+                    // Next, we load all scenes in order
                     for (int i = startIndex; i < SceneManagementSettings.Instance.OpenScenesBeforeLandingStart.Count; i++)
                     {
                         OpenScene(SceneManagementSettings.Instance.OpenScenesBeforeLandingStart[i]);
                     }
 
                     SceneManager.SetActiveScene(SceneManager.GetSceneAt(SceneManagementSettings.Instance.LastActiveSceneIndex));
+
                     // If first scene isn't actually loaded, we unload it
-                    if (!firstSceneInfo.WasLoaded) 
+                    if (!firstSceneInfo.WasLoaded)
                         EditorSceneManager.CloseScene(SceneManager.GetSceneAt(0), false);
 
                     var info = SceneManagementSettings.Instance.LastSceneView;
-                    SceneView.lastActiveSceneView.in2DMode = info.Is2D;
-                    SceneView.lastActiveSceneView.LookAt(info.Pivot, info.Rotation, info.Size, info.IsOrtho);
+                    if (info != null && ! info.IsDefault)
+                    {
+                        SceneView.lastActiveSceneView.in2DMode = info.Is2D;
+                        SceneView.lastActiveSceneView.LookAt(info.Pivot, info.Rotation, info.Size, info.IsOrtho);
+                    }
 
                     SceneManagementSettings.Instance.OpenScenesBeforeLandingStart = null;
                 }
