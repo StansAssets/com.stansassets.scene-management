@@ -3,7 +3,7 @@ using UnityEditor.PackageManager;
 
 namespace StansAssets.SceneManagement
 {
-    public static class SceneManagementPackage
+    static class SceneManagementPackage
     {
         public const string PackageName = "com.stansassets.scene-management";
         public const string DisplayName = "Scene Management";
