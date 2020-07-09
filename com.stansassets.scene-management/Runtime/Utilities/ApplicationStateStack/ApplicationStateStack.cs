@@ -1,8 +1,8 @@
+﻿using JetBrains.Annotations;
+using StansAssets.Foundation.Patterns;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
-using StansAssets.Foundation.Patterns;
 using UnityEngine.Assertions;
 
 namespace StansAssets.SceneManagement
@@ -38,9 +38,8 @@ namespace StansAssets.SceneManagement
             onComplete.Invoke(m_StateToEnum[applicationState]);
         });
 
-
         public void Set(T applicationState) => Set(applicationState, () => { });
-        public void Set(T applicationState,  [NotNull] Action onComplete) =>  m_StatesStack.Set(m_EnumToState[applicationState], onComplete);
+        public void Set(T applicationState, [NotNull] Action onComplete) => m_StatesStack.Set(m_EnumToState[applicationState], onComplete);
 
         public bool IsCurrent(T applicationState)
         {
@@ -49,7 +48,7 @@ namespace StansAssets.SceneManagement
 
         public IEnumerable<T> States
         {
-            get { return m_StatesStack.States.Select(applicationState => m_StateToEnum[applicationState]); }
+            get => m_StatesStack.States.Select(applicationState => m_StateToEnum[applicationState]);
         }
 
         public bool IsBusy => m_StatesStack.IsBusy;

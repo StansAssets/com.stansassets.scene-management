@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using StansAssets.Foundation.Patterns;
+using System.Collections.Generic;
 
 namespace StansAssets.SceneManagement
 {
