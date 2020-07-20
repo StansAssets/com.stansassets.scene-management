@@ -1,6 +1,6 @@
 ﻿namespace StansAssets.SceneManagement
 {
-    public interface IApplicationStateStackChanged
+    public interface IApplicationStateDelegate
     {
         void OnApplicationStateWillChanged(StackChangeEvent eventArg);
         void ApplicationStateChangeProgressChanged(float progress, StackChangeEvent eventArg);

@@ -4,18 +4,18 @@ using System.Linq;
 
 namespace StansAssets.SceneManagement
 {
-    public sealed class GroupRequest : Request
+    sealed class GroupRequest : Request
     {
-        readonly List<Request> m_requests;
-        readonly int m_finalCount;
+        readonly List<Request> m_Requests;
+        readonly int m_FinalCount;
 
-        public override bool IsDone => SumProgress == m_finalCount;
+        public override bool IsDone => SumProgress == m_FinalCount;
 
         public GroupRequest(int count) : base()
         {
-            m_finalCount = count;
+            m_FinalCount = count;
 
-            m_requests = new List<Request>();
+            m_Requests = new List<Request>();
         }
 
         public override void UpdateProgress(float v)
@@ -25,11 +25,11 @@ namespace StansAssets.SceneManagement
 
         public void AddRequest(Request r)
         {
-            m_requests.Add(r);
+            m_Requests.Add(r);
 
             r.ProgressChange += _ =>
             {
-                SetProgress(SumProgress / m_finalCount);
+                SetProgress(SumProgress / m_FinalCount);
             };
             r.Done += TryDone;
         }
@@ -42,6 +42,6 @@ namespace StansAssets.SceneManagement
             InvokeDone();
         }
 
-        float SumProgress => m_requests.Sum(r => r.Progress);
+        float SumProgress => m_Requests.Sum(r => r.Progress);
     }
 }

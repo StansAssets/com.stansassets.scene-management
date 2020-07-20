@@ -2,7 +2,7 @@
 
 namespace StansAssets.SceneManagement
 {
-    public class Request : IProgressReporter
+    class Request : IProgressReporter
     {
         public event Action Done;
         public event Action<float> ProgressChange;

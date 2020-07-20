@@ -15,12 +15,12 @@ namespace StansAssets.SceneManagement
 
         public ApplicationStateStack() { }
 
-        public void AddDelegate(IApplicationStateStackChanged d)
+        public void AddDelegate(IApplicationStateDelegate d)
         {
             m_StatesStack.AddDelegate(d);
         }
 
-        public void RemoveDelegate(IApplicationStateStackChanged d)
+        public void RemoveDelegate(IApplicationStateDelegate d)
         {
             m_StatesStack.RemoveDelegate(d);
         }
@@ -61,8 +61,8 @@ namespace StansAssets.SceneManagement
         public IEnumerable<IApplicationState> States => m_StatesStack;
         readonly List<IApplicationState> m_StatesStack;
 
-        public IEnumerable<IApplicationStateStackChanged> Subscriptions;
-        readonly List<IApplicationStateStackChanged> m_Subscriptions;
+        public IEnumerable<IApplicationStateDelegate> Subscriptions;
+        readonly List<IApplicationStateDelegate> m_Subscriptions;
 
         List<IApplicationState> m_OldStackState;
         List<IApplicationState> m_NewStackState;
@@ -72,15 +72,15 @@ namespace StansAssets.SceneManagement
         public ApplicationStateStack()
         {
             m_StatesStack = new List<IApplicationState>();
-            m_Subscriptions = new List<IApplicationStateStackChanged>();
+            m_Subscriptions = new List<IApplicationStateDelegate>();
         }
 
-        public void AddDelegate(IApplicationStateStackChanged d)
+        public void AddDelegate(IApplicationStateDelegate d)
         {
             m_Subscriptions.Add(d);
         }
 
-        public void RemoveDelegate(IApplicationStateStackChanged d)
+        public void RemoveDelegate(IApplicationStateDelegate d)
         {
             for (int i = m_Subscriptions.Count - 1; i >= 0; i--)
             {
