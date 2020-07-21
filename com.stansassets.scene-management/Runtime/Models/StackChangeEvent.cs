@@ -1,17 +1,18 @@
 using StansAssets.Foundation.Patterns;
+using System;
 using System.Collections.Generic;
 
 namespace StansAssets.SceneManagement
 {
-    public class StackChangeEvent
+    public class StackChangeEvent<T> where T : Enum
     {
-        static readonly DefaultPool<StackChangeEvent> s_EventsPool = new DefaultPool<StackChangeEvent>();
+        static readonly DefaultPool<StackChangeEvent<T>> s_EventsPool = new DefaultPool<StackChangeEvent<T>>();
 
         public StackAction Action { get; private set; }
-        public IReadOnlyList<IApplicationState>  OldStackValue { get; private set; }
-        public IReadOnlyList<IApplicationState>  NewStackValue { get; private set; }
+        public IReadOnlyList<T>  OldStackValue { get; private set; }
+        public IReadOnlyList<T>  NewStackValue { get; private set; }
 
-        public static StackChangeEvent GetPooled(StackAction action, IReadOnlyList<IApplicationState> oldStackValue, IReadOnlyList<IApplicationState> newStackValue)
+        public static StackChangeEvent<T> GetPooled(StackAction action, IReadOnlyList<T> oldStackValue, IReadOnlyList<T> newStackValue)
         {
             var e = s_EventsPool.Get();
             e.Action = action;
@@ -21,7 +22,7 @@ namespace StansAssets.SceneManagement
             return e;
         }
 
-        public static void Release(StackChangeEvent stackChangeEvent)
+        public static void Release(StackChangeEvent<T> stackChangeEvent)
         {
             s_EventsPool.Release(stackChangeEvent);
         }
