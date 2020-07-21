@@ -23,6 +23,14 @@ namespace StansAssets.SceneManagement
             throw new NotSupportedException();
         }
 
+        public override void SetDone()
+        {
+            foreach (var req in m_Requests)
+                req.SetDone();
+
+            InvokeDone();
+        }
+
         public void AddRequest(Request r)
         {
             m_Requests.Add(r);
@@ -36,7 +44,7 @@ namespace StansAssets.SceneManagement
 
         void TryDone()
         {
-            if (!IsDone)
+            if (IsDone)
                 return;
 
             InvokeDone();

@@ -50,6 +50,66 @@ namespace StansAssets.SceneManagement
             m_StateToEnum.Add(value, key);
         }
 
+        public void Set(T applicationState) => Set(applicationState, () => { });
+        public void Set(T applicationState, [NotNull] Action onComplete)
+        {
+            Assert.IsFalse(IsBusy);
+            Assert.IsNotNull(onComplete);
+            if (m_StatesStack.Count == 1 && m_StatesStack[0].Equals(applicationState))
+            {
+                onComplete.Invoke();
+                return;
+            }
+
+            IsBusy = true;
+            m_OldStackState = ListPool<T>.Get();
+            m_OldStackState.AddRange(m_StatesStack);
+
+            m_NewStackState = ListPool<T>.Get();
+            m_NewStackState.Add(applicationState);
+
+            var removedEvent = StackChangeEvent<T>.GetPooled(StackAction.Removed, m_OldStackState, m_NewStackState);
+            var addEvent = StackChangeEvent<T>.GetPooled(StackAction.Added, m_OldStackState, m_NewStackState);
+
+            var groupReq = new GroupRequest(2);
+            groupReq.Done += onComplete.Invoke;
+
+            var removeReq = new GroupRequest(m_OldStackState.Count);
+            var addReq = new GroupRequest(m_NewStackState.Count);
+
+            removeReq.ProgressChange += _ => InvokeProgressChange(groupReq.Progress, removedEvent);
+            removeReq.Done += () =>
+            {
+                InvokeStateChanged(removedEvent);
+                StackChangeEvent<T>.Release(removedEvent);
+
+                InvokeStateWillChange(addEvent);
+                InvokeChangeActionInStack(addEvent, addReq);
+            };
+
+            addReq.ProgressChange += _ => InvokeProgressChange(groupReq.Progress, addEvent);
+            addReq.Done += () =>
+            {
+
+                ListPool<T>.Release(m_OldStackState);
+                ListPool<T>.Release(m_NewStackState);
+
+                m_StatesStack.Clear();
+                m_StatesStack.Add(applicationState);
+
+                InvokeStateChanged(addEvent);
+                StackChangeEvent<T>.Release(addEvent);
+
+                IsBusy = false;
+            };
+
+            groupReq.AddRequest(removeReq);
+            groupReq.AddRequest(addReq);
+
+            InvokeStateWillChange(removedEvent);
+            InvokeChangeActionInStack(removedEvent, removeReq);
+        }
+
         public void Push(T applicationState) => Push(applicationState, () => { });
         public void Push(T applicationState, [NotNull] Action onComplete)
         {
@@ -78,17 +138,17 @@ namespace StansAssets.SceneManagement
             var pauseReq = new GroupRequest(m_OldStackState.Count);
             var addReq = new Request();
 
-            pauseReq.ProgressChange += p => InvokeProgressChange(groupReq.Progress, pauseEvent);
+            pauseReq.ProgressChange += _ => InvokeProgressChange(groupReq.Progress, pauseEvent);
             pauseReq.Done += () =>
             {
-                StackChangeEvent<T>.Release(pauseEvent);
                 InvokeStateChanged(pauseEvent);
+                StackChangeEvent<T>.Release(pauseEvent);
 
                 InvokeStateWillChange(addEvent);
                 m_EnumToState[applicationState].ChangeState(addEvent, addReq);
             };
 
-            addReq.ProgressChange += p => InvokeProgressChange(groupReq.Progress, addEvent);
+            addReq.ProgressChange += _ => InvokeProgressChange(groupReq.Progress, addEvent);
             addReq.Done += () =>
             {
                 m_StatesStack.Add(applicationState);
@@ -135,9 +195,9 @@ namespace StansAssets.SceneManagement
             group.Done += () => onComplete.Invoke(applicationState);
 
             var removeReq = new Request();
-            var resumeReq = new GroupRequest(m_NewStackState.Count);
+            var resumeReq = new Request();
 
-            removeReq.ProgressChange += p => InvokeProgressChange(group.Progress, removedEvent);
+            removeReq.ProgressChange += _ => InvokeProgressChange(group.Progress, removedEvent);
             removeReq.Done += () =>
             {
                 m_StatesStack.Remove(applicationState);
@@ -152,7 +212,7 @@ namespace StansAssets.SceneManagement
                     resumeReq.SetDone();
             };
 
-            resumeReq.ProgressChange += p => InvokeProgressChange(group.Progress, resumedEvent);
+            resumeReq.ProgressChange += _ => InvokeProgressChange(group.Progress, resumedEvent);
             resumeReq.Done += () =>
             {
                 ListPool<T>.Release(m_OldStackState);
@@ -168,66 +228,6 @@ namespace StansAssets.SceneManagement
 
             InvokeStateWillChange(removedEvent);
             m_EnumToState[applicationState].ChangeState(removedEvent, removeReq);
-        }
-
-        public void Set(T applicationState) => Set(applicationState, () => { });
-        public void Set(T applicationState, [NotNull] Action onComplete)
-        {
-            Assert.IsFalse(IsBusy);
-            Assert.IsNotNull(onComplete);
-            if (m_StatesStack.Count == 1 && m_StatesStack[0].Equals(applicationState))
-            {
-                onComplete.Invoke();
-                return;
-            }
-
-            IsBusy = true;
-            m_OldStackState = ListPool<T>.Get();
-            m_OldStackState.AddRange(m_StatesStack);
-
-            m_NewStackState = ListPool<T>.Get();
-            m_NewStackState.Add(applicationState);
-
-            var removedEvent = StackChangeEvent<T>.GetPooled(StackAction.Removed, m_OldStackState, m_NewStackState);
-            var addEvent = StackChangeEvent<T>.GetPooled(StackAction.Added, m_OldStackState, m_NewStackState);
-
-            var groupReq = new GroupRequest(2);
-            groupReq.Done += onComplete.Invoke;
-
-            var removeReq = new GroupRequest(m_OldStackState.Count);
-            var addReq = new GroupRequest(m_NewStackState.Count);
-
-            removeReq.ProgressChange += p => InvokeProgressChange(groupReq.Progress, removedEvent);
-            removeReq.Done += () =>
-            {
-                InvokeStateChanged(removedEvent);
-                StackChangeEvent<T>.Release(removedEvent);
-
-                InvokeStateWillChange(addEvent);
-                m_EnumToState[applicationState].ChangeState(addEvent, addReq);
-            };
-
-            addReq.ProgressChange += p => InvokeProgressChange(groupReq.Progress, addEvent);
-            addReq.Done += () =>
-            {
-
-                ListPool<T>.Release(m_OldStackState);
-                ListPool<T>.Release(m_NewStackState);
-
-                m_StatesStack.Clear();
-                m_StatesStack.Add(applicationState);
-
-                InvokeStateChanged(addEvent);
-                StackChangeEvent<T>.Release(addEvent);
-
-                IsBusy = false;
-            };
-
-            groupReq.AddRequest(removeReq);
-            groupReq.AddRequest(addReq);
-
-            InvokeStateWillChange(removedEvent);
-            InvokeChangeActionInStack(removedEvent, removeReq);
         }
 
         public bool IsCurrent(T applicationState)

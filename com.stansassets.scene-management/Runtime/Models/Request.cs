@@ -24,7 +24,7 @@ namespace StansAssets.SceneManagement
                 InvokeDone();
         }
 
-        public void SetDone()
+        public virtual void SetDone()
         {
             UpdateProgress(1f);
         }
