@@ -6,7 +6,7 @@
   "description": "Provides a set of tools to organize scenes loading and management.",
   "dependencies": {
     "com.stansassets.foundation": "1.0.4",
-    "com.stansassets.plugins-dev-kit": "0.0.3-preview"
+    "com.stansassets.plugins-dev-kit": "0.0.4-preview"
   },
   "keywords": [
     "unity",
