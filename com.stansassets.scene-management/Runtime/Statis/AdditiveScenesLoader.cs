@@ -32,12 +32,33 @@ namespace StansAssets.SceneManagement
         }
 
         /// <summary>
+        /// Load Scene Additively by it's build index.
+        /// </summary>
+        /// <param name="sceneBuildIndex">Build index of he scene to be loaded.</param>
+        /// <param name="loadCompleted">Load Completed callback.</param>
+        /// <returns></returns>
+        public static AsyncOperation LoadAdditively(int sceneBuildIndex, Action<Scene> loadCompleted = null)
+        {
+            return LoadAdditively(string.Empty, sceneBuildIndex, loadCompleted);
+        }
+
+        /// <summary>
         /// Load Scene Additively by it's name.
         /// <param name="sceneName">Name of the scene to be loaded.</param>
         /// <param name="loadCompleted">Load Completed callback.</param>
         /// </summary>
         public static AsyncOperation LoadAdditively(string sceneName, Action<Scene> loadCompleted = null)
         {
+            return LoadAdditively(sceneName, -1, loadCompleted);
+        }
+
+        static AsyncOperation LoadAdditively(string sceneName, int buildIndex,  Action<Scene> loadCompleted = null)
+        {
+            if (buildIndex != -1)
+            {
+                sceneName = buildIndex.ToString();
+            }
+
             if (TryGetLoadedScene(sceneName, out var loadedScene))
             {
                 loadCompleted?.Invoke(loadedScene);
@@ -49,8 +70,10 @@ namespace StansAssets.SceneManagement
                 if (loadCompleted != null)
                     callbacks.Add(loadCompleted);
 
+                var loadAsyncOperation = buildIndex != -1
+                    ? SceneManager.LoadSceneAsync(buildIndex, LoadSceneMode.Additive)
+                    : SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
 
-                var loadAsyncOperation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
                 s_LoadSceneRequests.Add(sceneName, callbacks);
                 s_LoadSceneOperations.Add(sceneName, loadAsyncOperation);
                 return loadAsyncOperation;
@@ -78,6 +101,16 @@ namespace StansAssets.SceneManagement
         }
 
         /// <summary>
+        /// Use GetSceneAsyncOperation to retrieve info about scene load progress.
+        /// </summary>
+        /// <param name="sceneBuildIndex">Build index of he scene.</param>
+        /// <returns>Additive scene <see cref="AsyncOperation"/> or `null` if scene load was never requested. </returns>
+        public static AsyncOperation GetSceneAsyncOperation(int sceneBuildIndex)
+        {
+            return GetSceneAsyncOperation(sceneBuildIndex.ToString());
+        }
+
+        /// <summary>
         /// Unload scene.
         /// <param name="scene">The scene to be loaded.</param>
         /// <param name="unloadCompleted">Unload Completed callback.</param>
@@ -88,11 +121,26 @@ namespace StansAssets.SceneManagement
         }
 
         /// <summary>
-        /// Unload scene by name.
+        /// Destroys all GameObjects associated with the given Scene and removes the Scene from the SceneManager.
         /// <param name="sceneName">Name of the scene to be loaded.</param>
         /// <param name="unloadCompleted">Unload Completed callback.</param>
         /// </summary>
         public static void Unload(string sceneName, Action unloadCompleted = null)
+        {
+            Unload(sceneName, -1, unloadCompleted);
+        }
+
+        /// <summary>
+        /// Destroys all GameObjects associated with the given Scene and removes the Scene from the SceneManager.
+        /// <param name="sceneBuildIndex">Build index of he scene.</param>
+        /// <param name="unloadCompleted">Unload Completed callback.</param>
+        /// </summary>
+        public static void Unload(int sceneBuildIndex, Action unloadCompleted = null)
+        {
+            Unload(string.Empty, sceneBuildIndex, unloadCompleted);
+        }
+
+        public static void Unload(string sceneName, int buildIndex, Action unloadCompleted = null)
         {
             if (!s_UnloadSceneCallbacks.ContainsKey(sceneName))
             {
@@ -110,7 +158,15 @@ namespace StansAssets.SceneManagement
                         break;
                     }
                 }
-                SceneManager.UnloadSceneAsync(sceneName);
+
+                if (buildIndex != -1)
+                {
+                    SceneManager.UnloadSceneAsync(buildIndex);
+                }
+                else
+                {
+                    SceneManager.UnloadSceneAsync(sceneName);
+                }
             }
             else
             {
