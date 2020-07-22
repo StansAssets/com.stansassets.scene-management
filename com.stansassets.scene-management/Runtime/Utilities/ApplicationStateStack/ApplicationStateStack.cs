@@ -1,225 +1,274 @@
+﻿using JetBrains.Annotations;
+using StansAssets.Foundation.Patterns;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
-using StansAssets.Foundation.Patterns;
 using UnityEngine.Assertions;
 
 namespace StansAssets.SceneManagement
 {
     public class ApplicationStateStack<T> : IApplicationStateStack<T> where T : Enum
     {
-        readonly Dictionary<T, IApplicationState> m_EnumToState = new Dictionary<T, IApplicationState>();
-        readonly Dictionary<IApplicationState, T> m_StateToEnum = new Dictionary<IApplicationState, T>();
-        readonly ApplicationStateStack m_StatesStack = new ApplicationStateStack();
+        readonly Dictionary<T, IApplicationState<T>> m_EnumToState = new Dictionary<T, IApplicationState<T>>();
+        readonly Dictionary<IApplicationState<T>, T> m_StateToEnum = new Dictionary<IApplicationState<T>, T>();
 
-        public event Action OnApplicationStateChanged;
+        readonly List<T> m_StatesStack;
+        readonly List<IApplicationStateDelegate<T>> m_Subscriptions;
+
+        List<T> m_OldStackState;
+        List<T> m_NewStackState;
 
         public ApplicationStateStack()
         {
-            m_StatesStack.OnApplicationStateChanged += () =>
-            {
-                OnApplicationStateChanged?.Invoke();
-            };
+            m_StatesStack = new List<T>();
+            m_Subscriptions = new List<IApplicationStateDelegate<T>>();
         }
 
-        public void RegisterState(T key, IApplicationState value)
+        public bool IsBusy { get; private set; }
+
+        public IEnumerable<T> States => m_StatesStack;
+
+        public void AddDelegate(IApplicationStateDelegate<T> d)
+        {
+            m_Subscriptions.Add(d);
+        }
+
+        public void RemoveDelegate(IApplicationStateDelegate<T> d)
+        {
+            for (int i = m_Subscriptions.Count - 1; i >= 0; i--)
+            {
+                if (m_Subscriptions[i] != d)
+                    continue;
+                m_Subscriptions.RemoveAt(i);
+                break;
+            }
+        }
+
+        public void RegisterState(T key, IApplicationState<T> value)
         {
             m_EnumToState.Add(key, value);
             m_StateToEnum.Add(value, key);
         }
 
+        public void Set(T applicationState) => Set(applicationState, () => { });
+        public void Set(T applicationState, [NotNull] Action onComplete)
+        {
+            Assert.IsFalse(IsBusy);
+            Assert.IsNotNull(onComplete);
+            if (m_StatesStack.Count == 1 && m_StatesStack[0].Equals(applicationState))
+            {
+                onComplete.Invoke();
+                return;
+            }
+
+            IsBusy = true;
+            m_OldStackState = ListPool<T>.Get();
+            m_OldStackState.AddRange(m_StatesStack);
+
+            m_NewStackState = ListPool<T>.Get();
+            m_NewStackState.Add(applicationState);
+
+            var removedEvent = StackChangeEvent<T>.GetPooled(StackAction.Removed, m_OldStackState, m_NewStackState);
+            var addEvent = StackChangeEvent<T>.GetPooled(StackAction.Added, m_OldStackState, m_NewStackState);
+
+            var groupReq = new GroupRequest(2);
+            groupReq.Done += onComplete.Invoke;
+
+            var removeReq = new GroupRequest(m_OldStackState.Count);
+            var addReq = new GroupRequest(m_NewStackState.Count);
+
+            removeReq.ProgressChange += _ => InvokeProgressChange(groupReq.Progress, removedEvent);
+            removeReq.Done += () =>
+            {
+                InvokeStateChanged(removedEvent);
+                StackChangeEvent<T>.Release(removedEvent);
+
+                InvokeStateWillChange(addEvent);
+                InvokeChangeActionInStack(addEvent, addReq);
+            };
+
+            addReq.ProgressChange += _ => InvokeProgressChange(groupReq.Progress, addEvent);
+            addReq.Done += () =>
+            {
+
+                ListPool<T>.Release(m_OldStackState);
+                ListPool<T>.Release(m_NewStackState);
+
+                m_StatesStack.Clear();
+                m_StatesStack.Add(applicationState);
+
+                InvokeStateChanged(addEvent);
+                StackChangeEvent<T>.Release(addEvent);
+
+                IsBusy = false;
+            };
+
+            groupReq.AddRequest(removeReq);
+            groupReq.AddRequest(addReq);
+
+            InvokeStateWillChange(removedEvent);
+            InvokeChangeActionInStack(removedEvent, removeReq);
+        }
+
         public void Push(T applicationState) => Push(applicationState, () => { });
-        public void Push(T applicationState, [NotNull] Action onComplete) => m_StatesStack.Push(m_EnumToState[applicationState], onComplete);
+        public void Push(T applicationState, [NotNull] Action onComplete)
+        {
+            Assert.IsFalse(IsBusy);
+            Assert.IsNotNull(onComplete);
+            if (m_StatesStack.Count > 0 && m_StatesStack[0].Equals(applicationState))
+            {
+                onComplete.Invoke();
+                return;
+            }
+
+            IsBusy = true;
+            m_OldStackState = ListPool<T>.Get();
+            m_OldStackState.AddRange(m_StatesStack);
+
+            m_NewStackState = ListPool<T>.Get();
+            m_NewStackState.AddRange(m_StatesStack);
+            m_NewStackState.Add(applicationState);
+
+            var pauseEvent = StackChangeEvent<T>.GetPooled(StackAction.Paused, m_OldStackState, m_NewStackState);
+            var addEvent = StackChangeEvent<T>.GetPooled(StackAction.Added, m_OldStackState, m_NewStackState);
+
+            var groupReq = new GroupRequest(2);
+            groupReq.Done += onComplete.Invoke;
+
+            var pauseReq = new GroupRequest(m_OldStackState.Count);
+            var addReq = new Request();
+
+            pauseReq.ProgressChange += _ => InvokeProgressChange(groupReq.Progress, pauseEvent);
+            pauseReq.Done += () =>
+            {
+                InvokeStateChanged(pauseEvent);
+                StackChangeEvent<T>.Release(pauseEvent);
+
+                InvokeStateWillChange(addEvent);
+                m_EnumToState[applicationState].ChangeState(addEvent, addReq);
+            };
+
+            addReq.ProgressChange += _ => InvokeProgressChange(groupReq.Progress, addEvent);
+            addReq.Done += () =>
+            {
+                m_StatesStack.Add(applicationState);
+
+                ListPool<T>.Release(m_OldStackState);
+                ListPool<T>.Release(m_NewStackState);
+
+                InvokeStateChanged(addEvent);
+                StackChangeEvent<T>.Release(addEvent);
+
+                IsBusy = false;
+            };
+
+            groupReq.AddRequest(pauseReq);
+            groupReq.AddRequest(addReq);
+
+            InvokeStateWillChange(pauseEvent);
+            InvokeChangeActionInStack(pauseEvent, pauseReq);
+        }
 
         public void Pop() => Pop(applicationState => { });
-        public void Pop([NotNull] Action<T> onComplete) => m_StatesStack.Pop(applicationState =>
+        public void Pop([NotNull] Action<T> onComplete)
         {
-            onComplete.Invoke(m_StateToEnum[applicationState]);
-        });
+            Assert.IsFalse(IsBusy);
+            Assert.IsNotNull(onComplete);
+            if (m_StatesStack.Count == 0)
+            {
+                throw new Exception("States are empty");
+            }
 
+            IsBusy = true;
+            m_OldStackState = ListPool<T>.Get();
+            m_OldStackState.AddRange(m_StatesStack);
 
-        public void Set(T applicationState) => Set(applicationState, () => { });
-        public void Set(T applicationState,  [NotNull] Action onComplete) =>  m_StatesStack.Set(m_EnumToState[applicationState], onComplete);
+            var applicationState = m_StatesStack.Last();
+            m_NewStackState = ListPool<T>.Get();
+            m_NewStackState.AddRange(m_StatesStack);
+            m_NewStackState.Remove(applicationState);
+
+            var removedEvent = StackChangeEvent<T>.GetPooled(StackAction.Removed, m_OldStackState, m_NewStackState);
+            var resumedEvent = StackChangeEvent<T>.GetPooled(StackAction.Resumed, m_OldStackState, m_NewStackState);
+
+            var group = new GroupRequest(2);
+            group.Done += () => onComplete.Invoke(applicationState);
+
+            var removeReq = new Request();
+            var resumeReq = new Request();
+
+            removeReq.ProgressChange += _ => InvokeProgressChange(group.Progress, removedEvent);
+            removeReq.Done += () =>
+            {
+                m_StatesStack.Remove(applicationState);
+
+                InvokeStateChanged(removedEvent);
+                StackChangeEvent<T>.Release(removedEvent);
+
+                InvokeStateWillChange(resumedEvent);
+                if (m_StatesStack.Count > 0)
+                    m_EnumToState[m_StatesStack.Last()].ChangeState(resumedEvent, resumeReq);
+                else
+                    resumeReq.SetDone();
+            };
+
+            resumeReq.ProgressChange += _ => InvokeProgressChange(group.Progress, resumedEvent);
+            resumeReq.Done += () =>
+            {
+                ListPool<T>.Release(m_OldStackState);
+                ListPool<T>.Release(m_NewStackState);
+
+                InvokeStateChanged(resumedEvent);
+
+                IsBusy = false;
+            };
+
+            group.AddRequest(removeReq);
+            group.AddRequest(resumeReq);
+
+            InvokeStateWillChange(removedEvent);
+            m_EnumToState[applicationState].ChangeState(removedEvent, removeReq);
+        }
 
         public bool IsCurrent(T applicationState)
         {
             return States.Any() && States.Last().Equals(applicationState);
         }
 
-        public IEnumerable<T> States
-        {
-            get { return m_StatesStack.States.Select(applicationState => m_StateToEnum[applicationState]); }
-        }
-
-        public bool IsBusy => m_StatesStack.IsBusy;
-    }
-
-    public class ApplicationStateStack
-    {
-        readonly List<IApplicationState> m_StatesStack;
-
-        List<IApplicationState> m_OldStackState;
-        List<IApplicationState> m_NewStackState;
-
-        public event Action OnApplicationStateChanged;
-        public bool IsBusy { get; private set; }
-
-        public ApplicationStateStack()
-        {
-            m_StatesStack = new List<IApplicationState>();
-        }
-
-        public void Push(IApplicationState applicationState) => Push(applicationState, () => { });
-
-        public void Push(IApplicationState applicationState, [NotNull] Action onComplete)
-        {
-            Assert.IsFalse(IsBusy);
-            Assert.IsNotNull(onComplete);
-            if (m_StatesStack.Count > 0 && m_StatesStack[0] == applicationState)
-            {
-                onComplete.Invoke();
-                return;
-            }
-
-            IsBusy = true;
-            m_OldStackState = ListPool<IApplicationState>.Get();
-            m_OldStackState.AddRange(m_StatesStack);
-
-            m_NewStackState = ListPool<IApplicationState>.Get();
-            m_NewStackState.AddRange(m_StatesStack);
-            m_NewStackState.Add(applicationState);
-            var pauseEvent = StackChangeEvent.GetPooled(StackAction.Paused, m_OldStackState, m_NewStackState);
-
-            InvokeActionsInStack(pauseEvent, () =>
-            {
-                StackChangeEvent.Release(pauseEvent);
-                var addEvent = StackChangeEvent.GetPooled(StackAction.Added, m_OldStackState, m_NewStackState);
-                applicationState.ChangeState(addEvent,() =>
-                {
-                    m_StatesStack.Add(applicationState);
-
-                    StackChangeEvent.Release(addEvent);
-                    ListPool<IApplicationState>.Release(m_OldStackState);
-                    ListPool<IApplicationState>.Release(m_NewStackState);
-
-                    onComplete.Invoke();
-                    OnApplicationStateChanged?.Invoke();
-
-                    IsBusy = false;
-                });
-            });
-        }
-
-        public void Pop() => Pop(state => { });
-
-        public void Pop([NotNull] Action<IApplicationState> onComplete)
-        {
-            Assert.IsFalse(IsBusy);
-            Assert.IsNotNull(onComplete);
-            if (m_StatesStack.Count == 0)
-            {
-                onComplete.Invoke(null);
-                return;
-            }
-
-            IsBusy = true;
-            m_OldStackState = ListPool<IApplicationState>.Get();
-            m_OldStackState.AddRange(m_StatesStack);
-
-            var applicationState = m_StatesStack.Last();
-            m_NewStackState = ListPool<IApplicationState>.Get();
-            m_NewStackState.AddRange(m_StatesStack);
-            m_NewStackState.Add(applicationState);
-
-            var removedEvent = StackChangeEvent.GetPooled(StackAction.Removed, m_OldStackState, m_NewStackState);
-            applicationState.ChangeState(removedEvent,() =>
-            {
-                m_StatesStack.Remove(applicationState);
-                StackChangeEvent.Release(removedEvent);
-                if (m_StatesStack.Count > 0)
-                {
-                    var resumedEvent = StackChangeEvent.GetPooled(StackAction.Resumed, m_OldStackState, m_NewStackState);
-                    m_StatesStack.Last().ChangeState(resumedEvent, () =>
-                    {
-                        StackChangeEvent.Release(resumedEvent);
-                        ListPool<IApplicationState>.Release(m_OldStackState);
-                        ListPool<IApplicationState>.Release(m_NewStackState);
-                        onComplete.Invoke(applicationState);
-                        OnApplicationStateChanged?.Invoke();
-
-                        IsBusy = false;
-                    });
-                }
-                else
-                {
-                    ListPool<IApplicationState>.Release(m_OldStackState);
-                    ListPool<IApplicationState>.Release(m_NewStackState);
-                    onComplete.Invoke(applicationState);
-                    OnApplicationStateChanged?.Invoke();
-
-                    IsBusy = false;
-                }
-            });
-        }
-
-        public void Set(IApplicationState applicationState) => Set(applicationState, () => { });
-
-        public void Set(IApplicationState applicationState,  [NotNull] Action onComplete)
-        {
-            Assert.IsFalse(IsBusy);
-            Assert.IsNotNull(onComplete);
-            if (m_StatesStack.Count == 1 && m_StatesStack[0] == applicationState)
-            {
-                onComplete.Invoke();
-                return;
-            }
-
-            IsBusy = true;
-            m_OldStackState = ListPool<IApplicationState>.Get();
-            m_OldStackState.AddRange(m_StatesStack);
-
-            m_NewStackState = ListPool<IApplicationState>.Get();
-            m_NewStackState.Add(applicationState);
-            var removedEvent = StackChangeEvent.GetPooled(StackAction.Removed, m_OldStackState, m_NewStackState);
-
-            InvokeActionsInStack(removedEvent, () =>
-            {
-                StackChangeEvent.Release(removedEvent);
-                var addEvent = StackChangeEvent.GetPooled(StackAction.Added, m_OldStackState, m_NewStackState);
-                applicationState.ChangeState(addEvent, () =>
-                {
-                    StackChangeEvent.Release(addEvent);
-                    ListPool<IApplicationState>.Release(m_OldStackState);
-                    ListPool<IApplicationState>.Release(m_NewStackState);
-
-                    m_StatesStack.Clear();
-                    m_StatesStack.Add(applicationState);
-                    onComplete.Invoke();
-                    OnApplicationStateChanged?.Invoke();
-
-                    IsBusy = false;
-                });
-            });
-        }
-
-        public IEnumerable<IApplicationState> States => m_StatesStack;
-
-        void InvokeActionsInStack(StackChangeEvent stackChangeEvent, Action onComplete, int index = 0)
+        void InvokeChangeActionInStack(StackChangeEvent<T> stackChangeEvent, GroupRequest groupReq, int index = 0)
         {
             if (index >= m_StatesStack.Count)
             {
-                onComplete.Invoke();
+                groupReq.SetDone();
                 return;
             }
 
             var state = m_StatesStack[index];
             index++;
 
-            state.ChangeState(stackChangeEvent, () =>
-            {
-                InvokeActionsInStack(stackChangeEvent, onComplete, index);
-            });
+            var request = new Request();
+            request.Done += () => InvokeChangeActionInStack(stackChangeEvent, groupReq, index);
+            groupReq.AddRequest(request);
+
+            m_EnumToState[state].ChangeState(stackChangeEvent, request);
+        }
+
+        void InvokeStateWillChange(StackChangeEvent<T> eventArg)
+        {
+            foreach (var subscription in m_Subscriptions)
+                subscription.OnApplicationStateWillChanged(eventArg);
+        }
+
+        void InvokeProgressChange(float p, StackChangeEvent<T> eventArg)
+        {
+            foreach (var subscription in m_Subscriptions)
+                subscription.ApplicationStateChangeProgressChanged(p, eventArg);
+        }
+
+        void InvokeStateChanged(StackChangeEvent<T> eventArg)
+        {
+            foreach (var subscription in m_Subscriptions)
+                subscription.ApplicationStateChanged(eventArg);
         }
     }
 }

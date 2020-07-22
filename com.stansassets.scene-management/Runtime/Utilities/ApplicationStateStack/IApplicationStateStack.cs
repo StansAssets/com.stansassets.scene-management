@@ -5,7 +5,8 @@ namespace StansAssets.SceneManagement
 {
     public interface IApplicationStateStack<T> where T : Enum
     {
-        event Action OnApplicationStateChanged;
+        void AddDelegate(IApplicationStateDelegate<T> d);
+        void RemoveDelegate(IApplicationStateDelegate<T> d);
 
         void Pop();
         void Pop(Action<T> onComplete);
