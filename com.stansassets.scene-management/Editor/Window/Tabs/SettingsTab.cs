@@ -1,4 +1,5 @@
-﻿using StansAssets.Plugins.Editor;
+﻿#if UNITY_2019_4_OR_NEWER
+using StansAssets.Plugins.Editor;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -9,7 +10,7 @@ namespace StansAssets.SceneManagement
     public class SettingsTab : BaseTab
     {
         public SettingsTab()
-            : base($"{SceneManagementPackage.WindowTabsPath}/SettingsTab.uxml")
+            : base($"{SceneManagementPackage.WindowTabsPath}/SettingsTab")
         {
             var landingSceneField = Root.Q<ObjectField>("landing-scene");
             landingSceneField.objectType = typeof(SceneAsset);
@@ -23,3 +24,4 @@ namespace StansAssets.SceneManagement
         }
     }
 }
+#endif

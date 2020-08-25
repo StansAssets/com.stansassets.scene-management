@@ -1,4 +1,5 @@
-﻿using StansAssets.Foundation.Editor;
+﻿#if UNITY_2019_4_OR_NEWER
+using StansAssets.Foundation.Editor;
 using StansAssets.Plugins.Editor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -20,3 +21,4 @@ namespace StansAssets.SceneManagement
         public static GUIContent WindowTitle => new GUIContent(SceneManagementPackage.DisplayName);
     }
 }
+#endif

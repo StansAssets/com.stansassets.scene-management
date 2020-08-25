@@ -1,3 +1,4 @@
+#if UNITY_2019_4_OR_NEWER
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -132,3 +133,4 @@ namespace StansAssets.SceneManagement
         }
     }
 }
+#endif

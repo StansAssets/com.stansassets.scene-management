@@ -1,17 +1,22 @@
 {
     "name": "StansAssets.SceneManagments.Tests",
     "references": [
-        "GUID:8c26edb72a5b44ef39c0bd009ec1322d"
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "StansAssets.SceneManagement"
     ],
+    "optionalUnityReferences": [],
     "includePlatforms": [
         "Editor"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
     "autoReferenced": false,
-    "defineConstraints": [],
-    "versionDefines": [],
-    "noEngineReferences": false
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ]
 }
