@@ -1,12 +1,12 @@
 {
   "name": "com.stansassets.scene-management",
   "displayName": "Stans Assets - Scene Management",
-  "version": "0.0.8-preview",
+  "version": "0.0.9-preview",
   "unity": "2019.3",
   "description": "Provides a set of tools to organize scenes loading and management.",
   "dependencies": {
     "com.stansassets.foundation": "1.0.4",
-    "com.stansassets.plugins-dev-kit": "0.0.5-previe"
+    "com.stansassets.plugins-dev-kit": "0.0.5-preview"
   },
   "keywords": [
     "unity",
