@@ -1,0 +1,22 @@
+{
+    "name": "StansAssets.SceneManagement.Build.Editor",
+    "references": [
+        "StansAssets.Foundation.Editor",
+        "StansAssets.Foundation",
+        "StansAssets.Plugins",
+        "StansAssets.Plugins.Editor",
+        "Unity.Addressables.Editor",
+        "StansAssets.SceneManagement.Build.Runtime",
+        "StansAssets.SceneManagement.Editor"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
+}

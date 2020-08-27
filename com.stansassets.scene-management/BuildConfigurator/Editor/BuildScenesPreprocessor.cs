@@ -2,6 +2,9 @@
 using UnityEditor;
 using System;
 using System.Collections.Generic;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 
 namespace StansAssets.SceneManagement.Build
 {
@@ -35,6 +38,7 @@ namespace StansAssets.SceneManagement.Build
                 handler.Invoke(options);
             }
 
+            SetupAddressableScenes(EditorUserBuildSettings.activeBuildTarget);
             options.scenes = FilterScenesByPath(EditorUserBuildSettings.activeBuildTarget, options.scenes);
         }
 
@@ -48,7 +52,8 @@ namespace StansAssets.SceneManagement.Build
 
             List<string> scenes = new List<string>();
 
-            if (configuration.DefaultScenes.Count == 0)
+            var defaultNonAddrScenes = configuration.GetNonAddressableDefaultScenes();
+            if (defaultNonAddrScenes.Count == 0)
             {
                 scenes.AddRange(buildScenes);
                 ProcessPlatforms(ref scenes, target, configuration.Platforms);
@@ -58,11 +63,11 @@ namespace StansAssets.SceneManagement.Build
                 if (configuration.DefaultScenesFirst)
                 {
                     ProcessPlatforms(ref scenes, target, configuration.Platforms);
-                    InsertScenes(ref scenes, configuration.DefaultScenes);
+                    InsertScenes(ref scenes, defaultNonAddrScenes);
                 }
                 else
                 {
-                    InsertScenes(ref scenes, configuration.DefaultScenes);
+                    InsertScenes(ref scenes, defaultNonAddrScenes);
                     ProcessPlatforms(ref scenes, target, configuration.Platforms);
                 }
             }
@@ -74,14 +79,17 @@ namespace StansAssets.SceneManagement.Build
         {
             foreach (var platformsConfiguration in platforms)
             {
-                if (platformsConfiguration.BuildTargets.Contains(target))
+                var editorBuildTargets = platformsConfiguration.GetBuildTargetsEditor();
+                if (editorBuildTargets.Contains(target))
                 {
-                    InsertScenes(ref scenes, platformsConfiguration.Scenes);
+                    InsertScenes(ref scenes, platformsConfiguration.GetNonAddressableScenes());
                 }
                 else
                 {
-                    RemoveScenes(ref scenes, platformsConfiguration.Scenes);
+                    RemoveScenes(ref scenes, platformsConfiguration.GetNonAddressableScenes());
                 }
+                // Remove any addressable scene from a build
+                RemoveScenes(ref scenes, platformsConfiguration.GetAddressableScenes());
             }
         }
 
@@ -112,6 +120,68 @@ namespace StansAssets.SceneManagement.Build
                     scenes.Remove(sceneAssetPath);
                 }
             }
+        }
+
+        static void SetupAddressableScenes(BuildTarget target)
+        {
+            var group = AddressablesUtility.GetOrCreateGroup("Scenes");
+
+            var configuration = BuildConfigurationSettings.Instance.Configuration;
+
+            AddAddressableScenesIntoGroup(configuration.GetAddressableDefaultScenes(), group);
+
+            foreach (var platformsConfiguration in configuration.Platforms)
+            {
+                var editorBuildTargets = platformsConfiguration.GetBuildTargetsEditor();
+                if (editorBuildTargets.Contains(target))
+                {
+                    AddAddressableScenesIntoGroup(platformsConfiguration.GetAddressableScenes(), group);
+                    break;
+                }
+            }
+
+            if (group.entries.Count > 0)
+            {
+                AddressableAssetSettings.BuildPlayerContent();
+            }
+            else
+            {
+                AddressableAssetSettingsDefaultObject.Settings.RemoveGroup(group);
+            }
+            BuildConfigurationSettings.Instance.Configuration.InitializeBuildData((BuildTargetRuntime)(int)target);
+        }
+
+        static void AddAddressableScenesIntoGroup(List<SceneAsset> scenes, AddressableAssetGroup group)
+        {
+            foreach (var scene in scenes)
+            {
+                var sceneAssetPath = AssetDatabase.GetAssetPath(scene);
+                if (string.IsNullOrEmpty(sceneAssetPath))
+                    continue;
+
+                var guid = AssetDatabase.AssetPathToGUID(sceneAssetPath);
+                var entry = AddressableAssetSettingsDefaultObject.Settings.CreateOrMoveEntry(guid, group, false, true);
+                entry.address = scene.name;
+            }
+        }
+    }
+
+    public static class AddressablesUtility
+    {
+        public static AddressableAssetGroup GetOrCreateGroup(string name)
+        {
+            var group = AddressableAssetSettingsDefaultObject.Settings.FindGroup((g) => g.name == name);
+            if (group == null)
+            {
+                group = AddressableAssetSettingsDefaultObject.Settings.CreateGroup(name, false, false, true, new List<AddressableAssetGroupSchema>());
+            }
+            group.ClearSchemas(true, true);
+            group.AddSchema<ContentUpdateGroupSchema>();
+            var schema = ScriptableObject.CreateInstance<BundledAssetGroupSchema>();
+            schema.UseAssetBundleCache = false;
+            group.AddSchema(schema);
+
+            return group;
         }
     }
 }

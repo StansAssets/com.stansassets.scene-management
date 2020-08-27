@@ -1,2 +1,2 @@
 using System.Runtime.CompilerServices;
-[assembly: InternalsVisibleTo("StansAssets.SceneManagement.Build")]
+[assembly: InternalsVisibleTo("StansAssets.SceneManagement.Build.Editor")]

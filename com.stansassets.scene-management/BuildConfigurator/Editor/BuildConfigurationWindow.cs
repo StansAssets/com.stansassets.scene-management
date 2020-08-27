@@ -222,22 +222,34 @@ namespace StansAssets.SceneManagement.Build
             }
         }
 
-        BuildTarget BuildTargetListItem(Rect pos, BuildTarget itemValue)
+        BuildTargetRuntime BuildTargetListItem(Rect pos, BuildTargetRuntime itemValue)
         {
             int indentLevel = EditorGUI.indentLevel;
             EditorGUI.indentLevel = 0;
-            BuildTarget target = (BuildTarget)EditorGUI.EnumPopup(pos, itemValue);
+            BuildTargetRuntime target = (BuildTargetRuntime)EditorGUI.EnumPopup(pos, itemValue);
             EditorGUI.indentLevel = indentLevel;
             return target;
         }
 
-        SceneAsset ContentTypeListItem(Rect pos, SceneAsset itemValue)
+        AddressableSceneAsset ContentTypeListItem(Rect pos, AddressableSceneAsset itemValue)
         {
+            if (itemValue == null)
+                itemValue = new AddressableSceneAsset();
+
             int indentLevel = EditorGUI.indentLevel;
             EditorGUI.indentLevel = 0;
-            var assets = EditorGUI.ObjectField(pos, itemValue, typeof(SceneAsset), false) as SceneAsset;
+
+            EditorGUI.BeginChangeCheck();
+            var sceneAsset = itemValue.GetSceneAsset();
+            var newSceneAsset = EditorGUI.ObjectField(new Rect(pos.x, pos.y, pos.width-20f, pos.height), sceneAsset, typeof(SceneAsset), false) as SceneAsset;
+            if (EditorGUI.EndChangeCheck())
+            {
+                itemValue.SetSceneAsset(newSceneAsset);
+            }
+            itemValue.Addressable = GUI.Toggle(new Rect(pos.x + pos.width - 20f, pos.y, 20f, pos.height), itemValue.Addressable, AddressableGuiContent);
+
             EditorGUI.indentLevel = indentLevel;
-            return assets;
+            return itemValue;
         }
 
         void DrawEmptyScene()
@@ -281,5 +293,9 @@ namespace StansAssets.SceneManagement.Build
 
             return index;
         }
+
+        static GUIContent s_AddressableGuiContent;
+
+        static GUIContent AddressableGuiContent => s_AddressableGuiContent ?? (s_AddressableGuiContent = new GUIContent("", "Mark scene Addressable?\nIf true - scene will be added as Addressable asset into \"Scenes\" group, otherwise - scene will be added into build settings."));
     }
 }

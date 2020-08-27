@@ -1,15 +1,18 @@
 {
     "name": "StansAssets.SceneManagement",
     "references": [
-        "StansAssets.Foundation"
+        "StansAssets.Foundation",
+        "StansAssets.SceneManagement.Build.Runtime",
+        "StansAssets.Plugins",
+        "Unity.Addressables",
+        "Unity.ResourceManager"
     ],
+    "optionalUnityReferences": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": [],
-    "versionDefines": [],
-    "noEngineReferences": false
+    "defineConstraints": []
 }
