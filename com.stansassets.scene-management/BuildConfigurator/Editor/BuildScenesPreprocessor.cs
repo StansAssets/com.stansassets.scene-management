@@ -42,6 +42,11 @@ namespace StansAssets.SceneManagement.Build
             options.scenes = FilterScenesByPath(EditorUserBuildSettings.activeBuildTarget, options.scenes);
         }
 
+        [MenuItem("Window/Asset Management/Setup Addressable Scenes")]
+        public static void SetupAddressableScenes() {
+            SetupAddressableScenes(EditorUserBuildSettings.activeBuildTarget);
+        }
+
         static string[] FilterScenesByPath(BuildTarget target, string[] buildScenes)
         {
             var configuration = BuildConfigurationSettings.Instance.Configuration;
@@ -149,6 +154,8 @@ namespace StansAssets.SceneManagement.Build
                 AddressableAssetSettingsDefaultObject.Settings.RemoveGroup(group);
             }
             BuildConfigurationSettings.Instance.Configuration.InitializeBuildData((BuildTargetRuntime)(int)target);
+            EditorUtility.SetDirty(BuildConfigurationSettings.Instance);
+            AssetDatabase.SaveAssets();
         }
 
         static void AddAddressableScenesIntoGroup(List<SceneAsset> scenes, AddressableAssetGroup group)

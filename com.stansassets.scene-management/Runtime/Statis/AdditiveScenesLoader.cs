@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using StansAssets.SceneManagement.Build;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -54,17 +55,13 @@ namespace StansAssets.SceneManagement
         /// </summary>
         public static void LoadAdditively(string sceneName, Action<Scene> loadCompleted = null)
         {
-            #if UNITY_EDITOR
-            LoadAdditively(sceneName, -1, loadCompleted);
-            #else
-            if (BuildConfigurationSettings.Instance.Configuration.IsSceneAddressable(sceneName))
+            if (!Application.isEditor && BuildConfigurationSettings.Instance.Configuration.IsSceneAddressable(sceneName))
             {
                 LoadAddressableAdditively(sceneName, loadCompleted);
             }
             else {
                 LoadAdditively(sceneName, -1, loadCompleted);
             }
-            #endif
         }
 
         static AsyncOperation LoadAdditively(string sceneName, int buildIndex,  Action<Scene> loadCompleted = null)
@@ -172,17 +169,13 @@ namespace StansAssets.SceneManagement
         /// </summary>
         public static void Unload(string sceneName, Action unloadCompleted = null)
         {
-#if UNITY_EDITOR
-            Unload(sceneName, -1, unloadCompleted);
-#else
-            if (BuildConfigurationSettings.Instance.Configuration.IsSceneAddressable(sceneName))
+            if (!Application.isEditor && BuildConfigurationSettings.Instance.Configuration.IsSceneAddressable(sceneName))
             {
                 UnloadAddressable(sceneName, unloadCompleted);
             }
             else {
                 Unload(sceneName, -1, unloadCompleted);
             }
-#endif
         }
 
         /// <summary>
@@ -282,6 +275,15 @@ namespace StansAssets.SceneManagement
                 if (additivelyLoadedScene.name == sceneName)
                 {
                     scene = additivelyLoadedScene;
+                    return true;
+                }
+            }
+
+            foreach (var additivelyLoadedScene in s_AdditiveScenesInstances)
+            {
+                if (additivelyLoadedScene.Scene.name == sceneName)
+                {
+                    scene = additivelyLoadedScene.Scene;
                     return true;
                 }
             }

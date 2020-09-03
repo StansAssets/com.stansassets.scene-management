@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using UnityEditor;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace StansAssets.SceneManagement.Build
 {
@@ -88,12 +90,15 @@ namespace StansAssets.SceneManagement.Build
                             if (string.IsNullOrEmpty(path))
                                 continue;
 
-                            m_SceneNames.Add(Path.GetFileName(path));
+                            m_SceneNames.Add(Path.GetFileNameWithoutExtension(path));
                             m_SceneAssets.Add(scene);
                         }
                     }
                 }
             }
+
+            Debug.Log("Addressable Scenes: " + m_SceneNames.Count);
+            Debug.Log("Addressable Scenes List: " + string.Join("\n", m_SceneNames));
         }
         #endif
 
