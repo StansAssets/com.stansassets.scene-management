@@ -12,7 +12,7 @@ namespace StansAssets.SceneManagement
         public static readonly string RootPath = PackageManagerUtility.GetPackageRootPath(PackageName);
 
 #if UNITY_2019_4_OR_NEWER
-        public static readonly PackageInfo Info = PackageManagerUtility.GetPackageInfo(PackageName);
+        public static readonly UnityEditor.PackageManager.PackageInfo Info = PackageManagerUtility.GetPackageInfo(PackageName);
 #endif
 
         internal static readonly string WindowTabsPath = $"{RootPath}/Editor/Window/Tabs";

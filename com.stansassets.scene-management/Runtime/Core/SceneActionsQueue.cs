@@ -9,12 +9,11 @@ namespace StansAssets.SceneManagement
     public class SceneActionsQueue
     {
         IScenePreloader m_Preloader;
-        AsyncOperation m_CurrentAsyncOperation;
+        IAsyncOperation m_CurrentAsyncOperation;
         bool m_IsRunning;
         readonly ISceneLoadService m_SceneLoadService;
         readonly Queue<SceneAction> m_ActionsQueue = new Queue<SceneAction>();
         readonly List<ISceneManager> m_SceneManagers = new List<ISceneManager>();
-
 
         public IEnumerable<SceneAction> ScheduledActions => m_ActionsQueue;
 
@@ -43,7 +42,6 @@ namespace StansAssets.SceneManagement
 
             m_ActionsQueue.Enqueue(data);
         }
-
 
         public void Start(Action onComplete = null)
         {
@@ -85,7 +83,7 @@ namespace StansAssets.SceneManagement
             {
                 if (m_CurrentAsyncOperation != null)
                 {
-                    m_Preloader?.OnProgress(m_CurrentAsyncOperation.progress);
+                    m_Preloader?.OnProgress(m_CurrentAsyncOperation.Progress);
                 }
 
                 yield return new WaitForEndOfFrame();
@@ -115,7 +113,7 @@ namespace StansAssets.SceneManagement
                 case SceneActionType.Load:
                     m_SceneLoadService.Load(actionData.SceneName, sceneManager =>
                     {
-                        if(sceneManager != null)
+                        if (sceneManager != null)
                             m_SceneManagers.Add(sceneManager);
 
                         ExecuteActionsStack(onComplete);
@@ -139,6 +137,5 @@ namespace StansAssets.SceneManagement
                     throw new ArgumentOutOfRangeException();
             }
         }
-
     }
 }

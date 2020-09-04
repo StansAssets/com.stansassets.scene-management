@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace StansAssets.SceneManagement.Build
 {
@@ -54,53 +50,17 @@ namespace StansAssets.SceneManagement.Build
             }
             return false;
         }
-
+        
         Dictionary<string, AddressableSceneAsset> m_AddressableSceneNamesToSceneAssets;
         [SerializeField] List<string> m_SceneNames = new List<string>();
         [SerializeField] List<AddressableSceneAsset> m_SceneAssets = new List<AddressableSceneAsset>();
-        #if UNITY_EDITOR
-        public void InitializeBuildData(BuildTargetRuntime builtTarget)
+
+        internal void SetScenesConfig(List<string> sceneNames, List<AddressableSceneAsset> sceneAssets)
         {
             m_AddressableSceneNamesToSceneAssets = null;
-            m_SceneNames.Clear();
-            m_SceneAssets.Clear();
-
-            foreach (var scene in DefaultScenes)
-            {
-                if (scene.Addressable)
-                {
-                    string path = AssetDatabase.GUIDToAssetPath(scene.Guid);
-                    if (string.IsNullOrEmpty(path))
-                        continue;
-
-                    m_SceneNames.Add(Path.GetFileNameWithoutExtension(path));
-                    m_SceneAssets.Add(scene);
-                }
-            }
-
-            foreach (var platform in Platforms)
-            {
-                if (platform.BuildTargets.Contains(builtTarget))
-                {
-                    foreach (var scene in platform.Scenes)
-                    {
-                        if (scene.Addressable)
-                        {
-                            string path = AssetDatabase.GUIDToAssetPath(scene.Guid);
-                            if (string.IsNullOrEmpty(path))
-                                continue;
-
-                            m_SceneNames.Add(Path.GetFileNameWithoutExtension(path));
-                            m_SceneAssets.Add(scene);
-                        }
-                    }
-                }
-            }
-
-            Debug.Log("Addressable Scenes: " + m_SceneNames.Count);
-            Debug.Log("Addressable Scenes List: " + string.Join("\n", m_SceneNames));
+            m_SceneNames = sceneNames;
+            m_SceneAssets = sceneAssets;
         }
-        #endif
 
         Dictionary<string, AddressableSceneAsset> AddressableSceneNamesToSceneAssets
         {

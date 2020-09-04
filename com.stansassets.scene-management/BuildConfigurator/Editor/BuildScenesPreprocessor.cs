@@ -9,7 +9,7 @@ using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 namespace StansAssets.SceneManagement.Build
 {
     [InitializeOnLoad]
-    public class BuildScenesPreprocessor
+    class BuildScenesPreprocessor
     {
         static readonly List<Action<BuildPlayerOptions>> s_BuildHandlers = new List<Action<BuildPlayerOptions>>();
 

@@ -5,7 +5,7 @@ using StansAssets.Plugins.Editor;
 
 namespace StansAssets.SceneManagement.Build
 {
-    public class BuildConfigurationWindow : IMGUISettingsWindow<BuildConfigurationWindow>
+    class BuildConfigurationWindow : IMGUISettingsWindow<BuildConfigurationWindow>
     {
         const string k_DefaultScenesDescription = "If you are leaving the default scnese empty, " +
             "projects settings defined scene will be added to the build. " +

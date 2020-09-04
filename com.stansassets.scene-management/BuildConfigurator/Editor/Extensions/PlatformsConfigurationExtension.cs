@@ -4,7 +4,7 @@ using UnityEditor;
 
 namespace StansAssets.SceneManagement.Build
 {
-    public static class PlatformsConfigurationExtension
+    static class PlatformsConfigurationExtension
     {
         public static List<SceneAsset> GetAddressableScenes(this PlatformsConfiguration platformsConfiguration)
         {

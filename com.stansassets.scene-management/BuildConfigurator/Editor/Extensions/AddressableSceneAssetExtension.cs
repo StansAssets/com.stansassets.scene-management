@@ -2,7 +2,7 @@
 
 namespace StansAssets.SceneManagement.Build
 {
-    public static class AddressableSceneAssetExtension
+    static class AddressableSceneAssetExtension
     {
         public static SceneAsset GetSceneAsset(this AddressableSceneAsset sceneAsset)
         {
