@@ -218,7 +218,7 @@ namespace StansAssets.SceneManagement
                         Postprocess(stackPopComplete, () =>
                         {
                             IsBusy = false;
-                            m_StatesStack.Add(removedSate);
+                            m_StatesStack.Remove(removedSate);
                             InvokeStateChanged(stackPopComplete);
 
                             ListPool<T>.Release(oldStackState);
