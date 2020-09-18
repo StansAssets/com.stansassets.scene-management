@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using StansAssets.Foundation.Async;
+using StansAssets.Foundation.Patterns;
 using UnityEngine;
 
 namespace StansAssets.SceneManagement
@@ -11,9 +12,12 @@ namespace StansAssets.SceneManagement
         IScenePreloader m_Preloader;
         AsyncOperation m_CurrentAsyncOperation;
         bool m_IsRunning;
+        event Action m_OnComplete;
+        event Action<float> m_OnProgress;
+
         readonly ISceneLoadService m_SceneLoadService;
         readonly Queue<SceneAction> m_ActionsQueue = new Queue<SceneAction>();
-        readonly List<ISceneManager> m_SceneManagers = new List<ISceneManager>();
+        
 
 
         public IEnumerable<SceneAction> ScheduledActions => m_ActionsQueue;
@@ -45,32 +49,46 @@ namespace StansAssets.SceneManagement
         }
 
 
-        public void Start(Action onComplete = null)
+        public void Start(Action<float> onProgress = null, Action onComplete = null)
         {
-            m_SceneManagers.Clear();
+            LoadedSceneManagers = ListPool<ISceneManager>.Get();
+            m_OnComplete = onComplete;
+            m_OnProgress = onProgress;
             if (m_Preloader != null)
             {
                 m_Preloader.FadeIn(() =>
                 {
                     StartActionsStack(() =>
                     {
+                        onProgress?.Invoke(1f);
                         m_Preloader.OnProgress(1f);
-                        m_Preloader.FadeOut(() =>
-                        {
-                            onComplete?.Invoke();
-                        });
+                        m_Preloader.FadeOut(Complete);
                     });
                 });
             }
             else
             {
-                StartActionsStack(onComplete);
+                StartActionsStack(Complete);
             }
         }
 
+        void Complete()
+        {
+            m_OnProgress?.Invoke(1f);
+            m_OnComplete?.Invoke();
+            
+            ListPool<ISceneManager>.Release(LoadedSceneManagers);
+            LoadedSceneManagers = null;
+            m_OnComplete = null;
+            m_OnProgress = null;
+        }
+        
+        
+        public List<ISceneManager> LoadedSceneManagers { get; set; }
+
         public T GetLoadedSceneManager<T>() where T : ISceneManager
         {
-            foreach (var sceneManager in m_SceneManagers)
+            foreach (var sceneManager in LoadedSceneManagers)
             {
                 if (sceneManager.GetType() == typeof(T))
                     return (T)sceneManager;
@@ -78,6 +96,7 @@ namespace StansAssets.SceneManagement
 
             return default;
         }
+        
 
         public IEnumerator OnStackProgress()
         {
@@ -86,6 +105,7 @@ namespace StansAssets.SceneManagement
                 if (m_CurrentAsyncOperation != null)
                 {
                     m_Preloader?.OnProgress(m_CurrentAsyncOperation.progress);
+                    m_OnProgress?.Invoke(m_CurrentAsyncOperation.progress);
                 }
 
                 yield return new WaitForEndOfFrame();
@@ -116,7 +136,7 @@ namespace StansAssets.SceneManagement
                     m_SceneLoadService.Load(actionData.SceneName, sceneManager =>
                     {
                         if(sceneManager != null)
-                            m_SceneManagers.Add(sceneManager);
+                            LoadedSceneManagers.Add(sceneManager);
 
                         ExecuteActionsStack(onComplete);
                     });
