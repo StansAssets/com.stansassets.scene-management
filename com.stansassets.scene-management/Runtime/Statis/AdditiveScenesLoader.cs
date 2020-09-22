@@ -75,7 +75,15 @@ namespace StansAssets.SceneManagement
                     : SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
 
                 s_LoadSceneRequests.Add(sceneName, callbacks);
-                s_LoadSceneOperations.Add(sceneName, loadAsyncOperation);
+                if (s_LoadSceneOperations.ContainsKey(sceneName)) {
+                    Debug.LogWarning($"The {sceneName} wasn't yet unloaded, but you are trying to load new {sceneName} instance." +
+                                     $" Consider using existing one of wait for the {nameof(Unload)} method callback.");
+                    s_LoadSceneOperations[sceneName] = loadAsyncOperation;
+                }
+                else {
+                    s_LoadSceneOperations.Add(sceneName, loadAsyncOperation);
+                }
+                
                 return loadAsyncOperation;
             }
 
