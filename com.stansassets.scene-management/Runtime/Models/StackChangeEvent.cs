@@ -4,25 +4,22 @@ using System.Collections.Generic;
 
 namespace StansAssets.SceneManagement
 {
-    public class StackChangeEvent<T> where T : Enum
+    public class StackChangeEvent<TEnum> : StackEvent<TEnum> where TEnum : Enum
     {
-        static readonly DefaultPool<StackChangeEvent<T>> s_EventsPool = new DefaultPool<StackChangeEvent<T>>();
-
+        static readonly DefaultPool<StackChangeEvent<TEnum>> s_EventsPool = new DefaultPool<StackChangeEvent<TEnum>>();
+        
         public StackAction Action { get; private set; }
-        public IReadOnlyList<T>  OldStackValue { get; private set; }
-        public IReadOnlyList<T>  NewStackValue { get; private set; }
-
-        public static StackChangeEvent<T> GetPooled(StackAction action, IReadOnlyList<T> oldStackValue, IReadOnlyList<T> newStackValue)
+        
+        public static StackChangeEvent<TEnum> GetPooled(StackAction action, TEnum state)
         {
             var e = s_EventsPool.Get();
             e.Action = action;
-            e.OldStackValue = oldStackValue;
-            e.NewStackValue = newStackValue;
+            e.State = state;
 
             return e;
         }
 
-        public static void Release(StackChangeEvent<T> stackChangeEvent)
+        public static void Release(StackChangeEvent<TEnum> stackChangeEvent)
         {
             s_EventsPool.Release(stackChangeEvent);
         }

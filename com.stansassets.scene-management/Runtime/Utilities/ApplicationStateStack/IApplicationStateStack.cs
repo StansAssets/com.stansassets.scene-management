@@ -5,11 +5,21 @@ namespace StansAssets.SceneManagement
 {
     public interface IApplicationStateStack<T> where T : Enum
     {
-        void AddDelegate(IApplicationStateDelegate<T> d);
-        void RemoveDelegate(IApplicationStateDelegate<T> d);
+        void AddDelegate(IApplicationStateDelegate<T> @delegate);
+        void RemoveDelegate(IApplicationStateDelegate<T> @delegate);
+
+        void RegisterState(T key, IApplicationState<T> applicationState);
+
+        bool IsCurrent(T applicationState);
+
+        void SetPreprocessAction(Action<StackOperationEvent<T>, Action> preprocessAction);
+        void SetPostprocessAction(Action<StackOperationEvent<T>, Action> postprocessAction);
+
+        IApplicationState<T> GetStateFromEnum(T key);
+        T GetStateEnum(IApplicationState<T> key);
 
         void Pop();
-        void Pop(Action<T> onComplete);
+        void Pop(Action onComplete);
 
         void Set(T state);
         void Set(T state, Action onComplete);

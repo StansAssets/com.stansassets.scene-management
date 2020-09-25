@@ -1,19 +1,18 @@
 ﻿using System;
+using UnityEngine;
 
 namespace StansAssets.SceneManagement
 {
-    class Request : IProgressReporter
+    class ProgressListenerRequest : IProgressReporter
     {
-        public event Action Done;
-        public event Action<float> ProgressChange;
+        public event Action OnComplete;
+        public event Action OnProgressChange;
 
         public float Progress { get; protected set; }
 
-        public Request() { }
+        protected bool IsDone => Progress >= 1f;
 
-        public virtual bool IsDone => Progress == 1f;
-
-        public virtual void UpdateProgress(float v)
+        public void UpdateProgress(float v)
         {
             if (IsDone)
                 return;
@@ -24,21 +23,21 @@ namespace StansAssets.SceneManagement
                 InvokeDone();
         }
 
-        public virtual void SetDone()
+        public void SetDone()
         {
             UpdateProgress(1f);
         }
 
         protected void SetProgress(float p)
         {
-            p = Math.Min(1f, Math.Max(0f, p));
+            p = Mathf.Clamp(p, 0f, 1f);
             Progress = p;
-            ProgressChange?.Invoke(Progress);
+            OnProgressChange?.Invoke();
         }
 
         protected void InvokeDone()
         {
-            Done?.Invoke();
+            OnComplete?.Invoke();
         }
     }
 }

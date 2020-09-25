@@ -41,20 +41,20 @@ namespace StansAssets.SceneManagement
             });
         }
 
-        public void Deactivate(string sceneName, Action onComplete)
+        public void Deactivate(string sceneName, Action<ISceneManager> onComplete)
         {
             if (AdditiveScenesLoader.TryGetLoadedScene(sceneName, out var scene))
             {
+                var sceneManager = FindMonoTypeOnSceneRoot<ISceneManager>(scene);
                 var sceneDelegate = FindMonoTypeOnSceneRoot<ISceneDelegate>(scene);
                 sceneDelegate?.DeactivateScene(() =>
                 {
-                    onComplete?.Invoke();
+                    onComplete?.Invoke(sceneManager);
                 });
             }
             else
             {
-                //TODO error and optional param with scene action stack
-                onComplete?.Invoke();
+               throw new InvalidOperationException($"{nameof(SceneLoadService)} can not deactivate {sceneName} scene, because it wasn't loaded. ");
             }
         }
 
