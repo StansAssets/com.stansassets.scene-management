@@ -5,7 +5,7 @@ using UnityEngine;
 namespace StansAssets.SceneManagement.Build
 {
     [Serializable]
-    public class BuildConfiguration
+    class BuildConfiguration
     {
         public string Name = string.Empty;
         public bool DefaultScenesFirst = false;
@@ -50,7 +50,7 @@ namespace StansAssets.SceneManagement.Build
             }
             return false;
         }
-        
+
         Dictionary<string, AddressableSceneAsset> m_AddressableSceneNamesToSceneAssets;
         [SerializeField] List<string> m_SceneNames = new List<string>();
         [SerializeField] List<AddressableSceneAsset> m_SceneAssets = new List<AddressableSceneAsset>();

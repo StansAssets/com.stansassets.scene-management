@@ -3,7 +3,7 @@ using StansAssets.Plugins;
 
 namespace StansAssets.SceneManagement.Build {
 
-    public class BuildConfigurationSettings :  PackageScriptableSettingsSingleton<BuildConfigurationSettings>
+    class BuildConfigurationSettings :  PackageScriptableSettingsSingleton<BuildConfigurationSettings>
     {
         protected override bool IsEditorOnly => true;
         public override string PackageName => "com.stansassets.scene-management";

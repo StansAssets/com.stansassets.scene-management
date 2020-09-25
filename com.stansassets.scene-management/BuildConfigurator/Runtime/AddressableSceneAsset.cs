@@ -3,7 +3,7 @@
 namespace StansAssets.SceneManagement.Build
 {
     [Serializable]
-    public class AddressableSceneAsset
+    class AddressableSceneAsset
     {
         public string Guid;
         public bool Addressable;
