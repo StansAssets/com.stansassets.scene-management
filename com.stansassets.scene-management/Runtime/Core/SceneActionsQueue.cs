@@ -10,7 +10,7 @@ namespace StansAssets.SceneManagement
     public class SceneActionsQueue
     {
         IScenePreloader m_Preloader;
-        AsyncOperation m_CurrentAsyncOperation;
+        IAsyncOperation m_CurrentAsyncOperation;
         bool m_IsRunning;
         event Action OnComplete;
         event Action<float> OnProgress;
@@ -76,7 +76,7 @@ namespace StansAssets.SceneManagement
         {
             OnProgress?.Invoke(1f);
             OnComplete?.Invoke();
-            
+
             OnComplete = null;
             OnProgress = null;
         }
@@ -91,7 +91,7 @@ namespace StansAssets.SceneManagement
 
             return default;
         }
-        
+
 
         public IEnumerator OnStackProgress()
         {
@@ -99,8 +99,8 @@ namespace StansAssets.SceneManagement
             {
                 if (m_CurrentAsyncOperation != null)
                 {
-                    m_Preloader?.OnProgress(m_CurrentAsyncOperation.progress);
-                    OnProgress?.Invoke(m_CurrentAsyncOperation.progress);
+                    m_Preloader?.OnProgress(m_CurrentAsyncOperation.Progress);
+                    OnProgress?.Invoke(m_CurrentAsyncOperation.Progress);
                 }
 
                 yield return new WaitForEndOfFrame();
@@ -143,7 +143,7 @@ namespace StansAssets.SceneManagement
                     {
                         if(sceneManager != null)
                             AvailableSceneManagers.Add(sceneManager);
-                        
+
                         ExecuteActionsStack(onComplete);
                     });
                     break;

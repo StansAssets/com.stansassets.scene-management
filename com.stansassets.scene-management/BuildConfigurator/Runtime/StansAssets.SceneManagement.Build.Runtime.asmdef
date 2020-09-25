@@ -1,16 +1,11 @@
 {
-    "name": "StansAssets.SceneManagement.Build",
+    "name": "StansAssets.SceneManagement.Build.Runtime",
     "references": [
-        "StansAssets.Foundation.Editor",
         "StansAssets.Foundation",
-        "StansAssets.Plugins",
-        "StansAssets.Plugins.Editor",
-        "StansAssets.SceneManagement.Editor"
+        "StansAssets.Plugins"
     ],
     "optionalUnityReferences": [],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

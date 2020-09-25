@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
+using StansAssets.SceneManagement.Build;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 
 namespace StansAssets.SceneManagement
@@ -21,7 +25,8 @@ namespace StansAssets.SceneManagement
         public static event Action<Scene, LoadSceneMode> SceneLoaded = delegate { };
 
         static readonly List<Scene> s_AdditiveScenes = new List<Scene>();
-        static readonly Dictionary<string, AsyncOperation> s_LoadSceneOperations = new Dictionary<string, AsyncOperation>();
+        static readonly List<SceneInstance> s_AdditiveScenesInstances = new List<SceneInstance>();
+        static readonly Dictionary<string, IAsyncOperation> s_LoadSceneOperations = new Dictionary<string, IAsyncOperation>();
         static readonly Dictionary<string, List<Action<Scene>>> s_LoadSceneRequests = new Dictionary<string, List<Action<Scene>>>();
         static readonly Dictionary<string, List<Action>> s_UnloadSceneCallbacks = new Dictionary<string, List<Action>>();
 
@@ -37,7 +42,7 @@ namespace StansAssets.SceneManagement
         /// <param name="sceneBuildIndex">Build index of he scene to be loaded.</param>
         /// <param name="loadCompleted">Load Completed callback.</param>
         /// <returns></returns>
-        public static AsyncOperation LoadAdditively(int sceneBuildIndex, Action<Scene> loadCompleted = null)
+        public static IAsyncOperation LoadAdditively(int sceneBuildIndex, Action<Scene> loadCompleted = null)
         {
             return LoadAdditively(string.Empty, sceneBuildIndex, loadCompleted);
         }
@@ -47,12 +52,18 @@ namespace StansAssets.SceneManagement
         /// <param name="sceneName">Name of the scene to be loaded.</param>
         /// <param name="loadCompleted">Load Completed callback.</param>
         /// </summary>
-        public static AsyncOperation LoadAdditively(string sceneName, Action<Scene> loadCompleted = null)
+        public static IAsyncOperation LoadAdditively(string sceneName, Action<Scene> loadCompleted = null)
         {
-            return LoadAdditively(sceneName, -1, loadCompleted);
+            if (!Application.isEditor && IsSceneAddressable(sceneName))
+            {
+                return LoadAddressableAdditively(sceneName, loadCompleted);
+            }
+            else {
+                return LoadAdditively(sceneName, -1, loadCompleted);
+            }
         }
 
-        static AsyncOperation LoadAdditively(string sceneName, int buildIndex,  Action<Scene> loadCompleted = null)
+        static IAsyncOperation LoadAdditively(string sceneName, int buildIndex,  Action<Scene> loadCompleted = null)
         {
             if (buildIndex != -1)
             {
@@ -74,17 +85,43 @@ namespace StansAssets.SceneManagement
                     ? SceneManager.LoadSceneAsync(buildIndex, LoadSceneMode.Additive)
                     : SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
 
+                var asyncWrapper = new AsyncOperationWrapper(loadAsyncOperation);
+
                 s_LoadSceneRequests.Add(sceneName, callbacks);
-                if (s_LoadSceneOperations.ContainsKey(sceneName)) {
-                    Debug.LogWarning($"The {sceneName} wasn't yet unloaded, but you are trying to load new {sceneName} instance." +
-                                     $" Consider using existing one of wait for the {nameof(Unload)} method callback.");
-                    s_LoadSceneOperations[sceneName] = loadAsyncOperation;
-                }
-                else {
-                    s_LoadSceneOperations.Add(sceneName, loadAsyncOperation);
-                }
-                
-                return loadAsyncOperation;
+                s_LoadSceneOperations.Add(sceneName, asyncWrapper);
+                return asyncWrapper;
+            }
+
+            if (loadCompleted != null) {
+                var callbacks = s_LoadSceneRequests[sceneName] ?? new List<Action<Scene>>();
+                callbacks.Add(loadCompleted);
+                s_LoadSceneRequests[sceneName] = callbacks;
+            }
+
+            return s_LoadSceneOperations[sceneName];
+        }
+
+        static IAsyncOperation LoadAddressableAdditively(string sceneName, Action<Scene> loadCompleted = null)
+        {
+            if (TryGetLoadedScene(sceneName, out var loadedScene))
+            {
+                loadCompleted?.Invoke(loadedScene);
+                return s_LoadSceneOperations[sceneName];
+            }
+            if (!s_LoadSceneRequests.ContainsKey(sceneName))
+            {
+                var callbacks = new List<Action<Scene>>();
+                if (loadCompleted != null)
+                    callbacks.Add(loadCompleted);
+
+
+                var loadAsyncOperation = Addressables.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+                loadAsyncOperation.Completed += AdditiveAddressableSceneLoaded;
+                var asyncWrapper = new AsyncOperationHandleWrapper<SceneInstance>(loadAsyncOperation);
+
+                s_LoadSceneRequests.Add(sceneName, callbacks);
+                s_LoadSceneOperations.Add(sceneName, asyncWrapper);
+                return asyncWrapper;
             }
 
             if (loadCompleted != null) {
@@ -101,7 +138,7 @@ namespace StansAssets.SceneManagement
         /// </summary>
         /// <param name="sceneName">Name of the scene.</param>
         /// <returns>Additive scene <see cref="AsyncOperation"/> or `null` if scene load was never requested. </returns>
-        public static AsyncOperation GetSceneAsyncOperation(string sceneName)
+        public static IAsyncOperation GetSceneAsyncOperation(string sceneName)
         {
             return s_LoadSceneOperations.ContainsKey(sceneName)
                 ? s_LoadSceneOperations[sceneName]
@@ -113,7 +150,7 @@ namespace StansAssets.SceneManagement
         /// </summary>
         /// <param name="sceneBuildIndex">Build index of he scene.</param>
         /// <returns>Additive scene <see cref="AsyncOperation"/> or `null` if scene load was never requested. </returns>
-        public static AsyncOperation GetSceneAsyncOperation(int sceneBuildIndex)
+        public static IAsyncOperation GetSceneAsyncOperation(int sceneBuildIndex)
         {
             return GetSceneAsyncOperation(sceneBuildIndex.ToString());
         }
@@ -135,7 +172,13 @@ namespace StansAssets.SceneManagement
         /// </summary>
         public static void Unload(string sceneName, Action unloadCompleted = null)
         {
-            Unload(sceneName, -1, unloadCompleted);
+            if (!Application.isEditor && IsSceneAddressable(sceneName))
+            {
+                UnloadAddressable(sceneName, unloadCompleted);
+            }
+            else {
+                Unload(sceneName, -1, unloadCompleted);
+            }
         }
 
         /// <summary>
@@ -148,7 +191,7 @@ namespace StansAssets.SceneManagement
             Unload(string.Empty, sceneBuildIndex, unloadCompleted);
         }
 
-        public static void Unload(string sceneName, int buildIndex, Action unloadCompleted = null)
+        static void Unload(string sceneName, int buildIndex, Action unloadCompleted = null)
         {
             if (!s_UnloadSceneCallbacks.ContainsKey(sceneName))
             {
@@ -187,6 +230,41 @@ namespace StansAssets.SceneManagement
             }
         }
 
+        static void UnloadAddressable(string sceneName, Action unloadCompleted = null)
+        {
+            if (!s_UnloadSceneCallbacks.ContainsKey(sceneName))
+            {
+                var callbacks = new List<Action>();
+                if (unloadCompleted != null)
+                    callbacks.Add(unloadCompleted);
+
+                s_UnloadSceneCallbacks.Add(sceneName, callbacks);
+
+                SceneInstance sceneInstance = default;
+                for (var i = 0; i < s_AdditiveScenesInstances.Count; i++)
+                {
+                    if (s_AdditiveScenesInstances[i].Scene.name == sceneName)
+                    {
+                        sceneInstance = s_AdditiveScenesInstances[i];
+                        s_AdditiveScenesInstances.Remove(sceneInstance);
+                        break;
+                    }
+                }
+
+                var asyncOperationHandle = Addressables.UnloadSceneAsync(sceneInstance);
+                asyncOperationHandle.Completed += AddressableSceneUnload;
+            }
+            else
+            {
+                var callbacks = s_UnloadSceneCallbacks[sceneName];
+                if (unloadCompleted != null) {
+                    if (callbacks == null)
+                        callbacks = new List<Action>();
+                    callbacks.Add(unloadCompleted);
+                }
+            }
+        }
+
         /// <summary>
         /// Method to find currently loaded scene by it's name.
         /// </summary>
@@ -200,6 +278,15 @@ namespace StansAssets.SceneManagement
                 if (additivelyLoadedScene.name == sceneName)
                 {
                     scene = additivelyLoadedScene;
+                    return true;
+                }
+            }
+
+            foreach (var additivelyLoadedScene in s_AdditiveScenesInstances)
+            {
+                if (additivelyLoadedScene.Scene.name == sceneName)
+                {
+                    scene = additivelyLoadedScene.Scene;
                     return true;
                 }
             }
@@ -233,6 +320,42 @@ namespace StansAssets.SceneManagement
             }
 
             s_LoadSceneOperations.Remove(scene.name);
+        }
+
+        static void AdditiveAddressableSceneLoaded(AsyncOperationHandle<SceneInstance> asyncOperation)
+        {
+            var scene = asyncOperation.Result.Scene;
+            s_AdditiveScenes.Add(scene);
+            s_AdditiveScenesInstances.Add(asyncOperation.Result);
+            SceneLoaded.Invoke(scene, LoadSceneMode.Additive);
+
+            if (s_LoadSceneRequests.TryGetValue(scene.name, out var callbacks))
+            {
+                foreach (var callback in callbacks)
+                    callback(scene);
+                s_LoadSceneRequests.Remove(scene.name);
+            }
+        }
+
+        static void AddressableSceneUnload(AsyncOperationHandle<SceneInstance> asyncOperation)
+        {
+            var scene = asyncOperation.Result.Scene;
+            SceneUnloaded.Invoke(scene);
+
+            if (s_UnloadSceneCallbacks.TryGetValue(scene.name, out var callbacks))
+            {
+                foreach (var callback in callbacks)
+                    callback();
+
+                s_UnloadSceneCallbacks.Remove(scene.name);
+            }
+
+            s_LoadSceneOperations.Remove(scene.name);
+        }
+
+        static bool IsSceneAddressable(string sceneName)
+        {
+            return BuildConfigurationSettings.Instance.Configuration.IsSceneAddressable(sceneName);
         }
     }
 }
