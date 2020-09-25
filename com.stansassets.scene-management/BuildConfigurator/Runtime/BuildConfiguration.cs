@@ -4,8 +4,11 @@ using UnityEngine;
 
 namespace StansAssets.SceneManagement.Build
 {
+    /// <summary>
+    /// Build settings for a separate configuration
+    /// </summary>
     [Serializable]
-    class BuildConfiguration
+    public class BuildConfiguration
     {
         public string Name = string.Empty;
         public bool DefaultScenesFirst = false;
@@ -14,7 +17,7 @@ namespace StansAssets.SceneManagement.Build
 
         public bool IsEmpty => DefaultScenes.Count == 0 && Platforms.Count == 0;
 
-        public BuildConfiguration Copy()
+        internal BuildConfiguration Copy()
         {
             var copy = new BuildConfiguration();
             copy.Name = Name + " Copy";
@@ -42,7 +45,7 @@ namespace StansAssets.SceneManagement.Build
             return copy;
         }
 
-        public bool IsSceneAddressable(string sceneName)
+        internal bool IsSceneAddressable(string sceneName)
         {
             if (AddressableSceneNamesToSceneAssets.TryGetValue(sceneName, out var asset))
             {

@@ -1,9 +1,12 @@
 ﻿using System.Collections.Generic;
 using StansAssets.Plugins;
 
-namespace StansAssets.SceneManagement.Build {
-
-    class BuildConfigurationSettings :  PackageScriptableSettingsSingleton<BuildConfigurationSettings>
+namespace StansAssets.SceneManagement.Build
+{
+    /// <summary>
+    /// Build settings
+    /// </summary>
+    public class BuildConfigurationSettings :  PackageScriptableSettingsSingleton<BuildConfigurationSettings>
     {
         protected override bool IsEditorOnly => true;
         public override string PackageName => "com.stansassets.scene-management";
