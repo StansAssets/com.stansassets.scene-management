@@ -3,6 +3,7 @@ using UnityEditor;
 using System;
 using System.Collections.Generic;
 using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 
@@ -11,6 +12,9 @@ namespace StansAssets.SceneManagement.Build
     [InitializeOnLoad]
     class BuildScenesPreprocessor
     {
+        public const string ScenesAddressablesGroupName = "Scenes";
+        public const string ScenesDependenciesAddressablesGroupName = "Scenes Dependencies";
+
         static readonly List<Action<BuildPlayerOptions>> s_BuildHandlers = new List<Action<BuildPlayerOptions>>();
 
         public static void RegisterBuildPlayerHandler(Action<BuildPlayerOptions> handler)
@@ -20,7 +24,8 @@ namespace StansAssets.SceneManagement.Build
 
         static BuildScenesPreprocessor()
         {
-            BuildPlayerWindow.RegisterBuildPlayerHandler((options) =>
+            AnalyzeSystem.RegisterNewRule<FindScenesDuplicateDependencies>();
+            BuildPlayerWindow.RegisterBuildPlayerHandler(options =>
             {
                 SetupBuildOptions(ref options);
                 EditorApplication.delayCall += () =>
@@ -127,10 +132,10 @@ namespace StansAssets.SceneManagement.Build
             }
         }
 
-        static void SetupAddressableScenes(BuildTarget target)
-        {
-            var group = AddressablesUtility.GetOrCreateGroup("Scenes");
-
+        static void SetupAddressableScenes(BuildTarget target) {
+            InitializeAddressablesAPI();
+            // TODO: Don't create a group until we checked that even 1 scene is Addressable
+            var group = AddressablesUtility.GetOrCreateGroup(ScenesAddressablesGroupName);
             var configuration = BuildConfigurationSettings.Instance.Configuration;
 
             AddAddressableScenesIntoGroup(configuration.GetAddressableDefaultScenes(), group);
@@ -145,8 +150,22 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
 
-            if (group.entries.Count > 0)
-            {
+            if (group.entries.Count > 0) {
+                var rule = AnalyzeSystemHelper.FindRule<FindScenesDuplicateDependencies>();
+                var results = AnalyzeSystemHelper.RefreshRule(rule);
+
+                bool fixNeeded = false;
+                foreach (var result in results) {
+                    if (result.severity == MessageType.Error || result.severity == MessageType.Warning) {
+                        fixNeeded = true;
+                        break;
+                    }
+                }
+
+                if (fixNeeded) {
+                    AnalyzeSystemHelper.FixIssues(rule);
+                }
+                AnalyzeSystemHelper.ClearAnalysis(rule);
                 AddressableAssetSettings.BuildPlayerContent();
             }
             else
@@ -156,6 +175,15 @@ namespace StansAssets.SceneManagement.Build
             BuildConfigurationSettings.Instance.Configuration.InitializeBuildData((BuildTargetRuntime)(int)target);
             EditorUtility.SetDirty(BuildConfigurationSettings.Instance);
             AssetDatabase.SaveAssets();
+        }
+
+        static void InitializeAddressablesAPI() {
+            if (AddressableAssetSettingsDefaultObject.Settings == null) {
+                AddressableAssetSettingsDefaultObject.Settings = AddressableAssetSettings.Create(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder,
+                                                                                                 AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName,
+                                                                                                 true,
+                                                                                                 true);
+            }
         }
 
         static void AddAddressableScenesIntoGroup(List<SceneAsset> scenes, AddressableAssetGroup group)
@@ -178,14 +206,17 @@ namespace StansAssets.SceneManagement.Build
         public static AddressableAssetGroup GetOrCreateGroup(string name)
         {
             var group = AddressableAssetSettingsDefaultObject.Settings.FindGroup((g) => g.name == name);
-            if (group == null)
-            {
-                group = AddressableAssetSettingsDefaultObject.Settings.CreateGroup(name, false, false, true, new List<AddressableAssetGroupSchema>());
+            if (group != null) {
+                AddressableAssetSettingsDefaultObject.Settings.RemoveGroup(group);
             }
+
+            group = AddressableAssetSettingsDefaultObject.Settings.CreateGroup(name, false, false, true, new List<AddressableAssetGroupSchema>());
             group.ClearSchemas(true, true);
             group.AddSchema<ContentUpdateGroupSchema>();
             var schema = ScriptableObject.CreateInstance<BundledAssetGroupSchema>();
             schema.UseAssetBundleCache = false;
+            schema.BundleMode = BundledAssetGroupSchema.BundlePackingMode.PackSeparately;
+            schema.BundleNaming = BundledAssetGroupSchema.BundleNamingStyle.AppendHash;
             group.AddSchema(schema);
 
             return group;

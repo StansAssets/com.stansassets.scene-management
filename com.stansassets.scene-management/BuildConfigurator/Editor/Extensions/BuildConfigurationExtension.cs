@@ -17,7 +17,7 @@ namespace StansAssets.SceneManagement.Build
         {
             return platformsConfiguration.DefaultScenes.Where(scene => scene.GetSceneAsset() != null && !scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
         }
-        
+
         public static void InitializeBuildData(this BuildConfiguration platformsConfiguration, BuildTargetRuntime builtTarget)
         {
             var sceneNames =  new List<string>();
@@ -56,7 +56,7 @@ namespace StansAssets.SceneManagement.Build
             }
 
             Debug.Log("Addressable Scenes: " + sceneNames.Count);
-            Debug.Log("Addressable Scenes List: " + string.Join("\n", sceneAssets));
+            Debug.Log($"Addressable Scenes List:\n{string.Join("\n", sceneAssets.Select(asset => AssetDatabase.GUIDToAssetPath(asset.Guid)))}");
             platformsConfiguration.SetScenesConfig(sceneNames, sceneAssets);
         }
     }
