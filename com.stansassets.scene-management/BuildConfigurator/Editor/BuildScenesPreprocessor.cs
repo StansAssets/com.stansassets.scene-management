@@ -10,7 +10,7 @@ using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 namespace StansAssets.SceneManagement.Build
 {
     [InitializeOnLoad]
-    class BuildScenesPreprocessor
+    public class BuildScenesPreprocessor
     {
         public const string ScenesAddressablesGroupName = "Scenes";
         public const string ScenesDependenciesAddressablesGroupName = "Scenes Dependencies";
