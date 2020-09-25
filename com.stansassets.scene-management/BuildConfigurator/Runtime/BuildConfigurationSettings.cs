@@ -8,7 +8,6 @@ namespace StansAssets.SceneManagement.Build
     /// </summary>
     public class BuildConfigurationSettings :  PackageScriptableSettingsSingleton<BuildConfigurationSettings>
     {
-        protected override bool IsEditorOnly => true;
         public override string PackageName => "com.stansassets.scene-management";
 
         public int ActiveConfigurationIndex = 0;
