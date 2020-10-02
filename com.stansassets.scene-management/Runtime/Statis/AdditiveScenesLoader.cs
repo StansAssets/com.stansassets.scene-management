@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using StansAssets.SceneManagement.Build;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -103,13 +104,16 @@ namespace StansAssets.SceneManagement
 
         static IAsyncOperation LoadAddressableAdditively(string sceneName, Action<Scene> loadCompleted = null)
         {
+            AddressablesLogger.Log($"[ADDRESSABLES] LoadAddressableAdditively call: {sceneName}");
             if (TryGetLoadedScene(sceneName, out var loadedScene))
             {
+                AddressablesLogger.Log($"[ADDRESSABLES] LoadAddressableAdditively already loaded: {sceneName}");
                 loadCompleted?.Invoke(loadedScene);
                 return s_LoadSceneOperations[sceneName];
             }
             if (!s_LoadSceneRequests.ContainsKey(sceneName))
             {
+                AddressablesLogger.Log($"[ADDRESSABLES] LoadAddressableAdditively start loading: {sceneName}");
                 var callbacks = new List<Action<Scene>>();
                 if (loadCompleted != null)
                     callbacks.Add(loadCompleted);
@@ -129,6 +133,7 @@ namespace StansAssets.SceneManagement
                 callbacks.Add(loadCompleted);
                 s_LoadSceneRequests[sceneName] = callbacks;
             }
+            AddressablesLogger.Log($"[ADDRESSABLES] LoadAddressableAdditively already loading: {sceneName}");
 
             return s_LoadSceneOperations[sceneName];
         }
@@ -232,8 +237,10 @@ namespace StansAssets.SceneManagement
 
         static void UnloadAddressable(string sceneName, Action unloadCompleted = null)
         {
+            AddressablesLogger.Log($"[ADDRESSABLES] UnloadAddressable call: {sceneName}");
             if (!s_UnloadSceneCallbacks.ContainsKey(sceneName))
             {
+                AddressablesLogger.Log($"[ADDRESSABLES] UnloadAddressable unload start: {sceneName}");
                 var callbacks = new List<Action>();
                 if (unloadCompleted != null)
                     callbacks.Add(unloadCompleted);
@@ -241,21 +248,41 @@ namespace StansAssets.SceneManagement
                 s_UnloadSceneCallbacks.Add(sceneName, callbacks);
 
                 SceneInstance sceneInstance = default;
+                bool sceneFound = false;
                 for (var i = 0; i < s_AdditiveScenesInstances.Count; i++)
                 {
+                    AddressablesLogger.Log($"[ADDRESSABLES] UnloadAddressable searching Scene: {s_AdditiveScenesInstances[i].Scene.name}");
                     if (s_AdditiveScenesInstances[i].Scene.name == sceneName)
                     {
+                        AddressablesLogger.Log($"[ADDRESSABLES] UnloadAddressable Scene found: {s_AdditiveScenesInstances[i].Scene.name}");
+                        sceneFound = true;
                         sceneInstance = s_AdditiveScenesInstances[i];
                         s_AdditiveScenesInstances.Remove(sceneInstance);
                         break;
                     }
                 }
+                AddressablesLogger.Log("[ADDRESSABLES] UnloadAddressable Addressables.UnloadSceneAsync Scene: " + (sceneInstance.Scene.name ?? "NULL"));
 
-                var asyncOperationHandle = Addressables.UnloadSceneAsync(sceneInstance);
-                asyncOperationHandle.Completed += AddressableSceneUnload;
+                if (sceneFound)
+                {
+                    var addressableSceneUnloader = new AddressableSceneUnloader(sceneInstance);
+                    addressableSceneUnloader.Unload(AddressableSceneUnloaded);
+                }
+                else
+                {
+                    if (s_LoadSceneOperations.ContainsKey(sceneName))
+                    {
+                        AddressablesLogger.LogWarning($"You are trying to unload {sceneName} scene, but it's loading is not complete yet!");
+                    }
+                    else
+                    {
+                        AddressablesLogger.LogWarning($"You are trying to unload {sceneName} scene, but it wasn't loaded!");
+                    }
+                }
             }
             else
             {
+                AddressablesLogger.Log($"[ADDRESSABLES] UnloadAddressable unload already started: {sceneName}");
                 var callbacks = s_UnloadSceneCallbacks[sceneName];
                 if (unloadCompleted != null) {
                     if (callbacks == null)
@@ -324,6 +351,7 @@ namespace StansAssets.SceneManagement
 
         static void AdditiveAddressableSceneLoaded(AsyncOperationHandle<SceneInstance> asyncOperation)
         {
+            AddressablesLogger.Log($"[ADDRESSABLES] AdditiveAddressableSceneLoaded Status: {asyncOperation.Status}, Scene: "  + (asyncOperation.Result.Scene.name ?? "NULL"));
             var scene = asyncOperation.Result.Scene;
             s_AdditiveScenes.Add(scene);
             s_AdditiveScenesInstances.Add(asyncOperation.Result);
@@ -337,25 +365,74 @@ namespace StansAssets.SceneManagement
             }
         }
 
-        static void AddressableSceneUnload(AsyncOperationHandle<SceneInstance> asyncOperation)
+        static void AddressableSceneUnloaded(AddressableSceneUnloader unloader)
         {
-            var scene = asyncOperation.Result.Scene;
-            SceneUnloaded.Invoke(scene);
+            AddressablesLogger.Log($"[ADDRESSABLES] AddressableSceneUnloaded Status: {unloader.AsyncOperationHandle.Status}, Scene: "  + (unloader.SceneName ?? "NULL"));
+            SceneUnloaded.Invoke(unloader.AsyncOperationHandle.Result.Scene);
 
-            if (s_UnloadSceneCallbacks.TryGetValue(scene.name, out var callbacks))
+            if (s_UnloadSceneCallbacks.TryGetValue(unloader.SceneName, out var callbacks))
             {
                 foreach (var callback in callbacks)
                     callback();
 
-                s_UnloadSceneCallbacks.Remove(scene.name);
+                s_UnloadSceneCallbacks.Remove(unloader.SceneName);
             }
 
-            s_LoadSceneOperations.Remove(scene.name);
+            s_LoadSceneOperations.Remove(unloader.SceneName);
         }
 
         static bool IsSceneAddressable(string sceneName)
         {
             return BuildConfigurationSettings.Instance.Configuration.IsSceneAddressable(sceneName);
+        }
+
+        class AddressableSceneUnloader
+        {
+            readonly SceneInstance m_SceneInstance;
+            readonly string m_SceneName;
+
+            Action<AddressableSceneUnloader> m_Complete;
+            AsyncOperationHandle<SceneInstance> m_AsyncOperationHandle;
+
+            public AddressableSceneUnloader(SceneInstance sceneInstance)
+            {
+                m_SceneInstance = sceneInstance;
+                m_SceneName = string.Copy(m_SceneInstance.Scene.name);
+            }
+
+            public void Unload(Action<AddressableSceneUnloader> complete)
+            {
+                m_Complete = complete;
+                var asyncOperationHandle = Addressables.UnloadSceneAsync(m_SceneInstance);
+                asyncOperationHandle.Completed += AddressableSceneUnloaded;
+            }
+
+            void AddressableSceneUnloaded(AsyncOperationHandle<SceneInstance> asyncOperation)
+            {
+                m_AsyncOperationHandle = asyncOperation;
+                m_Complete.Invoke(this);
+            }
+
+            public string SceneName => m_SceneName;
+            public AsyncOperationHandle<SceneInstance> AsyncOperationHandle => m_AsyncOperationHandle;
+        }
+    }
+
+    public static class AddressablesLogger
+    {
+        public static bool Verbose = false;
+
+        public static void Log(string msg)
+        {
+            if (Verbose)
+            {
+                Debug.Log(msg);
+            }
+        }
+
+        public static void LogWarning(string msg)
+        {
+            Debug.LogWarning(msg);
         }
     }
 }
