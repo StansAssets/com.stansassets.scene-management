@@ -365,20 +365,20 @@ namespace StansAssets.SceneManagement
             }
         }
 
-        static void AddressableSceneUnloaded(AddressableSceneUnloader unloader)
+        static void AddressableSceneUnloaded(AddressableSceneUnloaderResult result)
         {
-            AddressablesLogger.Log($"[ADDRESSABLES] AddressableSceneUnloaded Status: {unloader.AsyncOperationHandle.Status}, Scene: "  + (unloader.SceneName ?? "NULL"));
-            SceneUnloaded.Invoke(unloader.AsyncOperationHandle.Result.Scene);
+            AddressablesLogger.Log($"[ADDRESSABLES] AddressableSceneUnloaded Status: {result.AsyncOperationHandle.Status}, Scene: {result.SceneName}");
+            SceneUnloaded.Invoke(result.Scene);
 
-            if (s_UnloadSceneCallbacks.TryGetValue(unloader.SceneName, out var callbacks))
+            if (s_UnloadSceneCallbacks.TryGetValue(result.SceneName, out var callbacks))
             {
                 foreach (var callback in callbacks)
                     callback();
 
-                s_UnloadSceneCallbacks.Remove(unloader.SceneName);
+                s_UnloadSceneCallbacks.Remove(result.SceneName);
             }
 
-            s_LoadSceneOperations.Remove(unloader.SceneName);
+            s_LoadSceneOperations.Remove(result.SceneName);
         }
 
         static bool IsSceneAddressable(string sceneName)
