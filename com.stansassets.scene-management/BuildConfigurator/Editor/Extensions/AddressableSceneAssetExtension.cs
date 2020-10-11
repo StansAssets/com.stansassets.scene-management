@@ -24,6 +24,9 @@ namespace StansAssets.SceneManagement.Build
                 var guid = AssetDatabase.AssetPathToGUID(path);
                 addressableSceneAsset.Guid = guid;
             }
+            else {
+                addressableSceneAsset.Guid = string.Empty;
+            }
         }
     }
 }

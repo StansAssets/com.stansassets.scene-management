@@ -15,6 +15,11 @@ namespace StansAssets.SceneManagement.Build
         public List<AddressableSceneAsset> DefaultScenes = new List<AddressableSceneAsset>();
         public List<PlatformsConfiguration> Platforms = new List<PlatformsConfiguration>();
 
+        Dictionary<string, AddressableSceneAsset> m_AddressableSceneNamesToSceneAssets;
+        [SerializeField] List<string> m_SceneNames = new List<string>();
+        [SerializeField] List<AddressableSceneAsset> m_SceneAssets = new List<AddressableSceneAsset>();
+        [SerializeField] List<string> m_AllSceneNames = new List<string>();
+
         public bool IsEmpty => DefaultScenes.Count == 0 && Platforms.Count == 0;
 
         internal BuildConfiguration Copy()
@@ -54,15 +59,16 @@ namespace StansAssets.SceneManagement.Build
             return false;
         }
 
-        Dictionary<string, AddressableSceneAsset> m_AddressableSceneNamesToSceneAssets;
-        [SerializeField] List<string> m_SceneNames = new List<string>();
-        [SerializeField] List<AddressableSceneAsset> m_SceneAssets = new List<AddressableSceneAsset>();
+        internal bool HasScene(string sceneName) {
+            return m_AllSceneNames.Contains(sceneName);
+        }
 
-        internal void SetScenesConfig(List<string> sceneNames, List<AddressableSceneAsset> sceneAssets)
+        internal void SetScenesConfig(List<string> addressableSceneNames, List<AddressableSceneAsset> addressableSceneAssets, List<string> allSceneNames)
         {
             m_AddressableSceneNamesToSceneAssets = null;
-            m_SceneNames = sceneNames;
-            m_SceneAssets = sceneAssets;
+            m_SceneNames = addressableSceneNames;
+            m_SceneAssets = addressableSceneAssets;
+            m_AllSceneNames = allSceneNames;
         }
 
         Dictionary<string, AddressableSceneAsset> AddressableSceneNamesToSceneAssets

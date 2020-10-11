@@ -16,5 +16,16 @@ namespace StansAssets.SceneManagement.Build
         public BuildConfiguration Configuration => ActiveConfigurationIndex >= BuildConfigurations.Count
             ? new BuildConfiguration()
             : BuildConfigurations[ActiveConfigurationIndex];
+
+        internal bool HasValidConfiguration {
+            get {
+                foreach (var configuration in BuildConfigurations) {
+                    if (configuration.IsEmpty == false) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
     }
 }

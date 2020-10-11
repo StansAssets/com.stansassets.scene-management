@@ -55,6 +55,11 @@ namespace StansAssets.SceneManagement
         /// </summary>
         public static IAsyncOperation LoadAdditively(string sceneName, Action<Scene> loadCompleted = null)
         {
+            if (ValidateScene(sceneName) == false) {
+                throw new ArgumentException($"Build Configuration doesn't contain scene: {sceneName}." +
+                    $"\nTo load a scene please add it to platform specific collection or Default scenes.");
+            }
+
             if (!Application.isEditor && IsSceneAddressable(sceneName))
             {
                 return LoadAddressableAdditively(sceneName, loadCompleted);
@@ -384,6 +389,13 @@ namespace StansAssets.SceneManagement
         static bool IsSceneAddressable(string sceneName)
         {
             return BuildConfigurationSettings.Instance.Configuration.IsSceneAddressable(sceneName);
+        }
+
+        static bool ValidateScene(string sceneName) {
+            if (BuildConfigurationSettings.Instance.HasValidConfiguration) {
+                return BuildConfigurationSettings.Instance.Configuration.HasScene(sceneName);
+            }
+            return SceneManager.GetSceneByName(sceneName).IsValid();
         }
     }
 
