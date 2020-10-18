@@ -11,9 +11,9 @@ namespace StansAssets.SceneManagement.Build
             return platformsConfiguration.Scenes.Where(scene => scene.GetSceneAsset() != null && scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
         }
 
-        public static List<SceneAsset> GetNonAddressableScenes(this PlatformsConfiguration platformsConfiguration)
+        public static List<AddressableSceneAsset> GetNonAddressableScenes(this PlatformsConfiguration platformsConfiguration)
         {
-            return platformsConfiguration.Scenes.Where(scene => scene.GetSceneAsset() != null && !scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
+            return platformsConfiguration.Scenes.Where(scene => scene.GetSceneAsset() != null && !scene.Addressable).ToList();
         }
 
         public static List<BuildTarget> GetBuildTargetsEditor(this PlatformsConfiguration platformsConfiguration)

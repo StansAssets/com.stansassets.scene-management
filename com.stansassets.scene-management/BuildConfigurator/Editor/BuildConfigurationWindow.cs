@@ -12,8 +12,15 @@ namespace StansAssets.SceneManagement.Build
             "When Defult Scenes have atleaest one scene defined, " +
             "project scenes are ignored and only scene defined in this configuration will be used.";
 
+        static readonly Color s_ErrorColor = new Color(1f, 0.8f, 0.0f);
+        static readonly Color s_InactiveColor = new Color(1f, 0.8f, 0.0f);
+        static readonly  GUIContent s_DuplicatesGUIContent = new GUIContent("","Scene is duplicated!");
+        static readonly GUIContent s_EmptySceneGUIContent = new GUIContent("","Scene is empty! Please drop a scene or remove this element.");
+
         [SerializeField]
         IMGUIHyperLabel m_AddButton;
+
+        bool m_ShowBuildIndex;
 
         protected override void OnAwake()
         {
@@ -171,6 +178,7 @@ namespace StansAssets.SceneManagement.Build
                     {
                         foreach (var platform in conf.Platforms)
                         {
+                            m_ShowBuildIndex = conf.IsActive(platform);
                             EditorGUILayout.BeginHorizontal(GUI.skin.box);
                             {
                                 EditorGUILayout.BeginVertical(GUILayout.Width(10));
@@ -194,13 +202,17 @@ namespace StansAssets.SceneManagement.Build
                                 EditorGUILayout.BeginVertical(GUILayout.Width(150));
                                 {
                                     ReorderableListGUI.Title("Build Targets");
+
                                     ReorderableListGUI.ListField(platform.BuildTargets, BuildTargetListItem, DrawEmptyPlatform);
                                 }
                                 EditorGUILayout.EndVertical();
 
                                 EditorGUILayout.BeginVertical(GUILayout.ExpandWidth(true));
                                 {
+                                    GUI.backgroundColor = m_ShowBuildIndex ? GUI.skin.settings.selectionColor : Color.white;
                                     ReorderableListGUI.Title("Scenes");
+                                    GUI.backgroundColor = Color.white;
+
                                     ReorderableListGUI.ListField(platform.Scenes, ContentTypeListItem, DrawEmptyScene);
                                 }
                                 EditorGUILayout.EndVertical();
@@ -220,6 +232,8 @@ namespace StansAssets.SceneManagement.Build
                     }
                 }
             }
+
+            m_ShowBuildIndex = true;
         }
 
         BuildTargetRuntime BuildTargetListItem(Rect pos, BuildTargetRuntime itemValue)
@@ -239,16 +253,30 @@ namespace StansAssets.SceneManagement.Build
             int indentLevel = EditorGUI.indentLevel;
             EditorGUI.indentLevel = 0;
 
-            EditorGUI.BeginChangeCheck();
+            Rect sceneIndexRect = m_ShowBuildIndex ? new Rect(pos.x, pos.y, 20f, pos.height) : new Rect(pos.x, pos.y, 0f, 0f);
+            Rect objectFieldRect = new Rect(pos.x + sceneIndexRect.width, pos.y + 2, pos.width - 20f - sceneIndexRect.width, 16);
+            Rect addressableToggleRect = new Rect(objectFieldRect.x + objectFieldRect.width + 2, pos.y, 20f, pos.height);
+
+            if (m_ShowBuildIndex) {
+                int sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue);
+                GUI.Label(sceneIndexRect, sceneIndex.ToString());
+            }
+
             var sceneAsset = itemValue.GetSceneAsset();
-            var newSceneAsset = EditorGUI.ObjectField(new Rect(pos.x, pos.y, pos.width-20f, pos.height), sceneAsset, typeof(SceneAsset), false) as SceneAsset;
+            bool sceneWithError = sceneAsset == null;
+            GUI.color = sceneWithError ? s_ErrorColor : Color.white;
+
+            EditorGUI.BeginChangeCheck();
+            var newSceneAsset = EditorGUI.ObjectField(objectFieldRect, sceneAsset, typeof(SceneAsset), false) as SceneAsset;
             if (EditorGUI.EndChangeCheck())
             {
                 itemValue.SetSceneAsset(newSceneAsset);
             }
-            itemValue.Addressable = GUI.Toggle(new Rect(pos.x + pos.width - 20f, pos.y, 20f, pos.height), itemValue.Addressable, AddressableGuiContent);
+            GUI.color = Color.white;
 
+            itemValue.Addressable = GUI.Toggle(addressableToggleRect, itemValue.Addressable, AddressableGuiContent);
             EditorGUI.indentLevel = indentLevel;
+
             return itemValue;
         }
 
