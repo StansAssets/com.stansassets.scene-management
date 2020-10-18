@@ -7,7 +7,7 @@ namespace StansAssets.SceneManagement
     {
         public const string PackageName = "com.stansassets.scene-management";
         public const string DisplayName = "Scene Management";
-        public const string RootMenu = PackagesConfigEditor.RootMenu + "/" + DisplayName + "/";
+        public const string RootMenu = PluginsDevKitPackage.RootMenu + "/" + DisplayName + "/";
 
         public static readonly string RootPath = PackageManagerUtility.GetPackageRootPath(PackageName);
 

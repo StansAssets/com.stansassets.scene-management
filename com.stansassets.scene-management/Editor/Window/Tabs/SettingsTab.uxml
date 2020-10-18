@@ -1,5 +1,9 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
-    <ui:VisualElement name="tab-root">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:sa="StansAssets.Foundation.UIElements">
+    <sa:SettingsBlock label="Optional Settings">
         <uie:ObjectField label="Landing Scene" name="landing-scene" />
-    </ui:VisualElement>
+    </sa:SettingsBlock>
+
+    <sa:SettingsBlock label="Registered Stacks View">
+        <ui:Label label="Coming soon.." name="stack-view" />
+    </sa:SettingsBlock>
 </ui:UXML>

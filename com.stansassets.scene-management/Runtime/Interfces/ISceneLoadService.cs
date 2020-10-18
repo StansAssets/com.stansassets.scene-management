@@ -4,9 +4,9 @@ namespace StansAssets.SceneManagement
 {
     public interface ISceneLoadService
     {
-        void Load(IScenePreloader preloader, string sceneName, Action<ISceneManager> onComplete);
-        void Load(string sceneName, Action<ISceneManager> onComplete);
-        void Deactivate(string sceneName, Action<ISceneManager> onComplete);
+        void Load<T>(IScenePreloader preloader, string sceneName, Action<T> onComplete) where T : ISceneManager;
+        void Load<T>(string sceneName, Action<T> onComplete) where T : ISceneManager;
+        void Deactivate<T>(string sceneName, Action<T> onComplete) where T : ISceneManager;
         void Unload(string sceneName, Action onComplete);
     }
 }

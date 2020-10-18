@@ -6,29 +6,28 @@ namespace StansAssets.SceneManagement
 {
     public class SceneLoadService : ISceneLoadService
     {
-        public void Load(IScenePreloader preloader, string sceneName, Action<ISceneManager> onComplete)
+        public void Load<T>(IScenePreloader preloader, string sceneName, Action<T> onComplete) where T : ISceneManager
         {
             preloader.FadeIn(() =>
             {
-                Load(sceneName, sceneManager =>
+                Load<T>(sceneName, sceneManager =>
                 {
                     preloader.FadeOut(() =>
                     {
-                        onComplete?.Invoke(null);
+                        onComplete?.Invoke(sceneManager);
                     });
                 });
             });
         }
 
-        public void Load(string sceneName, Action<ISceneManager> onComplete)
+        public void Load<T>(string sceneName, Action<T> onComplete) where T : ISceneManager
         {
             AdditiveScenesLoader.LoadAdditively(sceneName, scene =>
             {
-                var sceneManager = FindMonoTypeOnSceneRoot<ISceneManager>(scene);
+                var sceneManager = FindMonoTypeOnSceneRoot<T>(scene);
                 var sceneDelegate = FindMonoTypeOnSceneRoot<ISceneDelegate>(scene);
                 if (sceneDelegate != null)
                 {
-                    sceneDelegate.OnSceneLoaded();
                     sceneDelegate.ActivateScene(() =>
                     {
                         onComplete?.Invoke(sceneManager);
@@ -41,11 +40,11 @@ namespace StansAssets.SceneManagement
             });
         }
 
-        public void Deactivate(string sceneName, Action<ISceneManager> onComplete)
+        public void Deactivate<T>(string sceneName, Action<T> onComplete) where T : ISceneManager
         {
             if (AdditiveScenesLoader.TryGetLoadedScene(sceneName, out var scene))
             {
-                var sceneManager = FindMonoTypeOnSceneRoot<ISceneManager>(scene);
+                var sceneManager = FindMonoTypeOnSceneRoot<T>(scene);
                 var sceneDelegate = FindMonoTypeOnSceneRoot<ISceneDelegate>(scene);
                 sceneDelegate?.DeactivateScene(() =>
                 {
@@ -62,8 +61,6 @@ namespace StansAssets.SceneManagement
         {
             if (AdditiveScenesLoader.TryGetLoadedScene(sceneName, out var scene))
             {
-                var sceneDelegate = FindMonoTypeOnSceneRoot<ISceneDelegate>(scene);
-                sceneDelegate?.OnSceneUnload();
                 AdditiveScenesLoader.Unload(scene, onComplete);
             }
             else

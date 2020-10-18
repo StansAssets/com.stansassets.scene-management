@@ -24,10 +24,9 @@ namespace StansAssets.SceneManagement.Build
 
         protected override void OnAwake()
         {
-            SetHeaderTitle("Cross-Platform build configuration");
-            SetHeaderDescription("Make configuration for every platform per different build types.");
+            titleContent = new GUIContent("Cross-Platform build configuration");
+            SetPackageName(SceneManagementPackage.PackageName);
 
-            SetHeaderVersion("preview");
             SetDocumentationUrl("https://github.com/StansAssets/com.stansassets.scene-management");
 
             if (BuildConfigurationSettings.Instance.BuildConfigurations.Count == 0)

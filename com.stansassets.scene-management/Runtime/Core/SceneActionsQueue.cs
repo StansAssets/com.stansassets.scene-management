@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using StansAssets.Foundation.Async;
-using StansAssets.Foundation.Patterns;
 using UnityEngine;
 
 namespace StansAssets.SceneManagement
@@ -128,7 +127,7 @@ namespace StansAssets.SceneManagement
             switch (actionData.Type)
             {
                 case SceneActionType.Load:
-                    m_SceneLoadService.Load(actionData.SceneName, sceneManager =>
+                    m_SceneLoadService.Load<ISceneManager>(actionData.SceneName, sceneManager =>
                     {
                         if(sceneManager != null)
                             AvailableSceneManagers.Add(sceneManager);
@@ -139,7 +138,7 @@ namespace StansAssets.SceneManagement
                     m_CurrentAsyncOperation = AdditiveScenesLoader.GetSceneAsyncOperation(actionData.SceneName);
                     break;
                 case SceneActionType.Deactivate:
-                    m_SceneLoadService.Deactivate(actionData.SceneName, (sceneManager) =>
+                    m_SceneLoadService.Deactivate<ISceneManager>(actionData.SceneName, (sceneManager) =>
                     {
                         if(sceneManager != null)
                             AvailableSceneManagers.Add(sceneManager);

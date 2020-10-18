@@ -4,6 +4,10 @@ using UnityEditor;
 
 namespace StansAssets.SceneManagement
 {
+    /// <summary>
+    /// Scene Management Settings scriptable object.
+    /// You can modify this settings using C# or Scene Management Editor Window.
+    /// </summary>
     public class SceneManagementSettings : PackageScriptableSettingsSingleton<SceneManagementSettings>
     {
         protected override bool IsEditorOnly => true;
@@ -15,5 +19,8 @@ namespace StansAssets.SceneManagement
         internal int LastActiveSceneIndex;
         internal SceneViewInfo LastSceneView;
 #endif
+        
+        
+        
     }
 }
