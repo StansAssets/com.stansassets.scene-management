@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using StansAssets.SceneManagement.Build;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -64,9 +63,8 @@ namespace StansAssets.SceneManagement
             {
                 return LoadAddressableAdditively(sceneName, loadCompleted);
             }
-            else {
-                return LoadAdditively(sceneName, -1, loadCompleted);
-            }
+
+            return LoadAdditively(sceneName, -1, loadCompleted);
         }
 
         static IAsyncOperation LoadAdditively(string sceneName, int buildIndex,  Action<Scene> loadCompleted = null)
@@ -395,13 +393,14 @@ namespace StansAssets.SceneManagement
             if (BuildConfigurationSettings.Instance.HasValidConfiguration) {
                 return BuildConfigurationSettings.Instance.Configuration.HasScene(sceneName);
             }
-            return SceneManager.GetSceneByName(sceneName).IsValid();
+
+            return true;
         }
     }
 
     static class AddressablesLogger
     {
-        public static bool Verbose = false;
+        public static readonly bool Verbose = false;
 
         public static void Log(string msg)
         {
