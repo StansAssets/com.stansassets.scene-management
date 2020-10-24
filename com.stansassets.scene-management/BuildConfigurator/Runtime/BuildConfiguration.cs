@@ -20,7 +20,20 @@ namespace StansAssets.SceneManagement.Build
         [SerializeField] List<AddressableSceneAsset> m_SceneAssets = new List<AddressableSceneAsset>();
         [SerializeField] List<string> m_AllSceneNames = new List<string>();
 
-        public bool IsEmpty => DefaultScenes.Count == 0 && Platforms.Count == 0;
+        public bool IsEmpty
+        {
+            get
+            {
+                foreach (var platform in Platforms)
+                {
+                    if (platform.IsEmpty == false)
+                    {
+                        return false;
+                    }
+                }
+                return DefaultScenes.Count == 0;
+            }
+        }
 
         internal BuildConfiguration Copy()
         {
