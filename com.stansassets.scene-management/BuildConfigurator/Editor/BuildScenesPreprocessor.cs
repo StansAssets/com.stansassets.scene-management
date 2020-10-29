@@ -35,17 +35,20 @@ namespace StansAssets.SceneManagement.Build
                     BuildPlayerWindow.DefaultBuildMethods.BuildPlayer(options);
                 };
             });
+            
+            BuildConfigurationSettings.Instance.Configuration.InitializeBuildData(EditorUserBuildSettings.activeBuildTarget);
         }
 
         public static void SetupBuildOptions(ref BuildPlayerOptions options)
         {
+            
             foreach (var handler in s_BuildHandlers)
             {
                 handler.Invoke(options);
             }
 
-            SetupAddressableScenes(EditorUserBuildSettings.activeBuildTarget);
-            options.scenes = FilterScenesByPath(EditorUserBuildSettings.activeBuildTarget, options.scenes);
+            SetupAddressableScenes(options.target);
+            options.scenes = FilterScenesByPath(options.target, options.scenes);
         }
 
         [MenuItem("Window/Asset Management/Setup Addressable Scenes")]

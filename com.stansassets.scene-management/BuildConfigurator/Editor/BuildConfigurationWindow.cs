@@ -81,6 +81,7 @@ namespace StansAssets.SceneManagement.Build
             if (EditorGUI.EndChangeCheck())
             {
                 UpdateActiveConfUI();
+                BuildConfigurationSettings.Instance.Configuration.InitializeBuildData(EditorUserBuildSettings.activeBuildTarget);
                 BuildConfigurationSettings.Save();
             }
         }

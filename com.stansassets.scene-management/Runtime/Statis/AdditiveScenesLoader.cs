@@ -46,15 +46,30 @@ namespace StansAssets.SceneManagement
         {
             return LoadAdditively(string.Empty, sceneBuildIndex, loadCompleted);
         }
+        
+        
+        /// <summary>
+        /// Load Scene Additively by it's name.
+        /// Method will bypass scene configuration availability checkю
+        /// <param name="sceneName">Name of the scene to be loaded.</param>
+        /// <param name="loadCompleted">Load Completed callback.</param>
+        /// </summary>
+        public static IAsyncOperation LoadAdditivelyWithConfigurationAvailabilityCheck(string sceneName, Action<Scene> loadCompleted = null) {
+            return LoadAdditively(sceneName, false, loadCompleted);
+        }
 
         /// <summary>
         /// Load Scene Additively by it's name.
         /// <param name="sceneName">Name of the scene to be loaded.</param>
         /// <param name="loadCompleted">Load Completed callback.</param>
         /// </summary>
-        public static IAsyncOperation LoadAdditively(string sceneName, Action<Scene> loadCompleted = null)
+        public static IAsyncOperation LoadAdditively(string sceneName, Action<Scene> loadCompleted = null) {
+            return LoadAdditively(sceneName, true, loadCompleted);
+        }
+
+        static IAsyncOperation LoadAdditively(string sceneName, bool checkSceneAvailability, Action<Scene> loadCompleted = null)
         {
-            if (ValidateScene(sceneName) == false) {
+            if (checkSceneAvailability && ValidateScene(sceneName) == false) {
                 throw new ArgumentException($"Build Configuration doesn't contain scene: {sceneName}." +
                     $"\nTo load a scene please add it to platform specific collection or Default scenes.");
             }
