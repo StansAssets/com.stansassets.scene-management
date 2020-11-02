@@ -46,8 +46,8 @@ namespace StansAssets.SceneManagement
         {
             return LoadAdditively(string.Empty, sceneBuildIndex, loadCompleted);
         }
-        
-        
+
+
         /// <summary>
         /// Load Scene Additively by it's name.
         /// Method will bypass scene configuration availability checkю
@@ -116,7 +116,6 @@ namespace StansAssets.SceneManagement
                 callbacks.Add(loadCompleted);
                 s_LoadSceneRequests[sceneName] = callbacks;
             }
-
             return s_LoadSceneOperations[sceneName];
         }
 
@@ -342,29 +341,40 @@ namespace StansAssets.SceneManagement
 
         static void AdditiveSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            // Skip addressable scenes
+            if (IsSceneAddressable(scene.name)) {
+                return;
+            }
+
             s_AdditiveScenes.Add(scene);
-            SceneLoaded.Invoke(scene, mode);
 
             if (s_LoadSceneRequests.TryGetValue(scene.name, out var callbacks))
             {
+                s_LoadSceneRequests.Remove(scene.name);
                 foreach (var callback in callbacks)
                     callback(scene);
-                s_LoadSceneRequests.Remove(scene.name);
             }
+
+            SceneLoaded.Invoke(scene, mode);
         }
 
         static void SceneUnloadComplete(Scene scene)
         {
-            SceneUnloaded.Invoke(scene);
-            if (s_UnloadSceneCallbacks.TryGetValue(scene.name, out var callbacks))
-            {
-                foreach (var callback in callbacks)
-                    callback();
-
-                s_UnloadSceneCallbacks.Remove(scene.name);
+            // Skip addressable scenes
+            if (IsSceneAddressable(scene.name)) {
+                return;
             }
 
             s_LoadSceneOperations.Remove(scene.name);
+            if (s_UnloadSceneCallbacks.TryGetValue(scene.name, out var callbacks))
+            {
+                s_UnloadSceneCallbacks.Remove(scene.name);
+                foreach (var callback in callbacks)
+                    callback();
+
+            }
+
+            SceneUnloaded.Invoke(scene);
         }
 
         static void AdditiveAddressableSceneLoaded(AsyncOperationHandle<SceneInstance> asyncOperation)
@@ -373,30 +383,31 @@ namespace StansAssets.SceneManagement
             var scene = asyncOperation.Result.Scene;
             s_AdditiveScenes.Add(scene);
             s_AdditiveScenesInstances.Add(asyncOperation.Result);
-            SceneLoaded.Invoke(scene, LoadSceneMode.Additive);
 
             if (s_LoadSceneRequests.TryGetValue(scene.name, out var callbacks))
             {
+                s_LoadSceneRequests.Remove(scene.name);
                 foreach (var callback in callbacks)
                     callback(scene);
-                s_LoadSceneRequests.Remove(scene.name);
             }
+
+            SceneLoaded.Invoke(scene, LoadSceneMode.Additive);
+
         }
 
         static void AddressableSceneUnloaded(AddressableSceneUnloaderResult result)
         {
             AddressablesLogger.Log($"[ADDRESSABLES] AddressableSceneUnloaded Status: {result.AsyncOperationHandle.Status}, Scene: {result.SceneName}");
-            SceneUnloaded.Invoke(result.Scene);
-
-            if (s_UnloadSceneCallbacks.TryGetValue(result.SceneName, out var callbacks))
-            {
-                foreach (var callback in callbacks)
-                    callback();
-
-                s_UnloadSceneCallbacks.Remove(result.SceneName);
-            }
 
             s_LoadSceneOperations.Remove(result.SceneName);
+            if (s_UnloadSceneCallbacks.TryGetValue(result.SceneName, out var callbacks))
+            {
+                s_UnloadSceneCallbacks.Remove(result.SceneName);
+                foreach (var callback in callbacks)
+                    callback();
+            }
+
+            SceneUnloaded.Invoke(result.Scene);
         }
 
         static bool IsSceneAddressable(string sceneName)
@@ -405,7 +416,7 @@ namespace StansAssets.SceneManagement
         }
 
         static bool ValidateScene(string sceneName) {
-            if (BuildConfigurationSettings.Instance.HasValidConfiguration) {
+            if (!Application.isEditor && BuildConfigurationSettings.Instance.HasValidConfiguration) {
                 return BuildConfigurationSettings.Instance.Configuration.HasScene(sceneName);
             }
 
@@ -415,7 +426,7 @@ namespace StansAssets.SceneManagement
 
     static class AddressablesLogger
     {
-        public static readonly bool Verbose = false;
+        public static readonly bool Verbose = true;
 
         public static void Log(string msg)
         {
