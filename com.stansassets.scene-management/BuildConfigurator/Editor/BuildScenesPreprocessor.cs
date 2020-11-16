@@ -35,13 +35,13 @@ namespace StansAssets.SceneManagement.Build
                     BuildPlayerWindow.DefaultBuildMethods.BuildPlayer(options);
                 };
             });
-            
+
             BuildConfigurationSettings.Instance.Configuration.InitializeBuildData(EditorUserBuildSettings.activeBuildTarget);
         }
 
         public static void SetupBuildOptions(ref BuildPlayerOptions options)
         {
-            
+
             foreach (var handler in s_BuildHandlers)
             {
                 handler.Invoke(options);
@@ -49,11 +49,6 @@ namespace StansAssets.SceneManagement.Build
 
             SetupAddressableScenes(options.target);
             options.scenes = FilterScenesByPath(options.target, options.scenes);
-        }
-
-        [MenuItem("Window/Asset Management/Setup Addressable Scenes")]
-        public static void SetupAddressableScenes() {
-            SetupAddressableScenes(EditorUserBuildSettings.activeBuildTarget);
         }
 
         static string[] FilterScenesByPath(BuildTarget target, string[] buildScenes)
@@ -69,7 +64,7 @@ namespace StansAssets.SceneManagement.Build
             return scenes;
         }
 
-        static void SetupAddressableScenes(BuildTarget target) {
+        internal static void SetupAddressableScenes(BuildTarget target) {
             if (BuildConfigurationSettings.Instance.HasValidConfiguration == false)
             {
                 return;
