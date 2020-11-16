@@ -30,6 +30,9 @@ namespace StansAssets.SceneManagement.Build
         {
             foreach (var scene in buildConfiguration.DefaultScenes)
             {
+                if(scene == null)
+                    continue;
+
                 var path = AssetDatabase.GUIDToAssetPath(scene.Guid);
                 scene.Name = Path.GetFileNameWithoutExtension(path);
             }
@@ -38,17 +41,19 @@ namespace StansAssets.SceneManagement.Build
             {
                 foreach (var scene in platform.Scenes)
                 {
+                    if(scene == null)
+                        continue;
+
                     var path = AssetDatabase.GUIDToAssetPath(scene.Guid);
                     scene.Name = Path.GetFileNameWithoutExtension(path);
                 }
             }
         }
 
-        public static List<SceneAssetInfo> BuildScenesCollection(this BuildConfiguration configuration, BuildTarget builtTarget, bool stripAddressables)
+        public static IEnumerable<SceneAssetInfo> BuildScenesCollection(this BuildConfiguration configuration, BuildTarget builtTarget, bool stripAddressables)
         {
             var scenes = new List<SceneAssetInfo>();
-
-            List<SceneAssetInfo> defaultSceneAssets = stripAddressables
+            var defaultSceneAssets = stripAddressables
                 ? configuration.DefaultScenes.Where(s => !s.Addressable).ToList()
                 : configuration.DefaultScenes;
 
