@@ -53,7 +53,7 @@ namespace StansAssets.SceneManagement
         /// <param name="sceneName">Name of the scene to be loaded.</param>
         /// <param name="loadCompleted">Load Completed callback.</param>
         /// </summary>
-        static IAsyncOperation LoadAdditively(string sceneName, Action<Scene> loadCompleted = null)
+        public static IAsyncOperation LoadAdditively(string sceneName, Action<Scene> loadCompleted = null)
         {
             if (ValidateScene(sceneName) == false)
             {
@@ -73,6 +73,8 @@ namespace StansAssets.SceneManagement
         {
             if (buildIndex != -1)
             {
+                // Our loaded / load requests scenes cache is using string key
+                // so we need to make sceneName from index just to make sure our cache will work.
                 sceneName = buildIndex.ToString();
             }
 
@@ -376,7 +378,7 @@ namespace StansAssets.SceneManagement
             AddressablesLogger.Log($"[ADDRESSABLES] AddressableSceneUnloaded Status: {result.AsyncOperationHandle.Status}, Scene: {result.SceneName}");
             ProcessSceneUnLoad(result.Scene, result.SceneName);
         }
-        
+
         static void ProcessSceneUnLoad(Scene scene, string sceneName)
         {
             s_LoadSceneOperations.Remove(scene.name);
