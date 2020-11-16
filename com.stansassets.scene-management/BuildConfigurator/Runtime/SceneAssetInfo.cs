@@ -3,11 +3,12 @@
 namespace StansAssets.SceneManagement.Build
 {
     /// <summary>
-    /// Class that indicates is scene addressable
+    /// Class that contains serialized scene info
     /// </summary>
     [Serializable]
-    public class AddressableSceneAsset
+    public class SceneAssetInfo
     {
+        public string Name;
         public string Guid;
         public bool Addressable;
     }

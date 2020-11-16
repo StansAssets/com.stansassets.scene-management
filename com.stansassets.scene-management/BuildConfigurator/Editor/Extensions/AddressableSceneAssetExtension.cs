@@ -4,28 +4,28 @@ namespace StansAssets.SceneManagement.Build
 {
     static class AddressableSceneAssetExtension
     {
-        public static SceneAsset GetSceneAsset(this AddressableSceneAsset sceneAsset)
+        public static SceneAsset GetSceneAsset(this SceneAssetInfo sceneAssetInfo)
         {
-            if (string.IsNullOrEmpty(sceneAsset.Guid))
+            if (string.IsNullOrEmpty(sceneAssetInfo.Guid))
             {
                 return null;
             }
 
-            var path = AssetDatabase.GUIDToAssetPath(sceneAsset.Guid);
+            var path = AssetDatabase.GUIDToAssetPath(sceneAssetInfo.Guid);
             var scene = AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
             return scene;
         }
 
-        public static void SetSceneAsset(this AddressableSceneAsset addressableSceneAsset, SceneAsset sceneAsset)
+        public static void SetSceneAsset(this SceneAssetInfo sceneAssetInfo, SceneAsset sceneAsset)
         {
             var path = AssetDatabase.GetAssetPath(sceneAsset);
             if (string.IsNullOrEmpty(path) == false)
             {
                 var guid = AssetDatabase.AssetPathToGUID(path);
-                addressableSceneAsset.Guid = guid;
+                sceneAssetInfo.Guid = guid;
             }
             else {
-                addressableSceneAsset.Guid = string.Empty;
+                sceneAssetInfo.Guid = string.Empty;
             }
         }
     }

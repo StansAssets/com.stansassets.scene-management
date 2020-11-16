@@ -15,7 +15,7 @@ namespace StansAssets.SceneManagement.Build
 
         public class ConfigurationValidationData
         {
-            public List<AddressableSceneAsset> Duplicates = new List<AddressableSceneAsset>();
+            public List<SceneAssetInfo> Duplicates = new List<SceneAssetInfo>();
             public int MissingScenesCounter;
         }
 
@@ -53,7 +53,7 @@ namespace StansAssets.SceneManagement.Build
             }
         }
 
-        static void ValidateScenes(IEnumerable<AddressableSceneAsset> scenes, BuildConfiguration configuration, bool printWarnings, HashSet<string> sceneGuids) {
+        static void ValidateScenes(IEnumerable<SceneAssetInfo> scenes, BuildConfiguration configuration, bool printWarnings, HashSet<string> sceneGuids) {
             foreach (var scene in scenes) {
                 var sceneAsset = scene.GetSceneAsset();
                 if (sceneAsset == null) {
