@@ -16,8 +16,8 @@ namespace StansAssets.SceneManagement
 
         readonly ISceneLoadService m_SceneLoadService;
         readonly Queue<SceneAction> m_ActionsQueue = new Queue<SceneAction>();
-        public List<ISceneManager> AvailableSceneManagers { get; set; } = new List<ISceneManager>();
 
+        public Dictionary<string, ISceneManager> AvailableSceneManagers { get; } = new Dictionary<string, ISceneManager>();
 
         public IEnumerable<SceneAction> ScheduledActions => m_ActionsQueue;
 
@@ -46,7 +46,6 @@ namespace StansAssets.SceneManagement
 
             m_ActionsQueue.Enqueue(data);
         }
-
 
         public void Start(Action<float> onProgress = null, Action onComplete = null)
         {
@@ -82,15 +81,15 @@ namespace StansAssets.SceneManagement
 
         public T GetLoadedSceneManager<T>() where T : ISceneManager
         {
-            foreach (var sceneManager in AvailableSceneManagers)
+            foreach (var kvp in AvailableSceneManagers)
             {
+                var sceneManager = kvp.Value;
                 if (sceneManager.GetType() == typeof(T))
                     return (T)sceneManager;
             }
 
             return default;
         }
-
 
         public IEnumerator OnStackProgress()
         {
@@ -129,8 +128,8 @@ namespace StansAssets.SceneManagement
                 case SceneActionType.Load:
                     m_SceneLoadService.Load<ISceneManager>(actionData.SceneName, sceneManager =>
                     {
-                        if(sceneManager != null)
-                            AvailableSceneManagers.Add(sceneManager);
+                        if (sceneManager != null)
+                            AvailableSceneManagers[actionData.SceneName] = sceneManager;
 
                         ExecuteActionsStack(onComplete);
                     });
@@ -140,8 +139,8 @@ namespace StansAssets.SceneManagement
                 case SceneActionType.Deactivate:
                     m_SceneLoadService.Deactivate<ISceneManager>(actionData.SceneName, (sceneManager) =>
                     {
-                        if(sceneManager != null)
-                            AvailableSceneManagers.Add(sceneManager);
+                        if (sceneManager != null)
+                            AvailableSceneManagers[actionData.SceneName] = sceneManager;
 
                         ExecuteActionsStack(onComplete);
                     });
@@ -149,6 +148,7 @@ namespace StansAssets.SceneManagement
                 case SceneActionType.Unload:
                     m_SceneLoadService.Unload(actionData.SceneName, () =>
                     {
+                        AvailableSceneManagers.Remove(actionData.SceneName);
                         ExecuteActionsStack(onComplete);
                     });
                     break;
@@ -156,6 +156,5 @@ namespace StansAssets.SceneManagement
                     throw new ArgumentOutOfRangeException();
             }
         }
-
     }
 }

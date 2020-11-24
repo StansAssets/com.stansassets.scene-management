@@ -73,6 +73,8 @@ namespace StansAssets.SceneManagement
         {
             if (buildIndex != -1)
             {
+                // Our loaded / load requests scenes cache is using string key
+                // so we need to make sceneName from index just to make sure our cache will work.
                 sceneName = buildIndex.ToString();
             }
 
@@ -376,7 +378,7 @@ namespace StansAssets.SceneManagement
             AddressablesLogger.Log($"[ADDRESSABLES] AddressableSceneUnloaded Status: {result.AsyncOperationHandle.Status}, Scene: {result.SceneName}");
             ProcessSceneUnLoad(result.Scene, result.SceneName);
         }
-        
+
         static void ProcessSceneUnLoad(Scene scene, string sceneName)
         {
             s_LoadSceneOperations.Remove(scene.name);
@@ -397,10 +399,12 @@ namespace StansAssets.SceneManagement
 
         static bool ValidateScene(string sceneName)
         {
+            // TODO let's reconsider the validation
+            /*
             if (!Application.isEditor && BuildConfigurationSettings.Instance.HasValidConfiguration)
             {
                 return BuildConfigurationSettings.Instance.Configuration.HasScene(sceneName);
-            }
+            }*/
 
             return true;
         }

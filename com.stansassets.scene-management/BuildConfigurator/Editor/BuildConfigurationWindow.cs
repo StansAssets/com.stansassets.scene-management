@@ -84,7 +84,9 @@ namespace StansAssets.SceneManagement.Build
             if (EditorGUI.EndChangeCheck())
             {
                 UpdateActiveConfUI();
-                BuildConfigurationSettings.Instance.Configuration.InitializeBuildData(EditorUserBuildSettings.activeBuildTarget);
+                foreach (var buildConfiguration in BuildConfigurationSettings.Instance.BuildConfigurations) {
+                    buildConfiguration.UpdateSceneNames();
+                }
                 BuildConfigurationSettings.Save();
             }
         }
@@ -292,11 +294,11 @@ namespace StansAssets.SceneManagement.Build
             EditorGUI.indentLevel = indentLevel;
             return target;
         }
-        
-        AddressableSceneAsset ContentTypeListItem(Rect pos, AddressableSceneAsset itemValue)
+
+        SceneAssetInfo ContentTypeListItem(Rect pos, SceneAssetInfo itemValue)
         {
             if (itemValue == null)
-                itemValue = new AddressableSceneAsset();
+                itemValue = new SceneAssetInfo();
 
             int indentLevel = EditorGUI.indentLevel;
             EditorGUI.indentLevel = 0;

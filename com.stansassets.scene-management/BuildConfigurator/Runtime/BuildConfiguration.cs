@@ -15,13 +15,9 @@ namespace StansAssets.SceneManagement.Build
     {
         public string Name = string.Empty;
         public bool DefaultScenesFirst = false;
-        public List<AddressableSceneAsset> DefaultScenes = new List<AddressableSceneAsset>();
+        public List<SceneAssetInfo> DefaultScenes = new List<SceneAssetInfo>();
         public List<PlatformsConfiguration> Platforms = new List<PlatformsConfiguration>();
 
-        Dictionary<string, AddressableSceneAsset> m_AddressableSceneNamesToSceneAssets;
-        [SerializeField] List<string> m_SceneNames = new List<string>();
-        [SerializeField] List<AddressableSceneAsset> m_SceneAssets = new List<AddressableSceneAsset>();
-        [SerializeField] List<string> m_AllSceneNames = new List<string>();
         public PlatformAddressablesMode DefaultAddressablesMode;
         public List<PlatformAddressableModeConfiguration> PlatformAddressableModeConfiguration;
         
@@ -68,42 +64,57 @@ namespace StansAssets.SceneManagement.Build
             return copy;
         }
 
-        internal bool IsSceneAddressable(string sceneName)
-        {
-            if (AddressableSceneNamesToSceneAssets.TryGetValue(sceneName, out var asset))
-            {
-                return asset.Addressable;
+        // TODO we might need to cache this data once
+        internal bool IsSceneAddressable(string sceneName) {
+            foreach (var scene in DefaultScenes) {
+                if (sceneName.Equals(scene.Name)) {
+                    return scene.Addressable;
+                }
             }
+
+            // TODO should come from another runtime settings
+            var buildTarget = ConvertRuntimePlatformToBuildTarget(Application.platform);
+            var platform = GetConfigurationFroBuildTarget(buildTarget);
+
+            foreach (var sceneAssetInfo in platform.Scenes) {
+                if (sceneName.Equals(sceneAssetInfo.Name)) {
+                    return sceneAssetInfo.Addressable;
+                }
+            }
+
             return false;
         }
 
-        internal bool HasScene(string sceneName) {
-            return m_AllSceneNames.Contains(sceneName);
-        }
-
-        internal void SetScenesConfig(List<string> addressableSceneNames, List<AddressableSceneAsset> addressableSceneAssets, List<string> allSceneNames)
+        PlatformsConfiguration GetConfigurationFroBuildTarget(BuildTargetRuntime buildTarget)
         {
-            m_AddressableSceneNamesToSceneAssets = null;
-            m_SceneNames = addressableSceneNames;
-            m_SceneAssets = addressableSceneAssets;
-            m_AllSceneNames = allSceneNames;
-        }
-
-        Dictionary<string, AddressableSceneAsset> AddressableSceneNamesToSceneAssets
-        {
-            get
+            foreach (var platform in Platforms)
             {
-                if (m_AddressableSceneNamesToSceneAssets == null)
+                if (platform.BuildTargets.Contains(buildTarget))
                 {
-                    m_AddressableSceneNamesToSceneAssets = new Dictionary<string, AddressableSceneAsset>();
-                    for (var i = 0; i < m_SceneNames.Count; ++i)
-                    {
-                        var sceneName = m_SceneNames[i];
-                        var sceneAsset = m_SceneAssets[i];
-                        m_AddressableSceneNamesToSceneAssets.Add(sceneName, sceneAsset);
-                    }
+                    return platform;
                 }
-                return m_AddressableSceneNamesToSceneAssets;
+            }
+
+            return null;
+        }
+
+        BuildTargetRuntime ConvertRuntimePlatformToBuildTarget(RuntimePlatform platform) {
+            switch (platform) {
+#if UNITY_EDITOR
+                case RuntimePlatform.OSXEditor:
+                case RuntimePlatform.WindowsEditor:
+                case RuntimePlatform.LinuxEditor:
+
+                    return (BuildTargetRuntime)(int)UnityEditor.EditorUserBuildSettings.activeBuildTarget;
+#endif
+                case RuntimePlatform.Android:
+                    return BuildTargetRuntime.Android;
+                case RuntimePlatform.IPhonePlayer:
+                    return BuildTargetRuntime.iOS;
+                case RuntimePlatform.WebGLPlayer:
+                    return BuildTargetRuntime.WebGL;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(platform), platform, null);
             }
         }
 
@@ -118,9 +129,9 @@ namespace StansAssets.SceneManagement.Build
             return mode?.AddressablesMode ?? DefaultAddressablesMode;
         }
 
-        public List<AddressableSceneAsset> GetPlatformScenesAssets(BuildTargetRuntime buildTarget)
+        public List<SceneAssetInfo> GetPlatformScenesAssets(BuildTargetRuntime buildTarget)
         {
-            List<AddressableSceneAsset> result = new List<AddressableSceneAsset>();
+            List<SceneAssetInfo> result = new List<SceneAssetInfo>();
             foreach (var platformsConfiguration in Platforms.Where(pc => pc.BuildTargets.Contains(buildTarget)))
             {
                 result.AddRange(platformsConfiguration.Scenes.Where(sa => sa != null && !string.IsNullOrEmpty(sa.Guid)));
@@ -129,10 +140,10 @@ namespace StansAssets.SceneManagement.Build
             return result;
         }
         
-        public List<AddressableSceneAsset> GetAllScenesForPlatform(BuildTargetRuntime target)
+        public List<SceneAssetInfo> GetAllScenesForPlatform(BuildTargetRuntime target)
         {
-            List<AddressableSceneAsset> result = new List<AddressableSceneAsset>();
-            IEnumerable<AddressableSceneAsset> defaultScenes = DefaultScenes.Where(sa =>  sa != null && !string.IsNullOrEmpty(sa.Guid));
+            List<SceneAssetInfo> result = new List<SceneAssetInfo>();
+            IEnumerable<SceneAssetInfo> defaultScenes = DefaultScenes.Where(sa =>  sa != null && !string.IsNullOrEmpty(sa.Guid));
             if (DefaultScenesFirst)
             {
                 result.AddRange(defaultScenes);
@@ -146,51 +157,56 @@ namespace StansAssets.SceneManagement.Build
             return result;
         }
 
-        public List<AddressableSceneAsset> GetAddressableSceneAssets(BuildTargetRuntime target)
+        public List<SceneAssetInfo> GetAddressableSceneAssets(BuildTargetRuntime target)
         {
+            List<SceneAssetInfo> result;
             var addressablesMode = GetAddressablesModeForPlatform(target);
             switch (addressablesMode)
             {
                 case PlatformAddressablesMode.UsePerSceneSettings:
-                    return GetAllScenesForPlatform(target).Where(sa => sa.Addressable).ToList();
+                    result = GetAllScenesForPlatform(target).Where(sa => sa.Addressable).ToList();
                     break;
                 case PlatformAddressablesMode.AllScenesAreNonAddressables:
-                    return new List<AddressableSceneAsset>();
+                    result = new List<SceneAssetInfo>();
                     break;
                 case PlatformAddressablesMode.AllScenesAreAddressable:
-                    return GetAllScenesForPlatform(target).Skip(1).ToList();
+                    result = GetAllScenesForPlatform(target).Skip(1).ToList();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+
+            return result;
         }
         
         /*
          * Alias for GetSceneAssetsForBuild.
          * It is because both names (GetNonAddressableSceneAssets and GetSceneAssetsForBuild) are not obvious in some cases, so it is questionary which name is better
          */
-        public List<AddressableSceneAsset> GetNonAddressableSceneAssets(BuildTargetRuntime target)  
+        public List<SceneAssetInfo> GetNonAddressableSceneAssets(BuildTargetRuntime target)  
         {
             return GetSceneAssetsToIncludeInBuild(target);
         }
         
-        public List<AddressableSceneAsset> GetSceneAssetsToIncludeInBuild(BuildTargetRuntime target)
+        public List<SceneAssetInfo> GetSceneAssetsToIncludeInBuild(BuildTargetRuntime target)
         {
+            List<SceneAssetInfo> result;
             var addressablesMode = GetAddressablesModeForPlatform(target);
             switch (addressablesMode)
             {
                 case PlatformAddressablesMode.UsePerSceneSettings:
-                    return GetAllScenesForPlatform(target).Where(sa => !sa.Addressable).ToList();
+                    result =  GetAllScenesForPlatform(target).Where(sa => !sa.Addressable).ToList();
                     break;
                 case PlatformAddressablesMode.AllScenesAreNonAddressables:
-                    return GetAllScenesForPlatform(target);
+                    result =  GetAllScenesForPlatform(target);
                     break;
                 case PlatformAddressablesMode.AllScenesAreAddressable:
-                    return GetAllScenesForPlatform(target).Take(1).ToList();
+                    result =  GetAllScenesForPlatform(target).Take(1).ToList();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+            return result;
         }
     }
 }

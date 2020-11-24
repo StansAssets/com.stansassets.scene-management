@@ -9,35 +9,43 @@ namespace StansAssets.SceneManagement.Build
 {
     static class BuildConfigurationExtension
     {
-        public static void InitializeBuildData(this BuildConfiguration configuration, BuildTarget buildTarget)
+        public static List<SceneAsset> GetAddressableDefaultScenes(this BuildConfiguration configuration)
         {
-            var addressableSceneNames =  new List<string>();
-            var addressableSceneAssets = new List<AddressableSceneAsset>();
-            var allSceneNames = new List<string>();
+            return configuration.DefaultScenes.Where(scene => scene.GetSceneAsset() != null && scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
+        }
 
-            var addressableSceneAssetsFromConfig = configuration.GetAddressableSceneAssets(buildTarget.ToBuildTargetRuntime());
-            foreach (var scene in addressableSceneAssetsFromConfig) {
-                string path = AssetDatabase.GUIDToAssetPath(scene.Guid);
-                if (string.IsNullOrEmpty(path))
+        public static List<SceneAsset> GetNonAddressableDefaultScenes(this BuildConfiguration configuration)
+        {
+            return configuration.DefaultScenes.Where(scene => scene.GetSceneAsset() != null && !scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
+        }
+
+        public static void InitializeBuildData(this BuildConfiguration buildConfiguration, BuildTarget buildTarget)
+        {
+            // TODO here we may want to create a runtime config and save some info
+            // but from now let's just make sure we always have valid names
+
+            buildConfiguration.UpdateSceneNames();
+        }
+
+        public static void UpdateSceneNames(this BuildConfiguration buildConfiguration)
+        {
+            foreach (var scene in buildConfiguration.DefaultScenes)
+            {
+                if(scene == null)
                     continue;
 
-                string sceneName = Path.GetFileNameWithoutExtension(path);
-                allSceneNames.Add(sceneName);
-                addressableSceneNames.Add(sceneName);
-                addressableSceneAssets.Add(scene);
-            }
-            
-            var nonAddressableSceneAssetsFilenames = configuration.GetNonAddressableSceneAssets(buildTarget.ToBuildTargetRuntime())
-                                                                  .Select(sa => AssetDatabase.GUIDToAssetPath(sa.Guid))
-                                                                  .Where(path => !string.IsNullOrEmpty(path))
-                                                                  .Select(Path.GetFileNameWithoutExtension);
-            foreach (var scene in nonAddressableSceneAssetsFilenames) {
-                allSceneNames.Add(scene);
+                var path = AssetDatabase.GUIDToAssetPath(scene.Guid);
+                scene.Name = Path.GetFileNameWithoutExtension(path);
             }
 
-            Debug.Log("Addressable Scenes: " + addressableSceneNames.Count);
-            Debug.Log($"Addressable Scenes List:\n{string.Join("\n", addressableSceneAssets.Select(asset => AssetDatabase.GUIDToAssetPath(asset.Guid)))}");
-            configuration.SetScenesConfig(addressableSceneNames, addressableSceneAssets, allSceneNames);
+            foreach (var platform in buildConfiguration.Platforms)
+            {
+                foreach (var scene in platform.Scenes)
+                {
+                    if(scene == null)
+                        continue;
+                        }
+            }
         }
 
         public static bool IsActive(this BuildConfiguration configuration, PlatformsConfiguration platformsConfiguration) {
@@ -45,34 +53,17 @@ namespace StansAssets.SceneManagement.Build
             return platformsConfiguration.BuildTargets.Contains(buildTarget);
         }
 
-        public static int GetSceneIndex(this BuildConfiguration configuration, AddressableSceneAsset scene)
+        public static int GetSceneIndex(this BuildConfiguration configuration, SceneAssetInfo scene)
         {
             return configuration.GetAllScenesForPlatform(EditorUserBuildSettings.activeBuildTarget.ToBuildTargetRuntime())
                                 .Where(sa=>sa != null)
                                 .Select(sa=>sa.Guid)
                                 .ToList()
                                 .IndexOf(scene.Guid);
-            int platformScenesCount = 0;
-            foreach (var platformConfiguration in configuration.Platforms) {
-                if (IsActive(configuration, platformConfiguration)) {
-                    var platformIndex = platformConfiguration.Scenes.IndexOf(scene);
-                    if (platformIndex >= 0) {
-                        return configuration.DefaultScenesFirst ? configuration.DefaultScenes.Count + platformIndex : platformIndex;
-                    }
-
-                    platformScenesCount = platformConfiguration.Scenes.Count;
-                }
-            }
-
-            var defaultIndex = configuration.DefaultScenes.IndexOf(scene);
-            if (defaultIndex >= 0) {
-                return configuration.DefaultScenesFirst ? defaultIndex : defaultIndex + platformScenesCount;
-            }
-
-            return -1;
         }
 
-        public static void SetupBuildSettings(this BuildConfiguration configuration, BuildTarget buildTarget) {
+        public static void SetupBuildSettings(this BuildConfiguration configuration, BuildTarget buildTarget)
+        {
             var buildSettingsScenes = EditorBuildSettings.scenes.ToList();
             var buildSettingsSceneGuids = new HashSet<string>(buildSettingsScenes.Select(s => s.guid.ToString()));
 
@@ -81,7 +72,8 @@ namespace StansAssets.SceneManagement.Build
             foreach (var sceneGuid in configurationSceneGuids) {
                 if (buildSettingsSceneGuids.Contains(sceneGuid) == false) {
                     string scenePath = AssetDatabase.GUIDToAssetPath(sceneGuid);
-                    if (string.IsNullOrEmpty(scenePath)) {
+                    if (string.IsNullOrEmpty(scenePath))
+                    {
                         Debug.LogWarning($"Scene with Guid: {sceneGuid} can't be added!");
                         continue;
                     }
@@ -92,7 +84,8 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
 
-            if (shouldUpdateBuildSettings) {
+            if (shouldUpdateBuildSettings)
+            {
                 EditorBuildSettings.scenes = buildSettingsScenes.ToArray();
             }
         }

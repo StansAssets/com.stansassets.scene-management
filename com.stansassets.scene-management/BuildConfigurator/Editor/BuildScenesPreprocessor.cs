@@ -50,12 +50,6 @@ namespace StansAssets.SceneManagement.Build
             options.scenes = FilterScenesByPath(options.target, options.scenes);
         }
 
-        [MenuItem("Window/Asset Management/Setup Addressable Scenes")]
-        public static void SetupAddressableScenes()
-        {
-            SetupAddressableScenes(EditorUserBuildSettings.activeBuildTarget);
-        }
-
         static string[] FilterScenesByPath(BuildTarget target, string[] buildScenes)
         {
             if (BuildConfigurationSettings.Instance.HasValidConfiguration == false)
@@ -69,8 +63,7 @@ namespace StansAssets.SceneManagement.Build
             return scenes;
         }
 
-        static void SetupAddressableScenes(BuildTarget target)
-        {
+        internal static void SetupAddressableScenes(BuildTarget target) {
             if (BuildConfigurationSettings.Instance.HasValidConfiguration == false)
             {
                 return;

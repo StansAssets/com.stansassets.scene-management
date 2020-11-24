@@ -8,5 +8,10 @@ namespace StansAssets.SceneManagement.Build
         public static void OpenBuildSettings() {
             BuildConfigurationWindow.ShowTowardsInspector("Build Conf");
         }
+
+        [MenuItem("Window/Asset Management/Setup Addressable Scenes")]
+        public static void SetupAddressableScenes() {
+            BuildScenesPreprocessor.SetupAddressableScenes(EditorUserBuildSettings.activeBuildTarget);
+        }
     }
 }
