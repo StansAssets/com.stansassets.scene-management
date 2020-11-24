@@ -9,16 +9,7 @@ namespace StansAssets.SceneManagement.Build
 {
     static class BuildConfigurationExtension
     {
-        public static List<SceneAsset> GetAddressableDefaultScenes(this BuildConfiguration configuration)
-        {
-            return configuration.DefaultScenes.Where(scene => scene.GetSceneAsset() != null && scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
-        }
-
-        public static List<SceneAsset> GetNonAddressableDefaultScenes(this BuildConfiguration configuration)
-        {
-            return configuration.DefaultScenes.Where(scene => scene.GetSceneAsset() != null && !scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
-        }
-
+        
         public static void InitializeBuildData(this BuildConfiguration buildConfiguration, BuildTarget buildTarget)
         {
             // TODO here we may want to create a runtime config and save some info
@@ -44,7 +35,10 @@ namespace StansAssets.SceneManagement.Build
                 {
                     if(scene == null)
                         continue;
-                        }
+                    
+                    var path = AssetDatabase.GUIDToAssetPath(scene.Guid);
+                    scene.Name = Path.GetFileNameWithoutExtension(path);
+                }
             }
         }
 
