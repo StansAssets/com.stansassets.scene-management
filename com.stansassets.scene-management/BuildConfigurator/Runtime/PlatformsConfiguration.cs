@@ -11,7 +11,6 @@ namespace StansAssets.SceneManagement.Build
     {
         public List<BuildTargetRuntime> BuildTargets = new List<BuildTargetRuntime>();
         public List<AddressableSceneAsset> Scenes = new List<AddressableSceneAsset>();
-
         public bool IsEmpty => BuildTargets.Count == 0 && Scenes.Count == 0;
     }
 }

@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 namespace StansAssets.SceneManagement.Build
@@ -19,7 +22,9 @@ namespace StansAssets.SceneManagement.Build
         [SerializeField] List<string> m_SceneNames = new List<string>();
         [SerializeField] List<AddressableSceneAsset> m_SceneAssets = new List<AddressableSceneAsset>();
         [SerializeField] List<string> m_AllSceneNames = new List<string>();
-
+        public PlatformAddressablesMode DefaultAddressablesMode;
+        public List<PlatformAddressableModeConfiguration> PlatformAddressableModeConfiguration;
+        
         public bool IsEmpty
         {
             get
@@ -99,6 +104,92 @@ namespace StansAssets.SceneManagement.Build
                     }
                 }
                 return m_AddressableSceneNamesToSceneAssets;
+            }
+        }
+
+        public IEnumerable<BuildTargetRuntime> GetTargetPlatforms()
+        {
+            return Platforms.SelectMany(configuration => configuration.BuildTargets).Where(target => (int)target>0).Distinct();
+        }
+
+        public PlatformAddressablesMode GetAddressablesModeForPlatform(BuildTargetRuntime target)
+        {
+            var mode = PlatformAddressableModeConfiguration.FirstOrDefault(c => c.BuildTarget.Equals(target));
+            return mode?.AddressablesMode ?? DefaultAddressablesMode;
+        }
+
+        public List<AddressableSceneAsset> GetPlatformScenesAssets(BuildTargetRuntime buildTarget)
+        {
+            List<AddressableSceneAsset> result = new List<AddressableSceneAsset>();
+            foreach (var platformsConfiguration in Platforms.Where(pc => pc.BuildTargets.Contains(buildTarget)))
+            {
+                result.AddRange(platformsConfiguration.Scenes.Where(sa => sa != null && !string.IsNullOrEmpty(sa.Guid)));
+            }
+
+            return result;
+        }
+        
+        public List<AddressableSceneAsset> GetAllScenesForPlatform(BuildTargetRuntime target)
+        {
+            List<AddressableSceneAsset> result = new List<AddressableSceneAsset>();
+            IEnumerable<AddressableSceneAsset> defaultScenes = DefaultScenes.Where(sa =>  sa != null && !string.IsNullOrEmpty(sa.Guid));
+            if (DefaultScenesFirst)
+            {
+                result.AddRange(defaultScenes);
+                result.AddRange(GetPlatformScenesAssets(target));
+            }
+            else
+            {
+                result.AddRange(GetPlatformScenesAssets(target));
+                result.AddRange(defaultScenes);
+            }
+            return result;
+        }
+
+        public List<AddressableSceneAsset> GetAddressableSceneAssets(BuildTargetRuntime target)
+        {
+            var addressablesMode = GetAddressablesModeForPlatform(target);
+            switch (addressablesMode)
+            {
+                case PlatformAddressablesMode.UsePerSceneSettings:
+                    return GetAllScenesForPlatform(target).Where(sa => sa.Addressable).ToList();
+                    break;
+                case PlatformAddressablesMode.AllScenesAreNonAddressables:
+                    return new List<AddressableSceneAsset>();
+                    break;
+                case PlatformAddressablesMode.AllScenesAreAddressable:
+                    return GetAllScenesForPlatform(target).Skip(1).ToList();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+        
+        /*
+         * Alias for GetSceneAssetsForBuild.
+         * It is because both names (GetNonAddressableSceneAssets and GetSceneAssetsForBuild) are not obvious in some cases, so it is questionary which name is better
+         */
+        public List<AddressableSceneAsset> GetNonAddressableSceneAssets(BuildTargetRuntime target)  
+        {
+            return GetSceneAssetsToIncludeInBuild(target);
+        }
+        
+        public List<AddressableSceneAsset> GetSceneAssetsToIncludeInBuild(BuildTargetRuntime target)
+        {
+            var addressablesMode = GetAddressablesModeForPlatform(target);
+            switch (addressablesMode)
+            {
+                case PlatformAddressablesMode.UsePerSceneSettings:
+                    return GetAllScenesForPlatform(target).Where(sa => !sa.Addressable).ToList();
+                    break;
+                case PlatformAddressablesMode.AllScenesAreNonAddressables:
+                    return GetAllScenesForPlatform(target);
+                    break;
+                case PlatformAddressablesMode.AllScenesAreAddressable:
+                    return GetAllScenesForPlatform(target).Take(1).ToList();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
     }

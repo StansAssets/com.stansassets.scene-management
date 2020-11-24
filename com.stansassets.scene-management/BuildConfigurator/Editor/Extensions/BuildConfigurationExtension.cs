@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -8,34 +9,30 @@ namespace StansAssets.SceneManagement.Build
 {
     static class BuildConfigurationExtension
     {
-        public static List<SceneAsset> GetAddressableDefaultScenes(this BuildConfiguration configuration)
-        {
-            return configuration.DefaultScenes.Where(scene => scene.GetSceneAsset() != null && scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
-        }
-
-        public static List<SceneAsset> GetNonAddressableDefaultScenes(this BuildConfiguration configuration)
-        {
-            return configuration.DefaultScenes.Where(scene => scene.GetSceneAsset() != null && !scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
-        }
-
         public static void InitializeBuildData(this BuildConfiguration configuration, BuildTarget buildTarget)
         {
             var addressableSceneNames =  new List<string>();
             var addressableSceneAssets = new List<AddressableSceneAsset>();
             var allSceneNames = new List<string>();
 
-            var allSceneAssets = BuildScenesCollection(configuration, buildTarget, false);
-            foreach (var scene in allSceneAssets) {
+            var addressableSceneAssetsFromConfig = configuration.GetAddressableSceneAssets(buildTarget.ToBuildTargetRuntime());
+            foreach (var scene in addressableSceneAssetsFromConfig) {
                 string path = AssetDatabase.GUIDToAssetPath(scene.Guid);
                 if (string.IsNullOrEmpty(path))
                     continue;
 
                 string sceneName = Path.GetFileNameWithoutExtension(path);
                 allSceneNames.Add(sceneName);
-                if (scene.Addressable) {
-                    addressableSceneNames.Add(sceneName);
-                    addressableSceneAssets.Add(scene);
-                }
+                addressableSceneNames.Add(sceneName);
+                addressableSceneAssets.Add(scene);
+            }
+            
+            var nonAddressableSceneAssetsFilenames = configuration.GetNonAddressableSceneAssets(buildTarget.ToBuildTargetRuntime())
+                                                                  .Select(sa => AssetDatabase.GUIDToAssetPath(sa.Guid))
+                                                                  .Where(path => !string.IsNullOrEmpty(path))
+                                                                  .Select(Path.GetFileNameWithoutExtension);
+            foreach (var scene in nonAddressableSceneAssetsFilenames) {
+                allSceneNames.Add(scene);
             }
 
             Debug.Log("Addressable Scenes: " + addressableSceneNames.Count);
@@ -43,32 +40,18 @@ namespace StansAssets.SceneManagement.Build
             configuration.SetScenesConfig(addressableSceneNames, addressableSceneAssets, allSceneNames);
         }
 
-        public static List<AddressableSceneAsset> BuildScenesCollection(this BuildConfiguration configuration, BuildTarget builtTarget, bool stripAddressables) {
-            var scenes = new List<AddressableSceneAsset>();
-
-            List<AddressableSceneAsset> defaultSceneAssets = stripAddressables ? configuration.DefaultScenes.Where(s => !s.Addressable).ToList()
-                                                                                      : configuration.DefaultScenes;
-
-            if (configuration.DefaultScenesFirst)
-            {
-                ProcessPlatforms(ref scenes, builtTarget, configuration.Platforms, stripAddressables);
-                InsertScenes(ref scenes, defaultSceneAssets);
-            }
-            else
-            {
-                InsertScenes(ref scenes, defaultSceneAssets);
-                ProcessPlatforms(ref scenes, builtTarget, configuration.Platforms, stripAddressables);
-            }
-
-            return scenes;
-        }
-
         public static bool IsActive(this BuildConfiguration configuration, PlatformsConfiguration platformsConfiguration) {
-            BuildTargetRuntime buildTarget = (BuildTargetRuntime)(int)EditorUserBuildSettings.activeBuildTarget;
+            BuildTargetRuntime buildTarget = EditorUserBuildSettings.activeBuildTarget.ToBuildTargetRuntime();
             return platformsConfiguration.BuildTargets.Contains(buildTarget);
         }
 
-        public static int GetSceneIndex(this BuildConfiguration configuration, AddressableSceneAsset scene) {
+        public static int GetSceneIndex(this BuildConfiguration configuration, AddressableSceneAsset scene)
+        {
+            return configuration.GetAllScenesForPlatform(EditorUserBuildSettings.activeBuildTarget.ToBuildTargetRuntime())
+                                .Where(sa=>sa != null)
+                                .Select(sa=>sa.Guid)
+                                .ToList()
+                                .IndexOf(scene.Guid);
             int platformScenesCount = 0;
             foreach (var platformConfiguration in configuration.Platforms) {
                 if (IsActive(configuration, platformConfiguration)) {
@@ -94,7 +77,7 @@ namespace StansAssets.SceneManagement.Build
             var buildSettingsSceneGuids = new HashSet<string>(buildSettingsScenes.Select(s => s.guid.ToString()));
 
             bool shouldUpdateBuildSettings = false;
-            var configurationSceneGuids = configuration.BuildScenesCollection(buildTarget, false).Select(s => s.Guid);
+            var configurationSceneGuids = configuration.GetSceneAssetsToIncludeInBuild(buildTarget.ToBuildTargetRuntime()).Select(s => s.Guid);
             foreach (var sceneGuid in configurationSceneGuids) {
                 if (buildSettingsSceneGuids.Contains(sceneGuid) == false) {
                     string scenePath = AssetDatabase.GUIDToAssetPath(sceneGuid);
@@ -114,36 +97,5 @@ namespace StansAssets.SceneManagement.Build
             }
         }
 
-        static void ProcessPlatforms(ref List<AddressableSceneAsset> scenes, BuildTarget buildTarget, List<PlatformsConfiguration> platforms, bool stripAddressable)
-        {
-            foreach (var platformsConfiguration in platforms)
-            {
-                var editorBuildTargets = platformsConfiguration.GetBuildTargetsEditor();
-                if (editorBuildTargets.Contains(buildTarget)) {
-                    var platformScenes = stripAddressable ? platformsConfiguration.GetNonAddressableScenes()
-                                                                     : platformsConfiguration.Scenes;
-
-                    InsertScenes(ref scenes, platformScenes);
-                    break;
-                }
-            }
-        }
-
-        static void InsertScenes(ref List<AddressableSceneAsset> scenes, List<AddressableSceneAsset> sceneToInsert)
-        {
-            for (var index = 0; index < sceneToInsert.Count; index++)
-            {
-                var scene = sceneToInsert[index];
-                if (string.IsNullOrEmpty(scene.Guid))
-                    continue;
-
-                if (scenes.Contains(scene))
-                {
-                    scenes.Remove(scene);
-                }
-
-                scenes.Insert(index, scene);
-            }
-        }
     }
 }

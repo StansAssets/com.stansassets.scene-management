@@ -53,7 +53,7 @@ namespace StansAssets.SceneManagement
         /// <param name="sceneName">Name of the scene to be loaded.</param>
         /// <param name="loadCompleted">Load Completed callback.</param>
         /// </summary>
-        static IAsyncOperation LoadAdditively(string sceneName, Action<Scene> loadCompleted = null)
+        public static IAsyncOperation LoadAdditively(string sceneName, Action<Scene> loadCompleted = null)
         {
             if (ValidateScene(sceneName) == false)
             {

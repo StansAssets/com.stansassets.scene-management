@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using UnityEngine;
 using UnityEditor;
 using Rotorz.ReorderableList;
 using StansAssets.Plugins.Editor;
@@ -7,11 +8,13 @@ namespace StansAssets.SceneManagement.Build
 {
     class BuildConfigurationWindow : IMGUISettingsWindow<BuildConfigurationWindow>
     {
-        const string k_DefaultScenesDescription = "If you are leaving the default scnese empty, " +
+        const string k_DefaultScenesDescription = "If you are leaving the default scenes empty, " +
             "projects settings defined scene will be added to the build. " +
-            "When Defult Scenes have atleaest one scene defined, " +
+            "When Default Scenes have at least one scene defined, " +
             "project scenes are ignored and only scene defined in this configuration will be used.";
 
+        const string k_PerPlatformAddressableDescription = "Settings ";
+        
         static readonly Color s_ErrorColor = new Color(1f, 0.8f, 0.0f);
         static readonly Color s_InactiveColor = new Color(1f, 0.8f, 0.0f);
         static readonly  GUIContent s_DuplicatesGUIContent = new GUIContent("","Scene is duplicated!");
@@ -87,6 +90,7 @@ namespace StansAssets.SceneManagement.Build
         }
 
         int m_SelectionIndex;
+        BuildConfiguration m_SelectedConfiguration;
 
         protected override void OnLayoutGUI()
         {
@@ -94,6 +98,7 @@ namespace StansAssets.SceneManagement.Build
             DrawHeader();
 
             m_SelectionIndex = DrawTabs();
+            m_SelectedConfiguration = BuildConfigurationSettings.Instance.BuildConfigurations[m_SelectionIndex];
 
             DrawScrollView(() =>
             {
@@ -139,6 +144,8 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
 
+            DrawPlatformAddressablesSettings(conf);
+            
             if (conf.DefaultScenesFirst)
             {
                 DrawDefaultScenes(conf);
@@ -149,6 +156,47 @@ namespace StansAssets.SceneManagement.Build
                 DrawPlatforms(conf);
                 DrawDefaultScenes(conf);
             }
+        }
+
+        private void DrawPlatformAddressablesSettings(BuildConfiguration conf)
+        {
+            using (new IMGUIBlockWithIndent(new GUIContent("Platform addressables settings")))
+            {
+                EditorGUILayout.HelpBox(k_PerPlatformAddressableDescription, MessageType.Info);
+                
+                using (new IMGUIBeginVertical())
+                {
+                    using (new IMGUIBeginHorizontal())
+                    {
+                        EditorGUILayout.LabelField("Default addressables mode:");
+                        var mode = conf.DefaultAddressablesMode;
+                        conf.DefaultAddressablesMode = (PlatformAddressablesMode) EditorGUILayout.EnumPopup(mode);
+                    }
+                    EditorGUILayout.LabelField("Platform depend settings");
+                    using (new IMGUIBeginVertical())
+                    {
+                        ReorderableListGUI.ListField(conf.PlatformAddressableModeConfiguration, DrawPlatformAddressableModeListItem, DrawEmptyPlatform);
+                    }
+                }
+            }
+        }
+
+        PlatformAddressableModeConfiguration DrawPlatformAddressableModeListItem(Rect rect, PlatformAddressableModeConfiguration item)
+        {
+            if (item == null)
+            {
+                item = new PlatformAddressableModeConfiguration();
+            }
+            var targetRect = new Rect(rect);
+            targetRect.width /= 2;
+            item.BuildTarget = (BuildTargetRuntime) EditorGUI.EnumPopup(targetRect, GUIContent.none, item.BuildTarget, i =>
+            {
+                return !i.Equals(BuildTargetRuntime.NoTarget) && 
+                    !m_SelectedConfiguration.PlatformAddressableModeConfiguration.Any(li => li.BuildTarget.Equals(i));
+            });
+            targetRect.x += targetRect.width;
+            item.AddressablesMode = (PlatformAddressablesMode) EditorGUI.EnumPopup(targetRect, item.AddressablesMode);
+            return item;
         }
 
         void DrawDefaultScenes(BuildConfiguration conf)
@@ -244,7 +292,7 @@ namespace StansAssets.SceneManagement.Build
             EditorGUI.indentLevel = indentLevel;
             return target;
         }
-
+        
         AddressableSceneAsset ContentTypeListItem(Rect pos, AddressableSceneAsset itemValue)
         {
             if (itemValue == null)
@@ -256,9 +304,10 @@ namespace StansAssets.SceneManagement.Build
             Rect sceneIndexRect = m_ShowBuildIndex ? new Rect(pos.x, pos.y, 20f, pos.height) : new Rect(pos.x, pos.y, 0f, 0f);
             Rect objectFieldRect = new Rect(pos.x + sceneIndexRect.width, pos.y + 2, pos.width - 20f - sceneIndexRect.width, 16);
             Rect addressableToggleRect = new Rect(objectFieldRect.x + objectFieldRect.width + 2, pos.y, 20f, pos.height);
-
+            
+            int sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue);
+            bool isFirstSceneInBuild = sceneIndex == 0;
             if (m_ShowBuildIndex) {
-                int sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue);
                 GUI.Label(sceneIndexRect, sceneIndex.ToString());
             }
 
@@ -274,12 +323,13 @@ namespace StansAssets.SceneManagement.Build
             }
             GUI.color = Color.white;
 
-            itemValue.Addressable = GUI.Toggle(addressableToggleRect, itemValue.Addressable, AddressableGuiContent);
+            
+            itemValue.Addressable = GUI.Toggle(addressableToggleRect, !isFirstSceneInBuild && itemValue.Addressable, AddressableGuiContent);
             EditorGUI.indentLevel = indentLevel;
 
             return itemValue;
         }
-
+        
         void DrawEmptyScene()
         {
             GUILayout.Label("Add a scenes", EditorStyles.miniLabel);
