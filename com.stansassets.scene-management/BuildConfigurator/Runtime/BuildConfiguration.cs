@@ -30,6 +30,23 @@ namespace StansAssets.SceneManagement.Build
             }
         }
 
+        internal bool UseAddressablesInEditor {
+            get {
+#if UNITY_EDITOR
+                return UnityEditor.EditorPrefs.GetBool($"{Name}_user-addressables-in-editor", false);
+#else
+                return false;
+#endif
+            }
+
+            set {
+#if UNITY_EDITOR
+                 UnityEditor.EditorPrefs.SetBool($"{Name}_user-addressables-in-editor", value);
+#endif
+            }
+        }
+
+
         internal BuildConfiguration Copy()
         {
             var copy = new BuildConfiguration();

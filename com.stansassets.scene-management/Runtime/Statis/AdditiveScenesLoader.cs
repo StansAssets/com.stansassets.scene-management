@@ -16,8 +16,12 @@ namespace StansAssets.SceneManagement
     {
         /// <summary>
         /// Event is fired when scene was unloaded.
+        /// The reason why it has <see cref="SceneInfo"/> type and not <see cref="Scene"/> is because when working with addressable
+        /// ofter we have scene with no name and no metadata since those scene are not included in the build.
+        ///
+        /// Let us know if you would like to have more metadata inside.
         /// </summary>
-        public static event Action<Scene> SceneUnloaded = delegate { };
+        public static event Action<SceneInfo> SceneUnloaded = delegate { };
 
         /// <summary>
         /// Event is fired when new scene was loaded.
@@ -61,7 +65,7 @@ namespace StansAssets.SceneManagement
                     $"\nTo load a scene please add it to platform specific collection or Default scenes.");
             }
 
-            if (!Application.isEditor && IsSceneAddressable(sceneName))
+            if (IsSceneAddressable(sceneName))
             {
                 return LoadAddressableAdditively(sceneName, loadCompleted);
             }
@@ -188,7 +192,7 @@ namespace StansAssets.SceneManagement
         /// </summary>
         public static void Unload(string sceneName, Action unloadCompleted = null)
         {
-            if (!Application.isEditor && IsSceneAddressable(sceneName))
+            if (IsSceneAddressable(sceneName))
             {
                 UnloadAddressable(sceneName, unloadCompleted);
             }
@@ -370,30 +374,35 @@ namespace StansAssets.SceneManagement
                 return;
             }
 
-            ProcessSceneUnLoad(scene, scene.name);
+            ProcessSceneUnLoad(scene.name);
         }
 
         static void AddressableSceneUnloaded(AddressableSceneUnloaderResult result)
         {
             AddressablesLogger.Log($"[ADDRESSABLES] AddressableSceneUnloaded Status: {result.AsyncOperationHandle.Status}, Scene: {result.SceneName}");
-            ProcessSceneUnLoad(result.Scene, result.SceneName);
+            ProcessSceneUnLoad(result.SceneName);
         }
 
-        static void ProcessSceneUnLoad(Scene scene, string sceneName)
+        static void ProcessSceneUnLoad(string sceneName)
         {
-            s_LoadSceneOperations.Remove(scene.name);
-            if (s_UnloadSceneCallbacks.TryGetValue(scene.name, out var callbacks))
+            s_LoadSceneOperations.Remove(sceneName);
+            if (s_UnloadSceneCallbacks.TryGetValue(sceneName, out var callbacks))
             {
-                s_UnloadSceneCallbacks.Remove(scene.name);
+                s_UnloadSceneCallbacks.Remove(sceneName);
                 foreach (var callback in callbacks)
                     callback();
             }
 
-            SceneUnloaded.Invoke(scene);
+            SceneUnloaded.Invoke(new SceneInfo(sceneName));
         }
 
-        static bool IsSceneAddressable(string sceneName)
-        {
+        static bool IsSceneAddressable(string sceneName) {
+            var conf = BuildConfigurationSettings.Instance.Configuration;
+
+            if (Application.isEditor && !conf.UseAddressablesInEditor) {
+                return false;
+            }
+
             return BuildConfigurationSettings.Instance.Configuration.IsSceneAddressable(sceneName);
         }
 

@@ -35,8 +35,6 @@ namespace StansAssets.SceneManagement.Build
                     BuildPlayerWindow.DefaultBuildMethods.BuildPlayer(options);
                 };
             });
-
-            BuildConfigurationSettings.Instance.Configuration.InitializeBuildData(EditorUserBuildSettings.activeBuildTarget);
         }
 
         public static void SetupBuildOptions(ref BuildPlayerOptions options)

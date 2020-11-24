@@ -141,6 +141,20 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
 
+            using (new IMGUIBlockWithIndent(new GUIContent("Addressables"))) {
+                conf.UseAddressablesInEditor = IMGUILayout.ToggleFiled("Use Addressables InEditor", conf.UseAddressablesInEditor, IMGUIToggleStyle.ToggleType.YesNo);
+
+                using (new IMGUIBeginHorizontal())
+                {
+                    GUILayout.FlexibleSpace();
+                    var active = GUILayout.Button("Build", GUILayout.Width(100));
+                    if (active)
+                    {
+                        BuildScenesPreprocessor.SetupAddressableScenes(EditorUserBuildSettings.activeBuildTarget);
+                    }
+                }
+            }
+
             if (conf.DefaultScenesFirst)
             {
                 DrawDefaultScenes(conf);
