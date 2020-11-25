@@ -26,20 +26,21 @@ namespace StansAssets.SceneManagement.Build
         static BuildScenesPreprocessor()
         {
             AnalyzeSystem.RegisterNewRule<FindScenesDuplicateDependencies>();
+
+#if !BUILD_SYSTEM_ENABLED
             BuildPlayerWindow.RegisterBuildPlayerHandler(options =>
             {
                 SetupBuildOptions(ref options);
                 EditorApplication.delayCall += () =>
                 {
-                    Debug.Log("Scenes list:\n" + string.Join(", \n", options.scenes));
                     BuildPlayerWindow.DefaultBuildMethods.BuildPlayer(options);
                 };
             });
+#endif
         }
 
         public static void SetupBuildOptions(ref BuildPlayerOptions options)
         {
-
             foreach (var handler in s_BuildHandlers)
             {
                 handler.Invoke(options);
@@ -47,6 +48,8 @@ namespace StansAssets.SceneManagement.Build
 
             SetupAddressableScenes(options.target);
             options.scenes = FilterScenesByPath(options.target, options.scenes);
+
+            Debug.Log("Built scenes:\n" + string.Join(", \n", options.scenes));
         }
 
         static string[] FilterScenesByPath(BuildTarget target, string[] buildScenes)

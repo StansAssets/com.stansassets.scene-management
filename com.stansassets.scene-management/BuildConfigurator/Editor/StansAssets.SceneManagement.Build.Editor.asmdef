@@ -20,6 +20,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.stansassets.build",
+            "expression": "0.0.1",
+            "define": "BUILD_SYSTEM_ENABLED"
+        }
+    ],
     "noEngineReferences": false
 }
