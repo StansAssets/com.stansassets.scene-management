@@ -5,7 +5,7 @@ using StansAssets.Plugins.Editor;
 
 namespace StansAssets.SceneManagement.Build
 {
-    class BuildConfigurationWindow : IMGUISettingsWindow<BuildConfigurationWindow>
+    class BuildConfigurationWindow : IMGUISettingsWindow<BuildConfigurationWindow>, IHasCustomMenu
     {
         const string k_DefaultScenesDescription = "If you are leaving the default scnese empty, " +
             "projects settings defined scene will be added to the build. " +
@@ -341,5 +341,19 @@ namespace StansAssets.SceneManagement.Build
         static GUIContent s_AddressableGuiContent;
 
         static GUIContent AddressableGuiContent => s_AddressableGuiContent ?? (s_AddressableGuiContent = new GUIContent("", "Mark scene Addressable?\nIf true - scene will be added as Addressable asset into \"Scenes\" group, otherwise - scene will be added into build settings."));
+
+        public void AddItemsToMenu(GenericMenu menu) {
+            menu.AddItem(new GUIContent("Add Build Settings Scenes to Default"), false, () => {
+                var conf = BuildConfigurationSettings.Instance.BuildConfigurations[m_SelectionIndex];
+                foreach (var scene in EditorBuildSettings.scenes)
+                {
+                    var sceneAssetInfo = new SceneAssetInfo();
+                    sceneAssetInfo.SetSceneAsset(scene);
+                    conf.DefaultScenes.Add(sceneAssetInfo);
+                }
+
+                BuildConfigurationSettings.Save();
+            });
+        }
     }
 }

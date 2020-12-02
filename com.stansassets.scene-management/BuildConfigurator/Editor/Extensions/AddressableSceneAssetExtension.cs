@@ -24,7 +24,22 @@ namespace StansAssets.SceneManagement.Build
                 var guid = AssetDatabase.AssetPathToGUID(path);
                 sceneAssetInfo.Guid = guid;
             }
-            else {
+            else
+            {
+                sceneAssetInfo.Guid = string.Empty;
+            }
+        }
+
+        public static void SetSceneAsset(this SceneAssetInfo sceneAssetInfo, EditorBuildSettingsScene sceneAsset)
+        {
+            var path = sceneAsset.path;
+            if (string.IsNullOrEmpty(path) == false)
+            {
+                var guid = AssetDatabase.AssetPathToGUID(path);
+                sceneAssetInfo.Guid = guid;
+            }
+            else
+            {
                 sceneAssetInfo.Guid = string.Empty;
             }
         }
