@@ -26,12 +26,15 @@ namespace StansAssets.SceneManagement.Build
                         return false;
                     }
                 }
+
                 return DefaultScenes.Count == 0;
             }
         }
 
-        internal bool UseAddressablesInEditor {
-            get {
+        internal bool UseAddressablesInEditor
+        {
+            get
+            {
 #if UNITY_EDITOR
                 return UnityEditor.EditorPrefs.GetBool($"{Name}_user-addressables-in-editor", false);
 #else
@@ -39,13 +42,13 @@ namespace StansAssets.SceneManagement.Build
 #endif
             }
 
-            set {
+            set
+            {
 #if UNITY_EDITOR
-                 UnityEditor.EditorPrefs.SetBool($"{Name}_user-addressables-in-editor", value);
+                UnityEditor.EditorPrefs.SetBool($"{Name}_user-addressables-in-editor", value);
 #endif
             }
         }
-
 
         internal BuildConfiguration Copy()
         {
@@ -76,9 +79,12 @@ namespace StansAssets.SceneManagement.Build
         }
 
         // TODO we might need to cache this data once
-        internal bool IsSceneAddressable(string sceneName) {
-            foreach (var scene in DefaultScenes) {
-                if (sceneName.Equals(scene.Name)) {
+        internal bool IsSceneAddressable(string sceneName)
+        {
+            foreach (var scene in DefaultScenes)
+            {
+                if (sceneName.Equals(scene.Name))
+                {
                     return scene.Addressable;
                 }
             }
@@ -86,10 +92,14 @@ namespace StansAssets.SceneManagement.Build
             // TODO should come from another runtime settings
             var buildTarget = ConvertRuntimePlatformToBuildTarget(Application.platform);
             var platform = GetConfigurationFroBuildTarget(buildTarget);
-
-            foreach (var sceneAssetInfo in platform.Scenes) {
-                if (sceneName.Equals(sceneAssetInfo.Name)) {
-                    return sceneAssetInfo.Addressable;
+            if (platform != null)
+            {
+                foreach (var sceneAssetInfo in platform.Scenes)
+                {
+                    if (sceneName.Equals(sceneAssetInfo.Name))
+                    {
+                        return sceneAssetInfo.Addressable;
+                    }
                 }
             }
 
@@ -109,8 +119,10 @@ namespace StansAssets.SceneManagement.Build
             return null;
         }
 
-        BuildTargetRuntime ConvertRuntimePlatformToBuildTarget(RuntimePlatform platform) {
-            switch (platform) {
+        BuildTargetRuntime ConvertRuntimePlatformToBuildTarget(RuntimePlatform platform)
+        {
+            switch (platform)
+            {
 #if UNITY_EDITOR
                 case RuntimePlatform.OSXEditor:
                 case RuntimePlatform.WindowsEditor:
