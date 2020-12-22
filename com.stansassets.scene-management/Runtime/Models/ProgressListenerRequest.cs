@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 namespace StansAssets.SceneManagement
@@ -8,36 +8,31 @@ namespace StansAssets.SceneManagement
         public event Action OnComplete;
         public event Action OnProgressChange;
 
+        bool m_IsDone;
+
         public float Progress { get; protected set; }
 
-        protected bool IsDone => Progress >= 1f;
 
         public void UpdateProgress(float v)
         {
-            if (IsDone)
+            if (m_IsDone)
                 return;
 
             SetProgress(v);
-
-            if (IsDone)
-                InvokeDone();
         }
 
         public void SetDone()
         {
             UpdateProgress(1f);
+            m_IsDone = true;
+            OnComplete?.Invoke();
         }
 
-        protected void SetProgress(float p)
+        private void SetProgress(float p)
         {
             p = Mathf.Clamp(p, 0f, 1f);
             Progress = p;
             OnProgressChange?.Invoke();
-        }
-
-        protected void InvokeDone()
-        {
-            OnComplete?.Invoke();
         }
     }
 }
