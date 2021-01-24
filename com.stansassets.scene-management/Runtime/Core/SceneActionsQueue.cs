@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using StansAssets.Foundation.Async;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace StansAssets.SceneManagement
 {
@@ -18,6 +19,8 @@ namespace StansAssets.SceneManagement
         readonly Queue<SceneAction> m_ActionsQueue = new Queue<SceneAction>();
 
         public Dictionary<string, ISceneManager> AvailableSceneManagers { get; } = new Dictionary<string, ISceneManager>();
+        public Dictionary<string, Scene> LoadedScenes { get; } = new Dictionary<string, Scene>();
+
 
         public IEnumerable<SceneAction> ScheduledActions => m_ActionsQueue;
 
@@ -50,6 +53,7 @@ namespace StansAssets.SceneManagement
         public void Start(Action<float> onProgress = null, Action onComplete = null)
         {
             AvailableSceneManagers.Clear();
+            LoadedScenes.Clear();
             OnComplete = onComplete;
             OnProgress = onProgress;
             if (m_Preloader != null)
@@ -84,11 +88,17 @@ namespace StansAssets.SceneManagement
             foreach (var kvp in AvailableSceneManagers)
             {
                 var sceneManager = kvp.Value;
-                if (sceneManager.GetType() == typeof(T))
+                var sceneManagerType = sceneManager.GetType();
+                if (sceneManagerType == typeof(T) || typeof(T).IsAssignableFrom(sceneManagerType))
                     return (T)sceneManager;
             }
 
             return default;
+        }
+
+        public Scene GetLoadedScene(string sceneName)
+        {
+            return LoadedScenes[sceneName];
         }
 
         public IEnumerator OnStackProgress()
@@ -126,11 +136,12 @@ namespace StansAssets.SceneManagement
             switch (actionData.Type)
             {
                 case SceneActionType.Load:
-                    m_SceneLoadService.Load<ISceneManager>(actionData.SceneName, sceneManager =>
+                    m_SceneLoadService.Load<ISceneManager>(actionData.SceneName, (scene, sceneManager) =>
                     {
                         if (sceneManager != null)
                             AvailableSceneManagers[actionData.SceneName] = sceneManager;
 
+                        LoadedScenes.Add(actionData.SceneName, scene);
                         ExecuteActionsStack(onComplete);
                     });
 
@@ -149,6 +160,7 @@ namespace StansAssets.SceneManagement
                     m_SceneLoadService.Unload(actionData.SceneName, () =>
                     {
                         AvailableSceneManagers.Remove(actionData.SceneName);
+                        LoadedScenes.Remove(actionData.SceneName);
                         ExecuteActionsStack(onComplete);
                     });
                     break;

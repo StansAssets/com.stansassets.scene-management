@@ -6,21 +6,21 @@ namespace StansAssets.SceneManagement
 {
     public class SceneLoadService : ISceneLoadService
     {
-        public void Load<T>(IScenePreloader preloader, string sceneName, Action<T> onComplete) where T : ISceneManager
+        public void Load<T>(IScenePreloader preloader, string sceneName, Action<Scene, T> onComplete) where T : ISceneManager
         {
             preloader.FadeIn(() =>
             {
-                Load<T>(sceneName, sceneManager =>
+                Load<T>(sceneName, (scene, sceneManager) =>
                 {
                     preloader.FadeOut(() =>
                     {
-                        onComplete?.Invoke(sceneManager);
+                        onComplete?.Invoke(scene, sceneManager);
                     });
                 });
             });
         }
 
-        public void Load<T>(string sceneName, Action<T> onComplete) where T : ISceneManager
+        public void Load<T>(string sceneName, Action<Scene, T> onComplete) where T : ISceneManager
         {
             AdditiveScenesLoader.LoadAdditively(sceneName, scene =>
             {
@@ -30,12 +30,12 @@ namespace StansAssets.SceneManagement
                 {
                     sceneDelegate.ActivateScene(() =>
                     {
-                        onComplete?.Invoke(sceneManager);
+                        onComplete?.Invoke(scene, sceneManager);
                     });
                 }
                 else
                 {
-                    onComplete?.Invoke(sceneManager);
+                    onComplete?.Invoke(scene, sceneManager);
                 }
             });
         }
