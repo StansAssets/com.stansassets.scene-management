@@ -16,6 +16,10 @@ namespace StansAssets.SceneManagement.Build
         public const string ScenesAddressablesGroupName = "Scenes";
         public const string ScenesDependenciesAddressablesGroupName = "Scenes Dependencies";
 
+        public delegate void BuildAddressablesDelegate();
+
+        static BuildAddressablesDelegate s_BuildAddressablesImpl = AddressableAssetSettings.BuildPlayerContent;
+
         static readonly List<Action<BuildPlayerOptions>> s_BuildHandlers = new List<Action<BuildPlayerOptions>>();
 
         public static void RegisterBuildPlayerHandler(Action<BuildPlayerOptions> handler)
@@ -50,6 +54,14 @@ namespace StansAssets.SceneManagement.Build
             options.scenes = FilterScenesByPath(options.target, options.scenes);
 
             Debug.Log("Built scenes:\n" + string.Join(", \n", options.scenes));
+        }
+
+        /// <summary>
+        /// Use this method to override Addressables build process. By default it's AddressableAssetSettings.BuildPlayerContent().
+        /// </summary>
+        public static void SetBuildAddressablesOverride(BuildAddressablesDelegate buildAddressablesDelegate)
+        {
+            s_BuildAddressablesImpl = buildAddressablesDelegate;
         }
 
         static string[] FilterScenesByPath(BuildTarget target, string[] buildScenes)
@@ -104,7 +116,8 @@ namespace StansAssets.SceneManagement.Build
                     AnalyzeSystemHelper.FixIssues(rule);
                 }
                 AnalyzeSystemHelper.ClearAnalysis(rule);
-                AddressableAssetSettings.BuildPlayerContent();
+
+                s_BuildAddressablesImpl.Invoke();
             }
             else
             {
