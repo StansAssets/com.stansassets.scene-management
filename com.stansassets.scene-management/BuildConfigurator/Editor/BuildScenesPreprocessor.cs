@@ -16,6 +16,14 @@ namespace StansAssets.SceneManagement.Build
         public const string ScenesAddressablesGroupName = "Scenes";
         public const string ScenesDependenciesAddressablesGroupName = "Scenes Dependencies";
 
+        public delegate void BuildAddressablesDelegate();
+
+        /// <summary>
+        /// Set this delegate to override Addressables build process. By default it's AddressableAssetSettings.BuildPlayerContent().
+        /// </summary>
+        public static BuildAddressablesDelegate BuildAddressablesImpl { get; set; } =
+            AddressableAssetSettings.BuildPlayerContent;
+
         static readonly List<Action<BuildPlayerOptions>> s_BuildHandlers = new List<Action<BuildPlayerOptions>>();
 
         public static void RegisterBuildPlayerHandler(Action<BuildPlayerOptions> handler)
@@ -25,6 +33,8 @@ namespace StansAssets.SceneManagement.Build
 
         static BuildScenesPreprocessor()
         {
+            BuildAddressablesImpl += () =>
+
             AnalyzeSystem.RegisterNewRule<FindScenesDuplicateDependencies>();
 
 #if !BUILD_SYSTEM_ENABLED
@@ -104,7 +114,8 @@ namespace StansAssets.SceneManagement.Build
                     AnalyzeSystemHelper.FixIssues(rule);
                 }
                 AnalyzeSystemHelper.ClearAnalysis(rule);
-                AddressableAssetSettings.BuildPlayerContent();
+
+                BuildAddressablesImpl.Invoke();
             }
             else
             {
