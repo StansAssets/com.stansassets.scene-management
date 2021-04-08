@@ -17,6 +17,8 @@ namespace StansAssets.SceneManagement
 
         Action<StackOperationEvent<T>, Action> m_PreprocessAction;
         Action<StackOperationEvent<T>, Action> m_PostprocessAction;
+        internal Action<List<T>, List<T>> m_VisualizerActionPreprocess = delegate {  };
+        internal Action<List<T>> m_VisualizerActionPostprocess = delegate {  };
 
         public ApplicationStateStack()
         {
@@ -68,6 +70,7 @@ namespace StansAssets.SceneManagement
             Assert.IsNotNull(onComplete);
             if (m_StatesStack.Count == 1 && m_StatesStack[0].Equals(applicationState))
             {
+                m_VisualizerActionPostprocess?.Invoke(m_StatesStack);
                 onComplete.Invoke();
                 return;
             }
@@ -82,6 +85,7 @@ namespace StansAssets.SceneManagement
             var stackSetOperationEvent = StackOperationEvent<T>.GetPooled(StackOperation.Set, applicationState, oldStackState, newStackState);
             Preprocess(stackSetOperationEvent, () =>
             {
+                m_VisualizerActionPreprocess?.Invoke(oldStackState, newStackState);
                 InvokeStateWillChange(stackSetOperationEvent);
                 RunStackAction(StackAction.Removed, oldStackState, () =>
                 {
@@ -106,7 +110,8 @@ namespace StansAssets.SceneManagement
                             ListPool<T>.Release(oldStackState);
                             ListPool<T>.Release(newStackState);
                             StackChangeEvent<T>.Release(addEvent);
-
+                            
+                            m_VisualizerActionPostprocess?.Invoke(m_StatesStack);
                             onComplete.Invoke();
                         });
                     };
@@ -124,6 +129,7 @@ namespace StansAssets.SceneManagement
             Assert.IsNotNull(onComplete);
             if (m_StatesStack.Count > 0 && m_StatesStack[0].Equals(applicationState))
             {
+                m_VisualizerActionPostprocess?.Invoke(m_StatesStack);
                 onComplete.Invoke();
                 return;
             }
@@ -142,6 +148,7 @@ namespace StansAssets.SceneManagement
 
             Preprocess(stateWillChangeEvent, () =>
             {
+                m_VisualizerActionPreprocess?.Invoke(oldStackState, newStackState);
                 InvokeStateWillChange(stateWillChangeEvent);
                 var pauseEvent = StackChangeEvent<T>.GetPooled(StackAction.Paused, pausedSate);
                 var addEvent = StackChangeEvent<T>.GetPooled(StackAction.Added, applicationState);
@@ -165,7 +172,8 @@ namespace StansAssets.SceneManagement
                             ListPool<T>.Release(newStackState);
                             StackChangeEvent<T>.Release(addEvent);
                             StackChangeEvent<T>.Release(pauseEvent);
-
+                            
+                            m_VisualizerActionPostprocess?.Invoke(m_StatesStack);
                             onComplete.Invoke();
                         });
                     };
@@ -201,6 +209,7 @@ namespace StansAssets.SceneManagement
             var stateWillChangeEvent = StackOperationEvent<T>.GetPooled(StackOperation.Pop, removedSate, oldStackState, newStackState);
             Preprocess(stateWillChangeEvent, () =>
             {
+                m_VisualizerActionPreprocess?.Invoke(oldStackState, newStackState);
                 InvokeStateWillChange(stateWillChangeEvent);
 
                 var removedEvent = StackChangeEvent<T>.GetPooled(StackAction.Removed, removedSate);
@@ -225,7 +234,8 @@ namespace StansAssets.SceneManagement
                             ListPool<T>.Release(newStackState);
                             StackChangeEvent<T>.Release(removedEvent);
                             StackChangeEvent<T>.Release(resumedEvent);
-
+                            
+                            m_VisualizerActionPostprocess?.Invoke(m_StatesStack);
                             onComplete.Invoke();
                         });
                     };

@@ -4,7 +4,8 @@
         "StansAssets.Foundation.Editor",
         "StansAssets.Foundation",
         "StansAssets.Plugins",
-        "StansAssets.Plugins.Editor"
+        "StansAssets.Plugins.Editor",
+        "StansAssets.SceneManagement"
     ],
     "optionalUnityReferences": [],
     "includePlatforms": [

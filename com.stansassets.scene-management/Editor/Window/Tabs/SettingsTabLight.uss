@@ -1,0 +1,12 @@
+.stack-item {
+    border-color: rgb(138, 138, 138);
+    background-color: rgb(190, 190, 190);
+}
+
+.stack-container {
+    background-color: rgb(165, 165, 165);
+}
+
+.stack-loading {
+    background-color: rgb(190, 190, 190);
+}

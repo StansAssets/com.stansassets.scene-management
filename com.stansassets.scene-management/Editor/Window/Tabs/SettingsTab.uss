@@ -1,3 +1,49 @@
 .tab-root {
     flex-grow: 1;
 }
+
+.stack-title {
+    padding: 3px 0 10px 0;
+    font-size: 15px;
+    -unity-font-style: bold;
+}
+
+.stack-title-small {
+    padding-bottom: 5px;
+    font-size: 12px;
+}
+
+.stack-content {
+    flex-direction: row;    
+}
+
+.stack-container {
+    margin: 5px 10px 0 0;
+    padding: 3px;
+    border-radius: 3px;
+}
+
+.stack-item {
+    padding: 5px;
+    border-radius: 3px;
+    border-width: 1px;
+    flex-grow: 0;
+}
+
+.stack-arrow {
+    padding: 10px 3px 10px 3px;
+    font-size: 25px;
+}
+
+.stack-loading {
+    flex-direction: row;
+    align-content: center;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(56, 56, 56);
+    margin: 5px 0 5px 0;
+}
+
+.stack-loading-text {
+    margin-right: 10px;
+}
