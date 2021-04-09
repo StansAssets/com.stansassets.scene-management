@@ -1,9 +1,7 @@
 ﻿#if UNITY_2019_4_OR_NEWER
-using System.Collections.Generic;
 using StansAssets.Plugins.Editor;
 using UnityEditor;
 using UnityEditor.UIElements;
-using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace StansAssets.SceneManagement
@@ -26,28 +24,19 @@ namespace StansAssets.SceneManagement
             });
             m_Enums = this.Q<VisualElement>("enums");
             StateStackVisualizer.StackRegistered += StackRegistered;
+            EditorApplication.playModeStateChanged += ModeChanged;
         }
 
-        void StackRegistered()
+        void StackRegistered(VisualElement stack)
         {
-            foreach (var stack in StateStackVisualizer.StackMap)
-            {
-                var stackUI = new VisualElement();
-                m_Enums.Add(stackUI);
-                stack.OnStackUpdatedPreprocess += (newStackUI) => { StackUpdated(stack, ref stackUI, newStackUI); };
-                stack.OnStackUpdatedPostprocess += (newStackUI) => { StackUpdated(stack, ref stackUI, newStackUI); };
-            }
+            m_Enums.Add(stack);
         }
-
-        void StackUpdated(StateStackVisualizerItem stack, ref VisualElement stackUI, VisualElement newStackUI)
+        
+        void ModeChanged (PlayModeStateChange state)
         {
-            if(m_Enums.Contains(stackUI))
-                m_Enums.Remove(stackUI);
-            
-            if (stack.IsActive())
+            if (state == PlayModeStateChange.ExitingPlayMode ) 
             {
-                stackUI =  newStackUI;
-                m_Enums.Add(stackUI);
+                m_Enums.Clear();
             }
         }
     }

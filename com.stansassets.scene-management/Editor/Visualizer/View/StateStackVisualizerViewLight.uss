@@ -1,0 +1,12 @@
+﻿.root {
+    background-color: rgb(165, 165, 165);
+}
+
+.stack-item {
+    border-color: rgb(138, 138, 138);
+    background-color: rgb(190, 190, 190);
+}
+
+.stack-item-active {
+    border-color: rgb(44, 191, 39);
+}
