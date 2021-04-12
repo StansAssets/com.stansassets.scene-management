@@ -51,7 +51,8 @@ namespace StansAssets.SceneManagement
             
             if(newStack.Any())
                 newStack.Last().Status = StackVisualItemStatus.Active;
-            
+
+            newStack.Reverse();
             return newStack; 
         }
     }
