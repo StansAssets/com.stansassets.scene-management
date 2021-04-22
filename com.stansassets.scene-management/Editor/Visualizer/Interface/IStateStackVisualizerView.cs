@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine.UIElements;
 
-namespace StansAssets.SceneManagement
+namespace StansAssets.SceneManagement.StackVisualizer
 {
     interface IStateStackVisualizerView
     {
@@ -10,8 +10,8 @@ namespace StansAssets.SceneManagement
 
         void ShowView(bool show);
         void SetStackName(string stackName);
-        void SetTwoStack(IEnumerable<StackVisualModel> oldStack, IEnumerable<StackVisualModel> newStack);
-        void SetStack(IEnumerable<StackVisualModel> stack);
+        void SetStackChange(IEnumerable<VisualStackTemplate> oldStack, IEnumerable<VisualStackTemplate> newStack);
+        void SetStack(IEnumerable<VisualStackTemplate> stack);
         void UpdateProgress(float progress, string title);
     }
 }

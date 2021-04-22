@@ -4,6 +4,6 @@
     </sa:SettingsBlock>
 
     <sa:SettingsBlock label="Registered Stacks View">
-        <ui:VisualElement name="enums"/>
+        <ui:VisualElement name="StackVisualizersRoot"/>
     </sa:SettingsBlock>
 </ui:UXML>

@@ -1,5 +1,6 @@
 ﻿#if UNITY_2019_4_OR_NEWER
 using StansAssets.Plugins.Editor;
+using StansAssets.SceneManagement.StackVisualizer;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
@@ -8,7 +9,7 @@ namespace StansAssets.SceneManagement
 {
     public class SettingsTab : BaseTab
     {
-        readonly VisualElement m_Enums;
+        readonly VisualElement m_StackVisualizersRoot;
 
         public SettingsTab()
             : base($"{SceneManagementPackage.WindowTabsPath}/SettingsTab")
@@ -22,21 +23,26 @@ namespace StansAssets.SceneManagement
                 SceneManagementSettings.Instance.LandingScene = (SceneAsset)e.newValue;
                 SceneManagementSettings.Save();
             });
-            m_Enums = this.Q<VisualElement>("enums");
-            StateStackVisualizer.StackRegistered += StackRegistered;
+            m_StackVisualizersRoot = this.Q<VisualElement>("StackVisualizersRoot");
+            StateStackVisualizer.VisualizersCollectionUpdated += SubscribeVisualizationStacks;
             EditorApplication.playModeStateChanged += ModeChanged;
+            SubscribeVisualizationStacks();
         }
 
-        void StackRegistered(VisualElement stack)
+        void SubscribeVisualizationStacks()
         {
-            m_Enums.Add(stack);
+            m_StackVisualizersRoot.Clear();
+            foreach (var stack in StateStackVisualizer.StackMapVisualElements)
+            {
+                m_StackVisualizersRoot.Add(stack);
+            }
         }
-        
+
         void ModeChanged (PlayModeStateChange state)
         {
             if (state == PlayModeStateChange.ExitingPlayMode ) 
             {
-                m_Enums.Clear();
+                m_StackVisualizersRoot.Clear();
             }
         }
     }

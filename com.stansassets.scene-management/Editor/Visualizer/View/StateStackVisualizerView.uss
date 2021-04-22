@@ -1,25 +1,25 @@
-﻿.root {
+﻿.sm-visualizer_view-root {
     margin: 5px 10px 0 0;
     padding: 3px;
     border-radius: 3px;
 }
 
-.stack-title {
+.sm-visualizer_view-stack-title {
     padding: 3px 0 10px 0;
     font-size: 15px;
     -unity-font-style: bold;
 }
 
-.stack-container {
+.sm-visualizer_view-stack-container {
     flex-direction: row;
 }
 
-.stack-content {
+.sm-visualizer_view-stack-content {
     flex-direction: column;
     flex-grow: 0;
 }
 
-.stack-item {
+.sm-visualizer_view-stack-item {
     padding: 5px;
     border-radius: 3px;
     border-width: 1px;
@@ -31,11 +31,11 @@
     -unity-text-align: middle-center;
 }
 
-.stack-arrow {
+.sm-visualizer_view-stack-arrow {
     margin: auto 3px auto 3px;
     font-size: 25px;
 }
 
-.stack-progress-bar {
+.sm-visualizer_view-stack-progress-bar {
     margin: 5px;
 }

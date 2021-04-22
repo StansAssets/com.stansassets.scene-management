@@ -4,15 +4,15 @@ using UnityEngine.UIElements;
 
 namespace StansAssets.SceneManagement
 {
-    public class StackVisualModel
+    public class VisualStackTemplate
     {
         public string Title;
-        public StackVisualItemStatus Status = StackVisualItemStatus.InActive;
+        public VisualStackItemStatus Status = VisualStackItemStatus.Disabled;
     }
 
-    public enum StackVisualItemStatus
+    public enum VisualStackItemStatus
     {
         Active,
-        InActive
+        Disabled
     }
 }

@@ -5,28 +5,28 @@ using StansAssets.Plugins.Editor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace StansAssets.SceneManagement
+namespace StansAssets.SceneManagement.StackVisualizer
 {
     public class StateStackVisualizerView : BaseTab, IStateStackVisualizerView
     {
-        Label m_header;
-        VisualElement m_container;
-        ProgressBar m_progressBar;
+        readonly Label m_Header;
+        readonly VisualElement m_Container;
+        readonly ProgressBar m_ProgressBar;
 
         public StateStackVisualizerView() : base($"{SceneManagementPackage.VisualizerViewPath}/StateStackVisualizerView")
         {
-            Root.AddToClassList("root");
-            m_header = new Label();
-            m_header.AddToClassList("stack-title");
-            m_container = new VisualElement();
-            m_container.AddToClassList("stack-container");
-            m_progressBar = new ProgressBar();
-            m_progressBar.AddToClassList("stack-progress-bar");
-            Root.Add(m_header);
-            Root.Add(m_container);
-            Root.Add(m_progressBar);
+            Root.AddToClassList(StateStackVisualizerViewUss.RootClass);
+            m_Header = new Label();
+            m_Header.AddToClassList(StateStackVisualizerViewUss.StackTitleClass);
+            m_Container = new VisualElement();
+            m_Container.AddToClassList(StateStackVisualizerViewUss.ContainerClass);
+            m_ProgressBar = new ProgressBar();
+            m_ProgressBar.AddToClassList(StateStackVisualizerViewUss.ProgressBarClass);
+            Root.Add(m_Header);
+            Root.Add(m_Container);
+            Root.Add(m_ProgressBar);
             
-            m_progressBar.style.display = DisplayStyle.None;
+            m_ProgressBar.style.display = DisplayStyle.None;
         }
 
         public void ShowView(bool show)
@@ -36,56 +36,56 @@ namespace StansAssets.SceneManagement
 
         public void SetStackName(string stackName)
         {
-            m_header.text = stackName;
+            m_Header.text = stackName;
         }
 
-        public void SetTwoStack(IEnumerable<StackVisualModel> oldStack, IEnumerable<StackVisualModel> newStack)
+        public void SetStackChange(IEnumerable<VisualStackTemplate> oldStackTemplates, IEnumerable<VisualStackTemplate> newStackTemplates)
         {
-            m_progressBar.style.display = DisplayStyle.Flex;
-            m_progressBar.value = 0;
-            m_container.Clear();
+            m_ProgressBar.style.display = DisplayStyle.Flex;
+            m_ProgressBar.value = 0;
+            m_Container.Clear();
 
-            m_container.Add(ElementStateStack(oldStack.ToList()));
+            m_Container.Add(CreateStackElements(oldStackTemplates));
             
             var labelArrow = new Label {text = "→"};
-            labelArrow.AddToClassList("stack-arrow");
-            m_container.Add(labelArrow);
+            labelArrow.AddToClassList(StateStackVisualizerViewUss.ArrowClass);
+            m_Container.Add(labelArrow);
 
-            m_container.Add(ElementStateStack(newStack.ToList()));
+            m_Container.Add(CreateStackElements(newStackTemplates));
         }
 
-        public void SetStack(IEnumerable<StackVisualModel> stack)
+        public void SetStack(IEnumerable<VisualStackTemplate> stackTemplates)
         {
-            m_progressBar.style.display = DisplayStyle.None;
-            m_progressBar.value = 0;
-            m_container.Clear();
+            m_ProgressBar.style.display = DisplayStyle.None;
+            m_ProgressBar.value = 0;
+            m_Container.Clear();
 
-            m_container.Add(ElementStateStack(stack.ToList()));
+            m_Container.Add(CreateStackElements(stackTemplates));
         }
 
         public void UpdateProgress(float progress, string title)
         {
-            m_progressBar.value = progress;
-            m_progressBar.title = title;
+            m_ProgressBar.value = progress;
+            m_ProgressBar.title = title;
         }
 
-        VisualElement ElementStateStack(List<StackVisualModel> stateStack)
+        VisualElement CreateStackElements(IEnumerable<VisualStackTemplate> stackTemplates)
         {
-            var containerStates = new VisualElement();
-            containerStates.AddToClassList("stack-content");
+            var stackRoot = new VisualElement();
+            stackRoot.AddToClassList(StateStackVisualizerViewUss.StackСontentClass);
             
-            foreach (var state in stateStack)
+            foreach (var state in stackTemplates)
             {
                 var label = new Label {text = state.Title};
-                label.AddToClassList("stack-item");
+                label.AddToClassList(StateStackVisualizerViewUss.StackItemClass);
                 
-                if(state.Status == StackVisualItemStatus.Active)
-                    label.AddToClassList("stack-item-active");
+                if(state.Status == VisualStackItemStatus.Active)
+                    label.AddToClassList(StateStackVisualizerViewUss.StackItemClass);
                 
-                containerStates.Add(label);
+                stackRoot.Add(label);
             }
 
-            return containerStates;
+            return stackRoot;
         }
     }
 }

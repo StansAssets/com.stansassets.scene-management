@@ -1,12 +1,12 @@
-﻿.root {
+﻿.sm-visualizer_view-root {
     background-color: rgb(165, 165, 165);
 }
 
-.stack-item {
+.sm-visualizer_view-stack-item {
     border-color: rgb(138, 138, 138);
     background-color: rgb(190, 190, 190);
 }
 
-.stack-item-active {
+.sm-visualizer_view-stack-item_active {
     border-color: rgb(44, 191, 39);
 }

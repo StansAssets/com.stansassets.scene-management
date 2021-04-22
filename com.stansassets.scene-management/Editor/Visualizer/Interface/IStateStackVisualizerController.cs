@@ -1,6 +1,7 @@
 ﻿using System;
+using UnityEngine.UIElements;
 
-namespace StansAssets.SceneManagement
+namespace StansAssets.SceneManagement.StackVisualizer
 {
     interface IStateStackVisualizerController<T> : IStateStackVisualizerController, IApplicationStateDelegate<T>
         where T : Enum
@@ -10,7 +11,6 @@ namespace StansAssets.SceneManagement
     interface IStateStackVisualizerController
     {
         string StackName { get; }
-        bool IsBusy { get; }
-        bool IsActive { get; }
+        VisualElement ViewRoot { get; }
     }
 }
