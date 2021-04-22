@@ -80,7 +80,7 @@ namespace StansAssets.SceneManagement.StackVisualizer
                 label.AddToClassList(StateStackVisualizerViewUss.StackItemClass);
                 
                 if(state.Status == VisualStackItemStatus.Active)
-                    label.AddToClassList(StateStackVisualizerViewUss.StackItemClass);
+                    label.AddToClassList(StateStackVisualizerViewUss.StackItemActiveClass);
                 
                 stackRoot.Add(label);
             }
