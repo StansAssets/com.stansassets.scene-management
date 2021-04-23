@@ -1,12 +1,6 @@
-﻿.sm-visualizer_view-root {
-    background-color: #4d4d4d;
-}
-
-.sm-visualizer_view-stack-item {
-    border-color: rgb(0, 0, 0);
-    background-color: rgb(56, 56, 56);
-}
-
-.sm-visualizer_view-stack-item_active {
-    border-color: rgb(44, 191, 39);
+﻿* {
+    --root-background-color: #4d4d4d;
+    --stack-item-border-color: rgb(0, 0, 0);
+    --stack-item-background-color: rgb(56, 56, 56);
+    --stack-item-active-border-color: rgb(44, 191, 39);
 }

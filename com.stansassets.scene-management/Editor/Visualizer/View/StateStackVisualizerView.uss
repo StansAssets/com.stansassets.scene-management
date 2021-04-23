@@ -2,6 +2,7 @@
     margin: 5px 10px 0 0;
     padding: 3px;
     border-radius: 3px;
+    background-color: var(--root-background-color);
 }
 
 .sm-visualizer_view-stack-title {
@@ -29,6 +30,12 @@
     width: 25px;
     height: 25px;
     -unity-text-align: middle-center;
+    border-color: var(--stack-item-border-color);
+    background-color: var(--stack-item-background-color);
+}
+
+.sm-visualizer_view-stack-item_active {
+    border-color: var(--stack-item-active-border-color);
 }
 
 .sm-visualizer_view-stack-arrow {
