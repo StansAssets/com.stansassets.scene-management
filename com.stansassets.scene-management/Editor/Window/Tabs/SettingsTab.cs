@@ -2,13 +2,14 @@
 using StansAssets.Plugins.Editor;
 using UnityEditor;
 using UnityEditor.UIElements;
-using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace StansAssets.SceneManagement
 {
     public class SettingsTab : BaseTab
     {
+        readonly VisualElement m_StackVisualizersRoot;
+
         public SettingsTab()
             : base($"{SceneManagementPackage.WindowTabsPath}/SettingsTab")
         {
@@ -21,6 +22,27 @@ namespace StansAssets.SceneManagement
                 SceneManagementSettings.Instance.LandingScene = (SceneAsset)e.newValue;
                 SceneManagementSettings.Save();
             });
+            m_StackVisualizersRoot = this.Q<VisualElement>("StackVisualizersRoot");
+            StackVisualizer.StackVisualizer.OnVisualizersCollectionUpdated += SubscribeVisualizationStacks;
+            EditorApplication.playModeStateChanged += ModeChanged;
+            SubscribeVisualizationStacks();
+        }
+
+        void SubscribeVisualizationStacks()
+        {
+            m_StackVisualizersRoot.Clear();
+            foreach (var stack in StackVisualizer.StackVisualizer.VisualizersRoots)
+            {
+                m_StackVisualizersRoot.Add(stack);
+            }
+        }
+
+        void ModeChanged (PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingPlayMode )
+            {
+                m_StackVisualizersRoot.Clear();
+            }
         }
     }
 }

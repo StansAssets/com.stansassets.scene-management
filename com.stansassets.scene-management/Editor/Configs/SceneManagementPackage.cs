@@ -16,5 +16,6 @@ namespace StansAssets.SceneManagement
 #endif
 
         internal static readonly string WindowTabsPath = $"{RootPath}/Editor/Window/Tabs";
+        internal static readonly string StackVisualizerPath = $"{RootPath}/Editor/Visualizer/View";
     }
 }

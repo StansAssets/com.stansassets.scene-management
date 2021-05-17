@@ -4,8 +4,8 @@ namespace StansAssets.SceneManagement
 {
     public interface IApplicationStateDelegate<T> where T : Enum
     {
-        void OnApplicationStateWillChanged(StackOperationEvent<T> e);
-        void ApplicationStateChangeProgressChanged(float progress, StackChangeEvent<T> e);
+        void ApplicationStateWillChange(StackOperationEvent<T> e);
+        void ApplicationStateChangeProgressUpdated(float progress, StackChangeEvent<T> e);
         void ApplicationStateChanged(StackOperationEvent<T> e);
     }
 }

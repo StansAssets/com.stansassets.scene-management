@@ -4,6 +4,6 @@
     </sa:SettingsBlock>
 
     <sa:SettingsBlock label="Registered Stacks View">
-        <ui:Label label="Coming soon.." name="stack-view" />
+        <ui:VisualElement name="StackVisualizersRoot"/>
     </sa:SettingsBlock>
 </ui:UXML>

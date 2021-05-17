@@ -296,7 +296,7 @@ namespace StansAssets.SceneManagement
         void InvokeStateWillChange(StackOperationEvent<T> eventArg)
         {
             foreach (var subscription in m_Subscriptions)
-                subscription.OnApplicationStateWillChanged(eventArg);
+                subscription.ApplicationStateWillChange(eventArg);
 
             StackOperationEvent<T>.Release(eventArg);
         }
@@ -304,7 +304,7 @@ namespace StansAssets.SceneManagement
         void InvokeProgressChange(float p, StackChangeEvent<T> eventArg)
         {
             foreach (var subscription in m_Subscriptions)
-                subscription.ApplicationStateChangeProgressChanged(p, eventArg);
+                subscription.ApplicationStateChangeProgressUpdated(p, eventArg);
         }
 
         void InvokeStateChanged(StackOperationEvent<T> eventArg)
