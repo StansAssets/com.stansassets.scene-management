@@ -2,8 +2,9 @@
 {
     public class VisualStackTemplate
     {
-        public string Title;
-        public VisualStackItemStatus Status;
+        public string Title { get; set; }
+        public string FullTitle { get; set; }
+        public VisualStackItemStatus Status { get; set; }
     }
 
     public enum VisualStackItemStatus

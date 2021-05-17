@@ -23,7 +23,7 @@ namespace StansAssets.SceneManagement
                 SceneManagementSettings.Save();
             });
             m_StackVisualizersRoot = this.Q<VisualElement>("StackVisualizersRoot");
-            StackVisualizer.StackVisualizer.VisualizersCollectionUpdated += SubscribeVisualizationStacks;
+            StackVisualizer.StackVisualizer.OnVisualizersCollectionUpdated += SubscribeVisualizationStacks;
             EditorApplication.playModeStateChanged += ModeChanged;
             SubscribeVisualizationStacks();
         }

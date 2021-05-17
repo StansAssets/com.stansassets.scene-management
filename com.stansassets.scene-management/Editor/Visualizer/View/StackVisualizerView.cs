@@ -73,18 +73,25 @@ namespace StansAssets.SceneManagement.StackVisualizer
             var stackRoot = new VisualElement();
             stackRoot.AddToClassList(StackVisualizerViewUss.StackСontentClass);
 
-            foreach (var state in stackTemplates)
+            foreach (var template in stackTemplates)
             {
-                var label = new Label {text = state.Title};
-                label.AddToClassList(StackVisualizerViewUss.StackItemClass);
-
-                if(state.Status == VisualStackItemStatus.Active)
-                    label.AddToClassList(StackVisualizerViewUss.StackItemActiveClass);
-
-                stackRoot.Add(label);
+                stackRoot.Add(CreateElement(template));
             }
 
             return stackRoot;
+        }
+
+        VisualElement CreateElement(VisualStackTemplate template)
+        {
+            var label = new Label {text = template.Title, tooltip = template.FullTitle };
+            label.AddToClassList(StackVisualizerViewUss.StackItemClass);
+
+            if (template.Status == VisualStackItemStatus.Active)
+            {
+                label.AddToClassList(StackVisualizerViewUss.StackItemActiveClass);
+            }
+
+            return label;
         }
     }
 }
