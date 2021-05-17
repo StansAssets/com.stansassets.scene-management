@@ -3,14 +3,13 @@ using UnityEngine.UIElements;
 
 namespace StansAssets.SceneManagement.StackVisualizer
 {
-    interface IStateStackVisualizerController<T> : IStateStackVisualizerController, IApplicationStateDelegate<T>
+    interface IStackVisualizerController<T> : IStackVisualizerController, IApplicationStateDelegate<T>
         where T : Enum
     {
     }
 
-    interface IStateStackVisualizerController
+    interface IStackVisualizerController
     {
-        string StackName { get; }
         VisualElement ViewRoot { get; }
     }
 }

@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine.UIElements;
 
 namespace StansAssets.SceneManagement.StackVisualizer
 {
-    interface IStateStackVisualizerView
+    interface IStackVisualizerView
     {
         VisualElement Root { get; }
 

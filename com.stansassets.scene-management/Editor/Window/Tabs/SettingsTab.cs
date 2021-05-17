@@ -1,6 +1,5 @@
 ﻿#if UNITY_2019_4_OR_NEWER
 using StansAssets.Plugins.Editor;
-using StansAssets.SceneManagement.StackVisualizer;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
@@ -24,7 +23,7 @@ namespace StansAssets.SceneManagement
                 SceneManagementSettings.Save();
             });
             m_StackVisualizersRoot = this.Q<VisualElement>("StackVisualizersRoot");
-            StateStackVisualizer.VisualizersCollectionUpdated += SubscribeVisualizationStacks;
+            StackVisualizer.StackVisualizer.VisualizersCollectionUpdated += SubscribeVisualizationStacks;
             EditorApplication.playModeStateChanged += ModeChanged;
             SubscribeVisualizationStacks();
         }
@@ -32,7 +31,7 @@ namespace StansAssets.SceneManagement
         void SubscribeVisualizationStacks()
         {
             m_StackVisualizersRoot.Clear();
-            foreach (var stack in StateStackVisualizer.StackMapVisualElements)
+            foreach (var stack in StackVisualizer.StackVisualizer.VisualizersRoots)
             {
                 m_StackVisualizersRoot.Add(stack);
             }
@@ -40,7 +39,7 @@ namespace StansAssets.SceneManagement
 
         void ModeChanged (PlayModeStateChange state)
         {
-            if (state == PlayModeStateChange.ExitingPlayMode ) 
+            if (state == PlayModeStateChange.ExitingPlayMode )
             {
                 m_StackVisualizersRoot.Clear();
             }

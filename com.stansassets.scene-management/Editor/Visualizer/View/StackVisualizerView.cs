@@ -1,31 +1,30 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using StansAssets.Foundation.UIElements;
 using StansAssets.Plugins.Editor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
 namespace StansAssets.SceneManagement.StackVisualizer
 {
-    public class StateStackVisualizerView : BaseTab, IStateStackVisualizerView
+    public class StackVisualizerView : BaseTab, IStackVisualizerView
     {
         readonly Label m_Header;
         readonly VisualElement m_Container;
         readonly ProgressBar m_ProgressBar;
 
-        public StateStackVisualizerView() : base($"{SceneManagementPackage.VisualizerViewPath}/StateStackVisualizerView")
+        public StackVisualizerView() : base($"{SceneManagementPackage.StackVisualizerPath}/StackVisualizerView")
         {
-            Root.AddToClassList(StateStackVisualizerViewUss.RootClass);
+            Root.AddToClassList(StackVisualizerViewUss.RootClass);
+
             m_Header = new Label();
-            m_Header.AddToClassList(StateStackVisualizerViewUss.StackTitleClass);
+            m_Header.AddToClassList(StackVisualizerViewUss.StackTitleClass);
             m_Container = new VisualElement();
-            m_Container.AddToClassList(StateStackVisualizerViewUss.ContainerClass);
+            m_Container.AddToClassList(StackVisualizerViewUss.ContainerClass);
             m_ProgressBar = new ProgressBar();
-            m_ProgressBar.AddToClassList(StateStackVisualizerViewUss.ProgressBarClass);
+            m_ProgressBar.AddToClassList(StackVisualizerViewUss.ProgressBarClass);
             Root.Add(m_Header);
             Root.Add(m_Container);
             Root.Add(m_ProgressBar);
-            
+
             m_ProgressBar.style.display = DisplayStyle.None;
         }
 
@@ -46,9 +45,9 @@ namespace StansAssets.SceneManagement.StackVisualizer
             m_Container.Clear();
 
             m_Container.Add(CreateStackElements(oldStackTemplates));
-            
+
             var labelArrow = new Label {text = "→"};
-            labelArrow.AddToClassList(StateStackVisualizerViewUss.ArrowClass);
+            labelArrow.AddToClassList(StackVisualizerViewUss.ArrowClass);
             m_Container.Add(labelArrow);
 
             m_Container.Add(CreateStackElements(newStackTemplates));
@@ -72,16 +71,16 @@ namespace StansAssets.SceneManagement.StackVisualizer
         VisualElement CreateStackElements(IEnumerable<VisualStackTemplate> stackTemplates)
         {
             var stackRoot = new VisualElement();
-            stackRoot.AddToClassList(StateStackVisualizerViewUss.StackСontentClass);
-            
+            stackRoot.AddToClassList(StackVisualizerViewUss.StackСontentClass);
+
             foreach (var state in stackTemplates)
             {
                 var label = new Label {text = state.Title};
-                label.AddToClassList(StateStackVisualizerViewUss.StackItemClass);
-                
+                label.AddToClassList(StackVisualizerViewUss.StackItemClass);
+
                 if(state.Status == VisualStackItemStatus.Active)
-                    label.AddToClassList(StateStackVisualizerViewUss.StackItemActiveClass);
-                
+                    label.AddToClassList(StackVisualizerViewUss.StackItemActiveClass);
+
                 stackRoot.Add(label);
             }
 
