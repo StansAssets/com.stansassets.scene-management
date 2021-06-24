@@ -15,7 +15,7 @@ namespace StansAssets.SceneManagement
 
         readonly AsyncOperation m_AsyncOperation;
 
-        private OperationStatus m_OperationStatus = OperationStatus.Unknown;
+        OperationStatus m_OperationStatus = OperationStatus.Unknown;
 
         public AsyncOperationWrapper(string sceneName, AsyncOperation asyncOperation) {
             SceneName = sceneName;

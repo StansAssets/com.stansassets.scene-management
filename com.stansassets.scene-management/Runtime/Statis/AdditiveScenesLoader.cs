@@ -8,6 +8,9 @@ using UnityEngine.SceneManagement;
 
 namespace StansAssets.SceneManagement
 {
+    /// <summary>
+    /// Scene loading operation status.
+    /// </summary>
     public enum OperationStatus
     {
         Unknown,
@@ -15,9 +18,19 @@ namespace StansAssets.SceneManagement
         Success
     }
 
+    /// <summary>
+    /// Scene load operation arguments.
+    /// </summary>
     public struct SceneLoadOperationArgs
     {
+        /// <summary>
+        /// Loaded scene instance.
+        /// </summary>
         public Scene Scene;
+
+        /// <summary>
+        /// Scene loading operation status.
+        /// </summary>
         public OperationStatus Status;
     }
 
@@ -366,7 +379,7 @@ namespace StansAssets.SceneManagement
         static void AdditiveAddressableSceneLoaded(IAsyncOperation asyncOperation)
         {
             AddressablesLogger.Log($"[ADDRESSABLES] AdditiveAddressableSceneLoaded Status: {asyncOperation.Status}," +
-                                   $"Scene: " + (asyncOperation.Status == OperationStatus.Unknown ? asyncOperation.SceneName : "NULL"));
+                                   "Scene: " + (asyncOperation.Status == OperationStatus.Unknown ? asyncOperation.SceneName : "NULL"));
 
             if (asyncOperation.Status == OperationStatus.Success) {
                 s_AdditiveScenesInstances.Add(asyncOperation.SceneInstance);
