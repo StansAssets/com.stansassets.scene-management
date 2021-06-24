@@ -22,20 +22,27 @@ namespace StansAssets.SceneManagement
 
         public void Load<T>(string sceneName, Action<Scene, T> onComplete) where T : ISceneManager
         {
-            AdditiveScenesLoader.LoadAdditively(sceneName, scene =>
+            AdditiveScenesLoader.LoadAdditively(sceneName, loadOperationArgs =>
             {
-                var sceneManager = FindMonoTypeOnSceneRoot<T>(scene);
-                var sceneDelegate = FindMonoTypeOnSceneRoot<ISceneDelegate>(scene);
-                if (sceneDelegate != null)
+                if (loadOperationArgs.Status == OperationStatus.Success)
                 {
-                    sceneDelegate.ActivateScene(() =>
+                    var sceneManager = FindMonoTypeOnSceneRoot<T>(loadOperationArgs.Scene);
+                    var sceneDelegate = FindMonoTypeOnSceneRoot<ISceneDelegate>(loadOperationArgs.Scene);
+                    if (sceneDelegate != null)
                     {
-                        onComplete?.Invoke(scene, sceneManager);
-                    });
+                        sceneDelegate.ActivateScene(() =>
+                        {
+                            onComplete?.Invoke(loadOperationArgs.Scene, sceneManager);
+                        });
+                    }
+                    else
+                    {
+                        onComplete?.Invoke(loadOperationArgs.Scene, sceneManager);
+                    }
                 }
                 else
                 {
-                    onComplete?.Invoke(scene, sceneManager);
+                    onComplete?.Invoke(default, default);
                 }
             });
         }
