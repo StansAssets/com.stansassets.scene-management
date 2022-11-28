@@ -11,6 +11,8 @@ namespace StansAssets.SceneManagement.StackVisualizer
         readonly VisualElement m_Container;
         readonly ProgressBar m_ProgressBar;
 
+        public new VisualElement Root => base.Root;
+
         public StackVisualizerView() : base($"{SceneManagementPackage.StackVisualizerPath}/StackVisualizerView")
         {
             Root.AddToClassList(StackVisualizerViewUss.RootClass);
