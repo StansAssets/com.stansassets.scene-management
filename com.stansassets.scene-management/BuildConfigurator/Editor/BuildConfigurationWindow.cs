@@ -144,6 +144,8 @@ namespace StansAssets.SceneManagement.Build
             using (new IMGUIBlockWithIndent(new GUIContent("Addressables"))) {
                 conf.UseAddressablesInEditor = IMGUILayout.ToggleFiled("Use Addressables InEditor", conf.UseAddressablesInEditor, IMGUIToggleStyle.ToggleType.YesNo);
 
+                conf.ClearAllAddressablesCache = IMGUILayout.ToggleFiled("Clear All Addressables Cache", conf.ClearAllAddressablesCache, IMGUIToggleStyle.ToggleType.YesNo);
+                
                 using (new IMGUIBeginHorizontal())
                 {
                     GUILayout.FlexibleSpace();
