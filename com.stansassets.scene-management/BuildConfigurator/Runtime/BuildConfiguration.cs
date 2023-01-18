@@ -49,6 +49,25 @@ namespace StansAssets.SceneManagement.Build
 #endif
             }
         }
+        
+        internal bool ClearAllAddressablesCache
+        {
+            get
+            {
+#if UNITY_EDITOR
+                return UnityEditor.EditorPrefs.GetBool($"{Name}_user-clear-all-addressable-cache", true);
+#else
+                return true;
+#endif
+            }
+
+            set
+            {
+#if UNITY_EDITOR
+                UnityEditor.EditorPrefs.SetBool($"{Name}_user-clear-all-addressable-cache", value);
+#endif
+            }
+        }
 
         internal BuildConfiguration Copy()
         {

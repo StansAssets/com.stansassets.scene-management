@@ -7,6 +7,7 @@ using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.Build.Pipeline.Utilities;
 
 namespace StansAssets.SceneManagement.Build
 {
@@ -50,6 +51,7 @@ namespace StansAssets.SceneManagement.Build
                 handler.Invoke(options);
             }
 
+            PrebuildCleanup();
             SetupAddressableScenes(options.target);
             options.scenes = FilterScenesByPath(options.target, options.scenes);
 
@@ -149,6 +151,32 @@ namespace StansAssets.SceneManagement.Build
                 var entry = AddressableAssetSettingsDefaultObject.Settings.CreateOrMoveEntry(guid, group, false, true);
                 entry.address = scene.name;
             }
+        }
+
+        static void PrebuildCleanup()
+        {
+            RemoveMissingGroupReferences();
+            if (BuildConfigurationSettings.Instance.Configuration.ClearAllAddressablesCache)
+            {
+                ClearAllAddressablesCache();
+            }
+        }
+
+        static void RemoveMissingGroupReferences()
+        {
+            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            var groups = settings.groups;
+            var missingAddressableAssetGroups = groups.Where(g => g == null).ToList();
+            for (var i = 0; i < missingAddressableAssetGroups.Count; i++)
+            {
+                settings.RemoveGroup(missingAddressableAssetGroups[i]);
+            }
+        }
+
+        static void ClearAllAddressablesCache()
+        {
+            AddressableAssetSettings.CleanPlayerContent();
+            BuildCache.PurgeCache(true);
         }
     }
 
