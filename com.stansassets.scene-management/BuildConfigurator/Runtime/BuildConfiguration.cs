@@ -55,9 +55,9 @@ namespace StansAssets.SceneManagement.Build
             get
             {
 #if UNITY_EDITOR
-                return UnityEditor.EditorPrefs.GetBool($"{Name}_user-clear-all-addressable-cache", true);
+                return UnityEditor.EditorPrefs.GetBool($"{Name}_user-clear-all-addressable-cache", false);
 #else
-                return true;
+                return false;
 #endif
             }
 
