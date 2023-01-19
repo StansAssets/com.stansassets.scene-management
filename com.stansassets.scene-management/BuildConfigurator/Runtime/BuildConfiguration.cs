@@ -10,10 +10,19 @@ namespace StansAssets.SceneManagement.Build
     [Serializable]
     public class BuildConfiguration
     {
+        public string Guid;
         public string Name = string.Empty;
         public bool DefaultScenesFirst = false;
         public List<SceneAssetInfo> DefaultScenes = new List<SceneAssetInfo>();
         public List<PlatformsConfiguration> Platforms = new List<PlatformsConfiguration>();
+
+        const string k_UseAddressablesInEditorKey = "_user-addressables-in-editor";
+        const string k_ClearAllAddressableCacheKey = "_user-clear-all-addressable-cache";
+
+        public BuildConfiguration()
+        {
+            Guid = System.Guid.NewGuid().ToString();
+        }
 
         public bool IsEmpty
         {
@@ -36,7 +45,7 @@ namespace StansAssets.SceneManagement.Build
             get
             {
 #if UNITY_EDITOR
-                return UnityEditor.EditorPrefs.GetBool($"{Name}_user-addressables-in-editor", false);
+                return UnityEditor.EditorPrefs.GetBool($"{Guid}{k_UseAddressablesInEditorKey}", false);
 #else
                 return false;
 #endif
@@ -45,17 +54,17 @@ namespace StansAssets.SceneManagement.Build
             set
             {
 #if UNITY_EDITOR
-                UnityEditor.EditorPrefs.SetBool($"{Name}_user-addressables-in-editor", value);
+                UnityEditor.EditorPrefs.SetBool($"{Guid}{k_UseAddressablesInEditorKey}", value);
 #endif
             }
         }
-        
+
         internal bool ClearAllAddressablesCache
         {
             get
             {
 #if UNITY_EDITOR
-                return UnityEditor.EditorPrefs.GetBool($"{Name}_user-clear-all-addressable-cache", false);
+                return UnityEditor.EditorPrefs.GetBool($"{Guid}{k_ClearAllAddressableCacheKey}", false);
 #else
                 return false;
 #endif
@@ -64,7 +73,7 @@ namespace StansAssets.SceneManagement.Build
             set
             {
 #if UNITY_EDITOR
-                UnityEditor.EditorPrefs.SetBool($"{Name}_user-clear-all-addressable-cache", value);
+                UnityEditor.EditorPrefs.SetBool($"{Guid}{k_ClearAllAddressableCacheKey}", value);
 #endif
             }
         }
@@ -73,6 +82,7 @@ namespace StansAssets.SceneManagement.Build
         {
             var copy = new BuildConfiguration();
             copy.Name = Name + " Copy";
+
             foreach (var scene in DefaultScenes)
             {
                 copy.DefaultScenes.Add(scene);
@@ -123,6 +133,15 @@ namespace StansAssets.SceneManagement.Build
             }
 
             return false;
+        }
+
+        internal void CleanEditorPrefsData()
+        {
+            //This is Editor-only code. Runtime part of this method should be empty.
+#if UNITY_EDITOR
+            UnityEditor.EditorPrefs.DeleteKey($"{Guid}{k_UseAddressablesInEditorKey}");
+            UnityEditor.EditorPrefs.DeleteKey($"{Guid}{k_ClearAllAddressableCacheKey}");
+#endif
         }
 
         PlatformsConfiguration GetConfigurationFroBuildTarget(BuildTargetRuntime buildTarget)

@@ -133,6 +133,7 @@ namespace StansAssets.SceneManagement.Build
                     bool remove = GUILayout.Button("Remove", GUILayout.Width(100));
                     if (remove)
                     {
+                        conf.CleanEditorPrefsData();
                         BuildConfigurationSettings.Instance.BuildConfigurations.Remove(conf);
                         OnAwake();
                         GUIUtility.ExitGUI();
