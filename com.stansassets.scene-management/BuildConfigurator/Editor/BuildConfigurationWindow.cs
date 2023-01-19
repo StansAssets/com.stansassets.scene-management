@@ -218,7 +218,7 @@ namespace StansAssets.SceneManagement.Build
                                 }
                                 EditorGUILayout.EndVertical();
 
-                                EditorGUILayout.BeginVertical(GUILayout.Width(150));
+                                EditorGUILayout.BeginVertical(GUILayout.Width(220f));
                                 {
                                     ReorderableListGUI.Title("Build Targets");
 
@@ -274,8 +274,12 @@ namespace StansAssets.SceneManagement.Build
 
             Rect sceneIndexRect = m_ShowBuildIndex ? new Rect(pos.x, pos.y, 20f, pos.height) : new Rect(pos.x, pos.y, 0f, 0f);
             Rect objectFieldRect = new Rect(pos.x + sceneIndexRect.width, pos.y + 2, pos.width - 20f - sceneIndexRect.width, 16);
+            float addressableToggleStartX = objectFieldRect.x + objectFieldRect.width + 2;
+            objectFieldRect.width = Mathf.Clamp(objectFieldRect.width, 40, addressableToggleStartX - objectFieldRect.x);
             Rect addressableToggleRect = new Rect(objectFieldRect.x + objectFieldRect.width + 2, pos.y, 20f, pos.height);
 
+            if (pos.width <= 65f) return itemValue;
+            
             if (m_ShowBuildIndex) {
                 int sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue);
                 GUI.Label(sceneIndexRect, sceneIndex.ToString());
@@ -291,6 +295,7 @@ namespace StansAssets.SceneManagement.Build
             {
                 itemValue.SetSceneAsset(newSceneAsset);
             }
+
             GUI.color = Color.white;
 
             itemValue.Addressable = GUI.Toggle(addressableToggleRect, itemValue.Addressable, AddressableGuiContent);
