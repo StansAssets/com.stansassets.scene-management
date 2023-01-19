@@ -16,11 +16,14 @@ namespace StansAssets.SceneManagement.Build
         public List<SceneAssetInfo> DefaultScenes = new List<SceneAssetInfo>();
         public List<PlatformsConfiguration> Platforms = new List<PlatformsConfiguration>();
 
+        const string k_UseAddressablesInEditorKey = "_user-addressables-in-editor";
+        const string k_ClearAllAddressableCacheKey = "_user-clear-all-addressable-cache";
+
         public BuildConfiguration()
         {
             Guid = System.Guid.NewGuid().ToString();
         }
-        
+
         public bool IsEmpty
         {
             get
@@ -42,7 +45,7 @@ namespace StansAssets.SceneManagement.Build
             get
             {
 #if UNITY_EDITOR
-                return UnityEditor.EditorPrefs.GetBool($"{Guid}_user-addressables-in-editor", false);
+                return UnityEditor.EditorPrefs.GetBool($"{Guid}{k_UseAddressablesInEditorKey}", false);
 #else
                 return false;
 #endif
@@ -51,17 +54,17 @@ namespace StansAssets.SceneManagement.Build
             set
             {
 #if UNITY_EDITOR
-                UnityEditor.EditorPrefs.SetBool($"{Guid}_user-addressables-in-editor", value);
+                UnityEditor.EditorPrefs.SetBool($"{Guid}{k_UseAddressablesInEditorKey}", value);
 #endif
             }
         }
-        
+
         internal bool ClearAllAddressablesCache
         {
             get
             {
 #if UNITY_EDITOR
-                return UnityEditor.EditorPrefs.GetBool($"{Guid}_user-clear-all-addressable-cache", false);
+                return UnityEditor.EditorPrefs.GetBool($"{Guid}{k_ClearAllAddressableCacheKey}", false);
 #else
                 return false;
 #endif
@@ -70,16 +73,16 @@ namespace StansAssets.SceneManagement.Build
             set
             {
 #if UNITY_EDITOR
-                UnityEditor.EditorPrefs.SetBool($"{Guid}_user-clear-all-addressable-cache", value);
+                UnityEditor.EditorPrefs.SetBool($"{Guid}{k_ClearAllAddressableCacheKey}", value);
 #endif
             }
         }
-        
+
         internal BuildConfiguration Copy()
         {
             var copy = new BuildConfiguration();
             copy.Name = Name + " Copy";
-            
+
             foreach (var scene in DefaultScenes)
             {
                 copy.DefaultScenes.Add(scene);
@@ -132,14 +135,15 @@ namespace StansAssets.SceneManagement.Build
             return false;
         }
 
-        internal void RemoveAddressablesPreferences()
+        internal void CleanEditorPrefsData()
         {
+            //This is Editor-only code. Runtime part of this method should be empty.
 #if UNITY_EDITOR
-            UnityEditor.EditorPrefs.DeleteKey($"{Guid}_user-addressables-in-editor");
-            UnityEditor.EditorPrefs.DeleteKey($"{Guid}_user-clear-all-addressable-cache"); 
+            UnityEditor.EditorPrefs.DeleteKey($"{Guid}{k_UseAddressablesInEditorKey}");
+            UnityEditor.EditorPrefs.DeleteKey($"{Guid}{k_ClearAllAddressableCacheKey}");
 #endif
         }
-        
+
         PlatformsConfiguration GetConfigurationFroBuildTarget(BuildTargetRuntime buildTarget)
         {
             foreach (var platform in Platforms)

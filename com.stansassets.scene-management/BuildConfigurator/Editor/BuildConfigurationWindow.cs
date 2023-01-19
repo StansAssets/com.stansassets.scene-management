@@ -107,7 +107,7 @@ namespace StansAssets.SceneManagement.Build
         {
             var conf = BuildConfigurationSettings.Instance.BuildConfigurations[index];
             using (new IMGUIBlockWithIndent(new GUIContent("Settings")))
-            { 
+            {
                 conf.Name = IMGUILayout.TextField("Configuration Name:", conf.Name);
                 conf.DefaultScenesFirst = IMGUILayout.ToggleFiled("Default Scenes First", conf.DefaultScenesFirst, IMGUIToggleStyle.ToggleType.YesNo);
 
@@ -133,7 +133,7 @@ namespace StansAssets.SceneManagement.Build
                     bool remove = GUILayout.Button("Remove", GUILayout.Width(100));
                     if (remove)
                     {
-                        conf.RemoveAddressablesPreferences();
+                        conf.CleanEditorPrefsData();
                         BuildConfigurationSettings.Instance.BuildConfigurations.Remove(conf);
                         OnAwake();
                         GUIUtility.ExitGUI();
