@@ -9,19 +9,26 @@ namespace StansAssets.SceneManagement
     public class SettingsTab : BaseTab
     {
         readonly VisualElement m_StackVisualizersRoot;
+        readonly EnumField m_PersistenceEnumField;
 
         public SettingsTab()
             : base($"{SceneManagementPackage.WindowTabsPath}/SettingsTab")
         {
             var landingSceneField = Root.Q<ObjectField>("landing-scene");
+            m_PersistenceEnumField = Root.Q<EnumField>("persistence-enum-field");
             landingSceneField.objectType = typeof(SceneAsset);
             landingSceneField.SetValueWithoutNotify(SceneManagementSettings.Instance.LandingScene);
 
             landingSceneField.RegisterValueChangedCallback((e) =>
             {
-                SceneManagementSettings.Instance.LandingScene = (SceneAsset)e.newValue;
+                SceneAsset newSceneAsset = (SceneAsset)e.newValue;
+                SceneManagementSettings.Instance.LandingScene = newSceneAsset;
                 SceneManagementSettings.Save();
+                DisplayPersistenceEnumField(newSceneAsset != null);
             });
+
+            CreatePersistenceEnumField();
+
             m_StackVisualizersRoot = this.Q<VisualElement>("StackVisualizersRoot");
             StackVisualizer.StackVisualizer.OnVisualizersCollectionUpdated += SubscribeVisualizationStacks;
             EditorApplication.playModeStateChanged += ModeChanged;
@@ -37,12 +44,32 @@ namespace StansAssets.SceneManagement
             }
         }
 
-        void ModeChanged (PlayModeStateChange state)
+        void ModeChanged(PlayModeStateChange state)
         {
-            if (state == PlayModeStateChange.ExitingPlayMode )
+            if (state == PlayModeStateChange.ExitingPlayMode)
             {
                 m_StackVisualizersRoot.Clear();
             }
+        }
+
+        void CreatePersistenceEnumField()
+        {
+            m_PersistenceEnumField.Init(IMGUIToggleStyle.YesNoBool.No);
+            m_PersistenceEnumField.tooltip = "tooltip";
+            bool useCameraAndScenePersistence = SceneManagementSettings.Instance.UseCameraAndScenePersistence;
+            IMGUIToggleStyle.YesNoBool cachedValue = useCameraAndScenePersistence ? IMGUIToggleStyle.YesNoBool.Yes : IMGUIToggleStyle.YesNoBool.No;
+            m_PersistenceEnumField.SetValueWithoutNotify(cachedValue);
+            m_PersistenceEnumField.RegisterValueChangedCallback(eventValue =>
+            {
+                var selectedOption = (IMGUIToggleStyle.YesNoBool)eventValue.newValue;
+                SceneManagementSettings.Instance.UseCameraAndScenePersistence = selectedOption == IMGUIToggleStyle.YesNoBool.Yes;
+            });
+        }
+
+        void DisplayPersistenceEnumField(bool state)
+        {
+            DisplayStyle displayStyle = state ? DisplayStyle.Flex : DisplayStyle.None;
+            m_PersistenceEnumField.style.display = displayStyle;
         }
     }
 }
