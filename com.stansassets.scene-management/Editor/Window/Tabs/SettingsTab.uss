@@ -3,32 +3,22 @@
 }
 
 .scene-persistence-visual-element {
-    height: 40px;
     flex-direction: row;
     margin: 1px 3px;
 }
 
 .scene-persistence-label {
-    flex-wrap: wrap;
-    flex-grow: 0;
-    flex-shrink: 1;
-    flex-direction: row;
     -unity-text-align: middle-left;
-    white-space: normal;
 }
 
 .scene-persistence-enum-field {
     flex-shrink: 1;
     align-items: center;
-    justify-content: space-around;
     margin: 0;
 }
 
-.half-width,
-.unity-label,
-.unity-base-field__input,
-.unity-object-field-display,
-.unity-object-field__object,
-.unity-enum-field{
+.uniform-object-field .unity-base-field__label,
+.uniform-object-field .unity-base-field__input {
+    flex-shrink: 1;
     min-width: 50%;
 }
