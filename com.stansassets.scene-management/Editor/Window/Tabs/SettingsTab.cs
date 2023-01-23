@@ -10,12 +10,17 @@ namespace StansAssets.SceneManagement
     {
         readonly VisualElement m_StackVisualizersRoot;
         readonly EnumField m_PersistenceEnumField;
+        readonly Label m_PersistenceLabel;
+
+        const string k_PersistenceEnumTooltip =
+            "If this option is switched on, you will return to your initial editing scene with the initial Scene View camera position after Playmode exit.";
 
         public SettingsTab()
             : base($"{SceneManagementPackage.WindowTabsPath}/SettingsTab")
         {
             var landingSceneField = Root.Q<ObjectField>("landing-scene");
             m_PersistenceEnumField = Root.Q<EnumField>("persistence-enum-field");
+            m_PersistenceLabel = Root.Q<Label>("scene-persistence-label");
             landingSceneField.objectType = typeof(SceneAsset);
             landingSceneField.SetValueWithoutNotify(SceneManagementSettings.Instance.LandingScene);
 
@@ -28,6 +33,7 @@ namespace StansAssets.SceneManagement
             });
 
             CreatePersistenceEnumField();
+            DisplayPersistenceEnumField(landingSceneField.value != null);
 
             m_StackVisualizersRoot = this.Q<VisualElement>("StackVisualizersRoot");
             StackVisualizer.StackVisualizer.OnVisualizersCollectionUpdated += SubscribeVisualizationStacks;
@@ -55,7 +61,7 @@ namespace StansAssets.SceneManagement
         void CreatePersistenceEnumField()
         {
             m_PersistenceEnumField.Init(IMGUIToggleStyle.YesNoBool.No);
-            m_PersistenceEnumField.tooltip = "tooltip";
+            m_PersistenceLabel.tooltip = k_PersistenceEnumTooltip;
             bool useCameraAndScenePersistence = SceneManagementSettings.Instance.UseCameraAndScenePersistence;
             IMGUIToggleStyle.YesNoBool cachedValue = useCameraAndScenePersistence ? IMGUIToggleStyle.YesNoBool.Yes : IMGUIToggleStyle.YesNoBool.No;
             m_PersistenceEnumField.SetValueWithoutNotify(cachedValue);
@@ -69,7 +75,8 @@ namespace StansAssets.SceneManagement
         void DisplayPersistenceEnumField(bool state)
         {
             DisplayStyle displayStyle = state ? DisplayStyle.Flex : DisplayStyle.None;
-            m_PersistenceEnumField.style.display = displayStyle;
+            m_PersistenceEnumField.style.display =
+                m_PersistenceLabel.style.display = displayStyle;
         }
     }
 }
