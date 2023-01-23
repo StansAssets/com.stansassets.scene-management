@@ -2,4 +2,23 @@
     flex-grow: 1;
 }
 
+.scene-persistence-visual-element {
+    flex-direction: row;
+    margin: 1px 3px;
+}
 
+.scene-persistence-label {
+    -unity-text-align: middle-left;
+}
+
+.scene-persistence-enum-field {
+    flex-shrink: 1;
+    align-items: center;
+    margin: 0;
+}
+
+.uniform-object-field .unity-base-field__label,
+.uniform-object-field .unity-base-field__input {
+    flex-shrink: 1;
+    min-width: 50%;
+}

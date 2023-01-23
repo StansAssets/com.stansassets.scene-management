@@ -79,7 +79,8 @@ namespace StansAssets.SceneManagement
         {
             if (playModeStateChange == PlayModeStateChange.EnteredEditMode)
             {
-                if (SceneManagementSettings.Instance.OpenScenesBeforeLandingStart != null
+                if (SceneManagementSettings.Instance.UseCameraAndScenePersistence
+                    && SceneManagementSettings.Instance.OpenScenesBeforeLandingStart != null
                     && SceneManagementSettings.Instance.OpenScenesBeforeLandingStart.Count > 0)
                 {
                     int startIndex = 0;
@@ -111,7 +112,7 @@ namespace StansAssets.SceneManagement
                         EditorSceneManager.CloseScene(SceneManager.GetSceneAt(0), false);
 
                     var info = SceneManagementSettings.Instance.LastSceneView;
-                    if (info != null && ! info.IsDefault)
+                    if (info != null && !info.IsDefault)
                     {
                         SceneView.lastActiveSceneView.in2DMode = info.Is2D;
                         SceneView.lastActiveSceneView.LookAt(info.Pivot, info.Rotation, info.Size, info.IsOrtho);

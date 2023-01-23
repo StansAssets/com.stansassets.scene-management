@@ -1,9 +1,16 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:sa="StansAssets.Foundation.UIElements">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" 
+         xmlns:sa="StansAssets.Foundation.UIElements" editor-extension-mode="False">
+
     <sa:SettingsBlock label="Optional Settings">
-        <uie:ObjectField label="Landing Scene" name="landing-scene" />
+        <uie:ObjectField label="Landing Scene" name="landing-scene" class="uniform-object-field" />
+        <ui:VisualElement name="scene-persistence" class="uniform-object-field scene-persistence-visual-element">
+            <ui:Label text="Scene &amp; Camera Persistence" name="scene-persistence-label" class="unity-base-field__label scene-persistence-label" />
+            <uie:EnumField name="persistence-enum-field" class="scene-persistence-enum-field" />
+        </ui:VisualElement>
+    </sa:SettingsBlock>
+    
+    <sa:SettingsBlock label="Registered Stacks View">
+        <ui:VisualElement name="StackVisualizersRoot" />
     </sa:SettingsBlock>
 
-    <sa:SettingsBlock label="Registered Stacks View">
-        <ui:VisualElement name="StackVisualizersRoot"/>
-    </sa:SettingsBlock>
 </ui:UXML>

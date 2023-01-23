@@ -12,15 +12,35 @@ namespace StansAssets.SceneManagement
     {
         protected override bool IsEditorOnly => true;
         public override string PackageName => SceneManagementPackage.PackageName;
-        
+
 #if UNITY_2019_4_OR_NEWER
         public SceneAsset LandingScene;
         internal List<SceneStateInfo> OpenScenesBeforeLandingStart;
         internal int LastActiveSceneIndex;
         internal SceneViewInfo LastSceneView;
+
+        const string k_UseCameraAndScenePersistenceKey = "_use-camera-and-scene-persistency";
+
+        internal bool UseCameraAndScenePersistence
+        {
+            get
+            {
+#if UNITY_EDITOR
+                return EditorPrefs.GetBool($"{k_UseCameraAndScenePersistenceKey}", false);
+#else
+                return false;
 #endif
-        
-        
-        
+            }
+
+            set
+            {
+#if UNITY_EDITOR
+                EditorPrefs.SetBool($"{k_UseCameraAndScenePersistenceKey}", value);
+#endif
+            }
+        }
+
+#endif
+
     }
 }

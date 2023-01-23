@@ -9,19 +9,32 @@ namespace StansAssets.SceneManagement
     public class SettingsTab : BaseTab
     {
         readonly VisualElement m_StackVisualizersRoot;
+        readonly EnumField m_PersistenceEnumField;
+        readonly Label m_PersistenceLabel;
+
+        const string k_PersistenceEnumTooltip =
+            "If this option is switched on, you will return to your initial editing scene with the initial Scene View camera position after Playmode exit.";
 
         public SettingsTab()
             : base($"{SceneManagementPackage.WindowTabsPath}/SettingsTab")
         {
             var landingSceneField = Root.Q<ObjectField>("landing-scene");
+            m_PersistenceEnumField = Root.Q<EnumField>("persistence-enum-field");
+            m_PersistenceLabel = Root.Q<Label>("scene-persistence-label");
             landingSceneField.objectType = typeof(SceneAsset);
             landingSceneField.SetValueWithoutNotify(SceneManagementSettings.Instance.LandingScene);
 
             landingSceneField.RegisterValueChangedCallback((e) =>
             {
-                SceneManagementSettings.Instance.LandingScene = (SceneAsset)e.newValue;
+                SceneAsset newSceneAsset = (SceneAsset)e.newValue;
+                SceneManagementSettings.Instance.LandingScene = newSceneAsset;
                 SceneManagementSettings.Save();
+                DisplayPersistenceEnumField(newSceneAsset != null);
             });
+
+            CreatePersistenceEnumField();
+            DisplayPersistenceEnumField(landingSceneField.value != null);
+
             m_StackVisualizersRoot = this.Q<VisualElement>("StackVisualizersRoot");
             StackVisualizer.StackVisualizer.OnVisualizersCollectionUpdated += SubscribeVisualizationStacks;
             EditorApplication.playModeStateChanged += ModeChanged;
@@ -37,12 +50,33 @@ namespace StansAssets.SceneManagement
             }
         }
 
-        void ModeChanged (PlayModeStateChange state)
+        void ModeChanged(PlayModeStateChange state)
         {
-            if (state == PlayModeStateChange.ExitingPlayMode )
+            if (state == PlayModeStateChange.ExitingPlayMode)
             {
                 m_StackVisualizersRoot.Clear();
             }
+        }
+
+        void CreatePersistenceEnumField()
+        {
+            m_PersistenceEnumField.Init(IMGUIToggleStyle.YesNoBool.No);
+            m_PersistenceLabel.tooltip = k_PersistenceEnumTooltip;
+            bool useCameraAndScenePersistence = SceneManagementSettings.Instance.UseCameraAndScenePersistence;
+            IMGUIToggleStyle.YesNoBool cachedValue = useCameraAndScenePersistence ? IMGUIToggleStyle.YesNoBool.Yes : IMGUIToggleStyle.YesNoBool.No;
+            m_PersistenceEnumField.SetValueWithoutNotify(cachedValue);
+            m_PersistenceEnumField.RegisterValueChangedCallback(eventValue =>
+            {
+                var selectedOption = (IMGUIToggleStyle.YesNoBool)eventValue.newValue;
+                SceneManagementSettings.Instance.UseCameraAndScenePersistence = selectedOption == IMGUIToggleStyle.YesNoBool.Yes;
+            });
+        }
+
+        void DisplayPersistenceEnumField(bool state)
+        {
+            DisplayStyle displayStyle = state ? DisplayStyle.Flex : DisplayStyle.None;
+            m_PersistenceEnumField.style.display =
+                m_PersistenceLabel.style.display = displayStyle;
         }
     }
 }
