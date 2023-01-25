@@ -11,15 +11,16 @@ namespace StansAssets.SceneManagement.Build
     {
         public BuildTargetGroupRuntime BuildTargetGroup;
         public List<SceneAssetInfo> Scenes = new List<SceneAssetInfo>();
+        public bool Override;
 
         public DefaultSceneConfiguration(int buildTargets, SceneAssetInfo sceneAssetInfo)
-        { 
+        {
             BuildTargetGroup = (BuildTargetGroupRuntime)buildTargets;
             Scenes.Add(sceneAssetInfo);
         }
 
         public DefaultSceneConfiguration(BuildTargetGroupRuntime buildTargets, SceneAssetInfo sceneAssetInfo)
-        { 
+        {
             BuildTargetGroup = buildTargets;
             Scenes.Add(sceneAssetInfo);
         }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using Rotorz.ReorderableList;
@@ -53,19 +54,17 @@ namespace StansAssets.SceneManagement.Build
             m_AddButton = new IMGUIHyperLabel(new GUIContent("+"), EditorStyles.miniLabel);
             m_AddButton.SetMouseOverColor(SettingsWindowStyles.SelectedElementColor);
 
+            m_BuildTargetGroupData = new BuildTargetGroupData();
+
+            m_ValidPlatforms = new GUIContent[m_BuildTargetGroupData.ValidPlatforms.Length + 1];
+            m_ValidPlatforms[0] = new GUIContent("Default");
+            for (var i = 0; i < m_BuildTargetGroupData.ValidPlatforms.Length; i++)
             {
-                m_BuildTargetGroupData = new BuildTargetGroupData();
-
-                m_ValidPlatforms = new GUIContent[m_BuildTargetGroupData.ValidPlatforms.Length + 1];
-                m_ValidPlatforms[0] = new GUIContent("Default");
-                for (var i = 0; i < m_BuildTargetGroupData.ValidPlatforms.Length; i++)
-                {
-                    int t = i + 1;
-                    m_ValidPlatforms[t] = EditorGUIUtility.IconContent($"{m_BuildTargetGroupData.ValidPlatforms[i].IconName}");
-                }
-
-                m_OverrideForPlatforms = new bool[m_ValidPlatforms.Length - 1];
+                int t = i + 1;
+                m_ValidPlatforms[t] = EditorGUIUtility.IconContent($"{m_BuildTargetGroupData.ValidPlatforms[i].IconName}");
             }
+
+            m_OverrideForPlatforms = new bool[m_ValidPlatforms.Length - 1];
         }
 
         void UpdateActiveConfUI()
@@ -213,10 +212,13 @@ namespace StansAssets.SceneManagement.Build
                         }
                         else
                         {
-                            m_OverrideForPlatforms[m_SelectedPlatform - 1] = EditorGUILayout.Toggle("Override for " + m_BuildTargetGroupData.ValidPlatforms[m_SelectedPlatform - 1].BuildTargetGroup,
-                                m_OverrideForPlatforms[m_SelectedPlatform - 1]);
+                            conf.DefaultSceneConfigurations[m_SelectedPlatform].Override
+                                = EditorGUILayout.Toggle("Override for " + m_BuildTargetGroupData.ValidPlatforms[m_SelectedPlatform - 1].BuildTargetGroup,
+                                    conf.DefaultSceneConfigurations[m_SelectedPlatform].Override);
+
                             CopyScenesFromDefaultConfiguration(conf, m_OverrideForPlatforms[m_SelectedPlatform - 1]);
-                            if (m_OverrideForPlatforms[m_SelectedPlatform - 1])
+
+                            if (conf.DefaultSceneConfigurations[m_SelectedPlatform].Override)
                             {
                                 ReorderableListGUI.ListField(conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes, ContentTypeListItem, DrawEmptyScene);
                             }
@@ -229,28 +231,18 @@ namespace StansAssets.SceneManagement.Build
         void CopyScenesFromDefaultConfiguration(BuildConfiguration conf, bool isOverride)
         {
             List<SceneAssetInfo> defaultScenes = conf.DefaultSceneConfigurations[0].Scenes;
-            List<SceneAssetInfo> selectedPlatformScenes = conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes;
-            if (!isOverride)
+            if (!isOverride || defaultScenes.Count != conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes.Count)
             {
                 conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes = defaultScenes;
                 return;
             }
 
-            if (defaultScenes.Count != selectedPlatformScenes.Count)
-            {
-                selectedPlatformScenes.Clear();
-                for (var i = 0; i < defaultScenes.Count; i++)
-                {
-                    SceneAssetInfo sceneAssetInfo = defaultScenes[i];
-                    var item = new SceneAssetInfo
-                    {
-                        Name = sceneAssetInfo.Name,
-                        Guid = sceneAssetInfo.Guid
-                    };
-                    selectedPlatformScenes.Add(item);
-                }
+            var firstGuids = defaultScenes.Select(x => x.Guid).ToList();
+            var secondGuids = conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes.Select(x => x.Guid).ToList();
 
-                conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes = selectedPlatformScenes;
+            if (firstGuids.Equals(secondGuids))
+            {
+                conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes = defaultScenes;
             }
         }
 
