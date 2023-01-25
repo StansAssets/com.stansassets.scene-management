@@ -53,7 +53,7 @@ namespace StansAssets.SceneManagement.Build
 
             PrebuildCleanup();
             SetupAddressableScenes(options.target);
-            options.scenes = FilterScenesByPath(options.target, options.scenes);
+            options.scenes = FilterScenesByPath(options.target, options.targetGroup, options.scenes);
 
             Debug.Log("Built scenes:\n" + string.Join(", \n", options.scenes));
         }
@@ -66,7 +66,7 @@ namespace StansAssets.SceneManagement.Build
             s_BuildAddressablesImpl = buildAddressablesDelegate;
         }
 
-        static string[] FilterScenesByPath(BuildTarget target, string[] buildScenes)
+        static string[] FilterScenesByPath(BuildTarget target, BuildTargetGroup buildTargetGroup, string[] buildScenes)
         {
             if (BuildConfigurationSettings.Instance.HasValidConfiguration == false)
             {
@@ -74,23 +74,25 @@ namespace StansAssets.SceneManagement.Build
             }
 
             var configuration = BuildConfigurationSettings.Instance.Configuration;
-            var sceneAssets = configuration.BuildScenesCollection(target, true);
+            var sceneAssets = configuration.BuildScenesCollection(target, buildTargetGroup, true);
             var scenes = sceneAssets.Select(s => AssetDatabase.GUIDToAssetPath(s.Guid)).ToArray();
             return scenes;
         }
 
-        internal static void SetupAddressableScenes(BuildTarget target) {
+        internal static void SetupAddressableScenes(BuildTarget target)
+        {
             if (BuildConfigurationSettings.Instance.HasValidConfiguration == false)
             {
                 return;
             }
 
             InitializeAddressablesSettings();
+
             // TODO: Don't create a group until we checked that even 1 scene is Addressable
             var group = AddressablesUtility.GetOrCreateGroup(ScenesAddressablesGroupName);
             var configuration = BuildConfigurationSettings.Instance.Configuration;
 
-            AddAddressableScenesIntoGroup(configuration.GetAddressableDefaultScenes(), group);
+            AddAddressableScenesIntoGroup(configuration.GetAddressableDefaultScenes(EditorUserBuildSettings.selectedBuildTargetGroup), group);
 
             foreach (var platformsConfiguration in configuration.Platforms)
             {
@@ -102,21 +104,26 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
 
-            if (group.entries.Count > 0) {
+            if (group.entries.Count > 0)
+            {
                 var rule = AnalyzeSystemHelper.FindRule<FindScenesDuplicateDependencies>();
                 var results = AnalyzeSystemHelper.RefreshRule(rule);
 
                 bool fixNeeded = false;
-                foreach (var result in results) {
-                    if (result.severity == MessageType.Error || result.severity == MessageType.Warning) {
+                foreach (var result in results)
+                {
+                    if (result.severity == MessageType.Error || result.severity == MessageType.Warning)
+                    {
                         fixNeeded = true;
                         break;
                     }
                 }
 
-                if (fixNeeded) {
+                if (fixNeeded)
+                {
                     AnalyzeSystemHelper.FixIssues(rule);
                 }
+
                 AnalyzeSystemHelper.ClearAnalysis(rule);
 
                 s_BuildAddressablesImpl.Invoke();
@@ -125,17 +132,20 @@ namespace StansAssets.SceneManagement.Build
             {
                 AddressableAssetSettingsDefaultObject.Settings.RemoveGroup(group);
             }
+
             BuildConfigurationSettings.Instance.Configuration.InitializeBuildData(target);
             EditorUtility.SetDirty(BuildConfigurationSettings.Instance);
             AssetDatabase.SaveAssets();
         }
 
-        static void InitializeAddressablesSettings() {
-            if (AddressableAssetSettingsDefaultObject.Settings == null) {
+        static void InitializeAddressablesSettings()
+        {
+            if (AddressableAssetSettingsDefaultObject.Settings == null)
+            {
                 AddressableAssetSettingsDefaultObject.Settings = AddressableAssetSettings.Create(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder,
-                                                                                                 AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName,
-                                                                                                 true,
-                                                                                                 true);
+                    AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName,
+                    true,
+                    true);
             }
         }
 
@@ -185,7 +195,8 @@ namespace StansAssets.SceneManagement.Build
         public static AddressableAssetGroup GetOrCreateGroup(string name)
         {
             var group = AddressableAssetSettingsDefaultObject.Settings.FindGroup((g) => g.name == name);
-            if (group != null) {
+            if (group != null)
+            {
                 AddressableAssetSettingsDefaultObject.Settings.RemoveGroup(group);
             }
 

@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using UnityEditor;
 
-namespace BuildConfigurator.Runtime
+namespace Scenes.Editor
 {
     public class BuildTargetGroupData
     {
-        public BuildTargetGroupModel[] ValidPlatforms;
+        public readonly BuildTargetGroupModel[] ValidPlatforms;
         BuildTargetGroupModel[] m_Groups;
 
         public BuildTargetGroupData()
@@ -14,7 +14,7 @@ namespace BuildConfigurator.Runtime
             ValidPlatforms = GetInstalledPlatforms();
         }
 
-        private BuildTargetGroupModel[] GetInstalledPlatforms()
+        BuildTargetGroupModel[] GetInstalledPlatforms()
         {
             var buildTargetGroupModels = new List<BuildTargetGroupModel>();
             for (var i = 0; i < m_Groups.Length; i++)

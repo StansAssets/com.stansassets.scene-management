@@ -1,6 +1,8 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEditor;
 using Rotorz.ReorderableList;
+using Scenes.Editor;
 using StansAssets.Plugins.Editor;
 
 namespace StansAssets.SceneManagement.Build
@@ -14,13 +16,17 @@ namespace StansAssets.SceneManagement.Build
 
         static readonly Color s_ErrorColor = new Color(1f, 0.8f, 0.0f);
         static readonly Color s_InactiveColor = new Color(1f, 0.8f, 0.0f);
-        static readonly  GUIContent s_DuplicatesGUIContent = new GUIContent("","Scene is duplicated!");
-        static readonly GUIContent s_EmptySceneGUIContent = new GUIContent("","Scene is empty! Please drop a scene or remove this element.");
+        static readonly GUIContent s_DuplicatesGUIContent = new GUIContent("", "Scene is duplicated!");
+        static readonly GUIContent s_EmptySceneGUIContent = new GUIContent("", "Scene is empty! Please drop a scene or remove this element.");
 
         [SerializeField]
         IMGUIHyperLabel m_AddButton;
 
         bool m_ShowBuildIndex;
+        int m_SelectedPlatform;
+        bool[] m_OverrideForPlatforms;
+        GUIContent[] m_ValidPlatforms;
+        BuildTargetGroupData m_BuildTargetGroupData;
 
         protected override void OnAwake()
         {
@@ -46,6 +52,20 @@ namespace StansAssets.SceneManagement.Build
 
             m_AddButton = new IMGUIHyperLabel(new GUIContent("+"), EditorStyles.miniLabel);
             m_AddButton.SetMouseOverColor(SettingsWindowStyles.SelectedElementColor);
+
+            {
+                m_BuildTargetGroupData = new BuildTargetGroupData();
+
+                m_ValidPlatforms = new GUIContent[m_BuildTargetGroupData.ValidPlatforms.Length + 1];
+                m_ValidPlatforms[0] = new GUIContent("Default");
+                for (var i = 0; i < m_BuildTargetGroupData.ValidPlatforms.Length; i++)
+                {
+                    int t = i + 1;
+                    m_ValidPlatforms[t] = EditorGUIUtility.IconContent($"{m_BuildTargetGroupData.ValidPlatforms[i].iconName}");
+                }
+
+                m_OverrideForPlatforms = new bool[m_ValidPlatforms.Length - 1];
+            }
         }
 
         void UpdateActiveConfUI()
@@ -81,9 +101,11 @@ namespace StansAssets.SceneManagement.Build
             if (EditorGUI.EndChangeCheck())
             {
                 UpdateActiveConfUI();
-                foreach (var buildConfiguration in BuildConfigurationSettings.Instance.BuildConfigurations) {
+                foreach (var buildConfiguration in BuildConfigurationSettings.Instance.BuildConfigurations)
+                {
                     buildConfiguration.UpdateSceneNames();
                 }
+
                 BuildConfigurationSettings.Save();
             }
         }
@@ -97,10 +119,7 @@ namespace StansAssets.SceneManagement.Build
 
             m_SelectionIndex = DrawTabs();
 
-            DrawScrollView(() =>
-            {
-                DrawConfiguration(m_SelectionIndex);
-            });
+            DrawScrollView(() => { DrawConfiguration(m_SelectionIndex); });
         }
 
         void DrawConfiguration(int index)
@@ -142,11 +161,14 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
 
-            using (new IMGUIBlockWithIndent(new GUIContent("Addressables"))) {
-                conf.UseAddressablesInEditor = IMGUILayout.ToggleFiled("Use Addressables InEditor", conf.UseAddressablesInEditor, IMGUIToggleStyle.ToggleType.YesNo);
+            using (new IMGUIBlockWithIndent(new GUIContent("Addressables")))
+            {
+                conf.UseAddressablesInEditor =
+                    IMGUILayout.ToggleFiled("Use Addressables InEditor", conf.UseAddressablesInEditor, IMGUIToggleStyle.ToggleType.YesNo);
 
-                conf.ClearAllAddressablesCache = IMGUILayout.ToggleFiled("Clear All Addressables Cache", conf.ClearAllAddressablesCache, IMGUIToggleStyle.ToggleType.YesNo);
-                
+                conf.ClearAllAddressablesCache =
+                    IMGUILayout.ToggleFiled("Clear All Addressables Cache", conf.ClearAllAddressablesCache, IMGUIToggleStyle.ToggleType.YesNo);
+
                 using (new IMGUIBeginHorizontal())
                 {
                     GUILayout.FlexibleSpace();
@@ -180,8 +202,67 @@ namespace StansAssets.SceneManagement.Build
                     GUILayout.Space(20);
                     using (new IMGUIBeginVertical())
                     {
-                        ReorderableListGUI.ListField(conf.DefaultScenes, ContentTypeListItem, DrawEmptyScene);
+                        EditorGUILayout.LabelField("Selected Platform: ");
+                        m_SelectedPlatform = GUILayout.SelectionGrid(m_SelectedPlatform, m_ValidPlatforms, m_ValidPlatforms.Length);
+
+                        InitializeDefaultSceneConfigurations(conf);
+
+                        if (m_SelectedPlatform == 0)
+                        {
+                            ReorderableListGUI.ListField(conf.DefaultSceneConfigurations[0].Scenes, ContentTypeListItem, DrawEmptyScene);
+                        }
+                        else
+                        {
+                            m_OverrideForPlatforms[m_SelectedPlatform - 1] = EditorGUILayout.Toggle("Override for " + m_ValidPlatforms[m_SelectedPlatform],
+                                m_OverrideForPlatforms[m_SelectedPlatform - 1]);
+                            CopyScenesFromDefaultConfiguration(conf, m_OverrideForPlatforms[m_SelectedPlatform - 1]);
+                            if (m_OverrideForPlatforms[m_SelectedPlatform - 1])
+                            {
+                                ReorderableListGUI.ListField(conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes, ContentTypeListItem, DrawEmptyScene);
+                            }
+                        }
                     }
+                }
+            }
+        }
+
+        void CopyScenesFromDefaultConfiguration(BuildConfiguration conf, bool isOverride)
+        {
+            List<SceneAssetInfo> defaultScenes = conf.DefaultSceneConfigurations[0].Scenes;
+            if (defaultScenes.Count == 0) return;
+            List<SceneAssetInfo> selectedPlatformScenes = conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes;
+            if (defaultScenes.Count != selectedPlatformScenes.Count)
+            {
+                selectedPlatformScenes.Clear();
+                for (var i = 0; i < defaultScenes.Count; i++)
+                {
+                    SceneAssetInfo sceneAssetInfo = defaultScenes[i];
+                    var item = new SceneAssetInfo
+                    {
+                        Name = sceneAssetInfo.Name,
+                        Guid = sceneAssetInfo.Guid
+                    };
+                    if (isOverride)
+                    {
+                        item.Addressable = sceneAssetInfo.Addressable;
+                    }
+
+                    selectedPlatformScenes.Add(item);
+                }
+
+                conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes = selectedPlatformScenes;
+            }
+        }
+
+        void InitializeDefaultSceneConfigurations(BuildConfiguration conf)
+        {
+            if (conf.DefaultSceneConfigurations.Count != m_ValidPlatforms.Length)
+            {
+                conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(-1, new SceneAssetInfo()));
+                for (int i = 1; i < m_ValidPlatforms.Length; i++)
+                {
+                    BuildTargetGroup buildTargetGroup = m_BuildTargetGroupData.ValidPlatforms[i-1].group;
+                    conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(buildTargetGroup, new SceneAssetInfo()));
                 }
             }
         }
@@ -276,7 +357,8 @@ namespace StansAssets.SceneManagement.Build
             Rect objectFieldRect = new Rect(pos.x + sceneIndexRect.width, pos.y + 2, pos.width - 20f - sceneIndexRect.width, 16);
             Rect addressableToggleRect = new Rect(objectFieldRect.x + objectFieldRect.width + 2, pos.y, 20f, pos.height);
 
-            if (m_ShowBuildIndex) {
+            if (m_ShowBuildIndex)
+            {
                 int sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue);
                 GUI.Label(sceneIndexRect, sceneIndex.ToString());
             }
@@ -291,6 +373,7 @@ namespace StansAssets.SceneManagement.Build
             {
                 itemValue.SetSceneAsset(newSceneAsset);
             }
+
             GUI.color = Color.white;
 
             itemValue.Addressable = GUI.Toggle(addressableToggleRect, itemValue.Addressable, AddressableGuiContent);
@@ -343,16 +426,19 @@ namespace StansAssets.SceneManagement.Build
 
         static GUIContent s_AddressableGuiContent;
 
-        static GUIContent AddressableGuiContent => s_AddressableGuiContent ?? (s_AddressableGuiContent = new GUIContent("", "Mark scene Addressable?\nIf true - scene will be added as Addressable asset into \"Scenes\" group, otherwise - scene will be added into build settings."));
+        static GUIContent AddressableGuiContent => s_AddressableGuiContent ?? (s_AddressableGuiContent = new GUIContent("",
+            "Mark scene Addressable?\nIf true - scene will be added as Addressable asset into \"Scenes\" group, otherwise - scene will be added into build settings."));
 
-        public void AddItemsToMenu(GenericMenu menu) {
-            menu.AddItem(new GUIContent("Add Build Settings Scenes to Default"), false, () => {
+        public void AddItemsToMenu(GenericMenu menu)
+        {
+            menu.AddItem(new GUIContent("Add Build Settings Scenes to Default"), false, () =>
+            {
                 var conf = BuildConfigurationSettings.Instance.BuildConfigurations[m_SelectionIndex];
                 foreach (var scene in EditorBuildSettings.scenes)
                 {
                     var sceneAssetInfo = new SceneAssetInfo();
                     sceneAssetInfo.SetSceneAsset(scene);
-                    conf.DefaultScenes.Add(sceneAssetInfo);
+                    conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(-1, sceneAssetInfo));
                 }
 
                 BuildConfigurationSettings.Save();

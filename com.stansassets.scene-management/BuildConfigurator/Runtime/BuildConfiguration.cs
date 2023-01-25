@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace StansAssets.SceneManagement.Build
 {
@@ -13,7 +14,7 @@ namespace StansAssets.SceneManagement.Build
         public string Guid;
         public string Name = string.Empty;
         public bool DefaultScenesFirst = false;
-        public List<SceneAssetInfo> DefaultScenes = new List<SceneAssetInfo>();
+        public List<DefaultSceneConfiguration> DefaultSceneConfigurations = new List<DefaultSceneConfiguration>();
         public List<PlatformsConfiguration> Platforms = new List<PlatformsConfiguration>();
 
         const string k_UseAddressablesInEditorKey = "_user-addressables-in-editor";
@@ -22,6 +23,7 @@ namespace StansAssets.SceneManagement.Build
         public BuildConfiguration()
         {
             Guid = System.Guid.NewGuid().ToString();
+
         }
 
         public bool IsEmpty
@@ -36,7 +38,7 @@ namespace StansAssets.SceneManagement.Build
                     }
                 }
 
-                return DefaultScenes.Count == 0;
+                return DefaultSceneConfigurations.Count == 0;
             }
         }
 
@@ -83,9 +85,9 @@ namespace StansAssets.SceneManagement.Build
             var copy = new BuildConfiguration();
             copy.Name = Name + " Copy";
 
-            foreach (var scene in DefaultScenes)
+            foreach (var scene in DefaultSceneConfigurations)
             {
-                copy.DefaultScenes.Add(scene);
+                copy.DefaultSceneConfigurations.Add(scene);
             }
 
             foreach (var platformsConfiguration in Platforms)
@@ -110,11 +112,16 @@ namespace StansAssets.SceneManagement.Build
         // TODO we might need to cache this data once
         internal bool IsSceneAddressable(string sceneName)
         {
-            foreach (var scene in DefaultScenes)
+            for (var i = 0; i < DefaultSceneConfigurations.Count; i++)
             {
-                if (sceneName.Equals(scene.Name))
+                DefaultSceneConfiguration defaultSceneConfiguration = DefaultSceneConfigurations[i];
+                for (var j = 0; j < defaultSceneConfiguration.Scenes.Count; j++)
                 {
-                    return scene.Addressable;
+                    string configurationSceneName = defaultSceneConfiguration.Scenes[j].Name;
+                    if (sceneName.Equals(configurationSceneName))
+                    {
+                        return defaultSceneConfiguration.Scenes[j].Addressable;
+                    }
                 }
             }
 

@@ -1,7 +1,9 @@
-﻿using UnityEditor;
+﻿using System;
+using UnityEditor;
 
-namespace BuildConfigurator.Runtime
+namespace Scenes.Editor
 {
+    [Serializable]
     public class BuildTargetGroupModel
     {
         public BuildTargetGroup group;
