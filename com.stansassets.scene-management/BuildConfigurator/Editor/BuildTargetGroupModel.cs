@@ -6,15 +6,15 @@ namespace Scenes.Editor
     [Serializable]
     public class BuildTargetGroupModel
     {
-        public BuildTargetGroup group;
-        public BuildTarget[] targets;
-        public string iconName;
+        public BuildTargetGroup BuildTargetGroup;
+        public BuildTarget[] BuildTargets;
+        public string IconName;
     
-        public BuildTargetGroupModel(BuildTargetGroup group, BuildTarget[] targets, string iconName)
+        public BuildTargetGroupModel(BuildTargetGroup buildTargetGroup, BuildTarget[] buildTargets, string iconName)
         {
-            this.group = group;
-            this.targets = targets;
-            this.iconName = iconName;
+            BuildTargetGroup = buildTargetGroup;
+            BuildTargets = buildTargets;
+            IconName = iconName;
         }
     }
 }

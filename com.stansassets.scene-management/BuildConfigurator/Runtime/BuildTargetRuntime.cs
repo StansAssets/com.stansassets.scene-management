@@ -97,6 +97,21 @@ namespace StansAssets.SceneManagement.Build
         ///   <para>Build a Nintendo Switch player.</para>
         /// </summary>
         Switch = 38, // 0x00000026
-        Lumin = 39, // 0x00000027
+        Lumin = 39, // 0x00000027 
+        /// <summary>
+        ///   <para>Build a Stadia standalone.</para>
+        /// </summary>
+        Stadia = 40, // 0x00000028
+        /// <summary>
+        ///   <para>Build a CloudRendering standalone.</para>
+        /// </summary>
+        CloudRendering = 41, // 0x00000029
+        [Obsolete("GameCoreScarlett is deprecated, please use GameCoreXboxSeries (UnityUpgradable) -> GameCoreXboxSeries", false)] GameCoreScarlett = 42, // 0x0000002A
+        GameCoreXboxSeries = 42, // 0x0000002A
+        GameCoreXboxOne = 43, // 0x0000002B
+        /// <summary>
+        ///   <para>Build to PlayStation 5 platform.</para>
+        /// </summary>
+        PS5 = 44, // 0x0000002C
     }
 }

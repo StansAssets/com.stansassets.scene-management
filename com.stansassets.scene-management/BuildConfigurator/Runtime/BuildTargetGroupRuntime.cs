@@ -4,7 +4,7 @@ using System.ComponentModel;
 namespace StansAssets.SceneManagement.Build
 {
     /// <summary>
-    ///   <para>Build target runtime.</para>
+    ///   <para>Build target group runtime.</para>
     /// </summary>
     public enum BuildTargetGroupRuntime
     {

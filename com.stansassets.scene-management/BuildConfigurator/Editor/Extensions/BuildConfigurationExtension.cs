@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -10,22 +11,24 @@ namespace StansAssets.SceneManagement.Build
     {
         public static List<SceneAsset> GetAddressableDefaultScenes(this BuildConfiguration configuration, BuildTargetGroup currentBuildTargetGroup)
         {
-            DefaultSceneConfiguration defaultSceneConfiguration = configuration.DefaultSceneConfigurations.FirstOrDefault(sceneConfiguration => sceneConfiguration.BuildTargetGroup == currentBuildTargetGroup);
+            DefaultSceneConfiguration defaultSceneConfiguration = configuration.DefaultSceneConfigurations.FirstOrDefault(sceneConfiguration => sceneConfiguration.BuildTargetGroup == currentBuildTargetGroup.ConvertBuildTargetGroupToRuntime());
             if (defaultSceneConfiguration == null)
             {
                 defaultSceneConfiguration = configuration.DefaultSceneConfigurations[0];
             }
+
             return defaultSceneConfiguration.Scenes.Where(scene => scene.GetSceneAsset() != null && scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset())
                 .ToList();
         }
 
         public static List<SceneAsset> GetNonAddressableDefaultScenes(this BuildConfiguration configuration, BuildTargetGroup currentBuildTargetGroup)
         {
-            DefaultSceneConfiguration defaultSceneConfiguration = configuration.DefaultSceneConfigurations.FirstOrDefault(sceneConfiguration => sceneConfiguration.BuildTargetGroup == currentBuildTargetGroup);
+            DefaultSceneConfiguration defaultSceneConfiguration = configuration.DefaultSceneConfigurations.FirstOrDefault(sceneConfiguration => sceneConfiguration.BuildTargetGroup == currentBuildTargetGroup.ConvertBuildTargetGroupToRuntime());
             if (defaultSceneConfiguration == null)
             {
                 defaultSceneConfiguration = configuration.DefaultSceneConfigurations[0];
             }
+
             return defaultSceneConfiguration.Scenes.Where(scene => scene.GetSceneAsset() != null && !scene.Addressable)
                 .Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
         }
@@ -46,7 +49,7 @@ namespace StansAssets.SceneManagement.Build
 
                 foreach (SceneAssetInfo scene in defaultSceneConfiguration.Scenes)
                 {
-                    if(scene == null)
+                    if (scene == null)
                         continue;
                     string path = AssetDatabase.GUIDToAssetPath(scene.Guid);
                     scene.Name = Path.GetFileNameWithoutExtension(path);
@@ -69,7 +72,7 @@ namespace StansAssets.SceneManagement.Build
         public static IEnumerable<SceneAssetInfo> BuildScenesCollection(this BuildConfiguration configuration, BuildTarget builtTarget, BuildTargetGroup buildTargetGroup, bool stripAddressables)
         {
             var scenes = new List<SceneAssetInfo>();
-            var defaultSceneConfig = configuration.DefaultSceneConfigurations.First(sceneConfiguration => sceneConfiguration.BuildTargetGroup == buildTargetGroup);
+            var defaultSceneConfig = configuration.DefaultSceneConfigurations.First(sceneConfiguration => sceneConfiguration.BuildTargetGroup == buildTargetGroup.ConvertBuildTargetGroupToRuntime());
 
             List<SceneAssetInfo> sceneAssetInfos = stripAddressables ? defaultSceneConfig.Scenes.Where(s => !s.Addressable).ToList() : defaultSceneConfig.Scenes;
 
@@ -155,6 +158,39 @@ namespace StansAssets.SceneManagement.Build
             if (shouldUpdateBuildSettings)
             {
                 EditorBuildSettings.scenes = buildSettingsScenes.ToArray();
+            }
+        }
+
+        public static BuildTargetGroupRuntime ConvertBuildTargetGroupToRuntime(this BuildTargetGroup buildTargetGroup)
+        {
+            switch (buildTargetGroup)
+            {
+                case BuildTargetGroup.Unknown:
+                    return BuildTargetGroupRuntime.Unknown;
+                case BuildTargetGroup.Standalone:
+                    return BuildTargetGroupRuntime.Standalone;
+                case BuildTargetGroup.Android:
+                    return BuildTargetGroupRuntime.Android;
+                case BuildTargetGroup.WebGL:
+                    return BuildTargetGroupRuntime.WebGL;
+                case BuildTargetGroup.WSA:
+                    return BuildTargetGroupRuntime.WSA;
+                case BuildTargetGroup.PS4:
+                    return BuildTargetGroupRuntime.PS4;
+                case BuildTargetGroup.XboxOne:
+                    return BuildTargetGroupRuntime.XboxOne;
+                case BuildTargetGroup.tvOS:
+                    return BuildTargetGroupRuntime.tvOS;
+                case BuildTargetGroup.Switch:
+                    return BuildTargetGroupRuntime.Switch;
+                case BuildTargetGroup.Lumin:
+                    return BuildTargetGroupRuntime.Lumin;
+                case BuildTargetGroup.Stadia:
+                    return BuildTargetGroupRuntime.Stadia;
+                case BuildTargetGroup.PS5:
+                    return BuildTargetGroupRuntime.PS5;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(buildTargetGroup), buildTargetGroup, null);
             }
         }
 

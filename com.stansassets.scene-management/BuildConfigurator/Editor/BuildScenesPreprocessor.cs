@@ -52,7 +52,7 @@ namespace StansAssets.SceneManagement.Build
             }
 
             PrebuildCleanup();
-            SetupAddressableScenes(options.target);
+            SetupAddressableScenes(options.target, options.targetGroup);
             options.scenes = FilterScenesByPath(options.target, options.targetGroup, options.scenes);
 
             Debug.Log("Built scenes:\n" + string.Join(", \n", options.scenes));
@@ -79,7 +79,7 @@ namespace StansAssets.SceneManagement.Build
             return scenes;
         }
 
-        internal static void SetupAddressableScenes(BuildTarget target)
+        internal static void SetupAddressableScenes(BuildTarget target, BuildTargetGroup buildTargetGroup)
         {
             if (BuildConfigurationSettings.Instance.HasValidConfiguration == false)
             {
@@ -92,7 +92,7 @@ namespace StansAssets.SceneManagement.Build
             var group = AddressablesUtility.GetOrCreateGroup(ScenesAddressablesGroupName);
             var configuration = BuildConfigurationSettings.Instance.Configuration;
 
-            AddAddressableScenesIntoGroup(configuration.GetAddressableDefaultScenes(EditorUserBuildSettings.selectedBuildTargetGroup), group);
+            AddAddressableScenesIntoGroup(configuration.GetAddressableDefaultScenes(buildTargetGroup), group);
 
             foreach (var platformsConfiguration in configuration.Platforms)
             {

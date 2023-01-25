@@ -20,10 +20,10 @@ namespace Scenes.Editor
             for (var i = 0; i < m_Groups.Length; i++)
             {
                 BuildTargetGroupModel buildTargetGroup = m_Groups[i];
-                for (var j = 0; j < buildTargetGroup.targets.Length; j++)
+                for (var j = 0; j < buildTargetGroup.BuildTargets.Length; j++)
                 {
-                    BuildTarget target = buildTargetGroup.targets[j];
-                    if (BuildPipeline.IsBuildTargetSupported(buildTargetGroup.group, target))
+                    BuildTarget target = buildTargetGroup.BuildTargets[j];
+                    if (BuildPipeline.IsBuildTargetSupported(buildTargetGroup.BuildTargetGroup, target))
                     {
                         buildTargetGroupModels.Add(buildTargetGroup);
                         break;
@@ -74,6 +74,9 @@ namespace Scenes.Editor
                 new BuildTargetGroupModel(
                     BuildTargetGroup.Stadia,
                     new BuildTarget[] { BuildTarget.Stadia }, "BuildSettings.Stadia.small"),
+                new BuildTargetGroupModel(
+                    BuildTargetGroup.PS5,
+                    new BuildTarget[] { BuildTarget.PS5 }, "BuildSettings.PS5.Small"),
                 new BuildTargetGroupModel(
                     BuildTargetGroup.Unknown,
                     new BuildTarget[] { BuildTarget.NoTarget }, "BuildSettings.StandaloneGLESEmu.Small"),

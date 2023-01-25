@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace StansAssets.SceneManagement.Build
 {
@@ -23,7 +22,6 @@ namespace StansAssets.SceneManagement.Build
         public BuildConfiguration()
         {
             Guid = System.Guid.NewGuid().ToString();
-
         }
 
         public bool IsEmpty

@@ -61,7 +61,7 @@ namespace StansAssets.SceneManagement.Build
                 for (var i = 0; i < m_BuildTargetGroupData.ValidPlatforms.Length; i++)
                 {
                     int t = i + 1;
-                    m_ValidPlatforms[t] = EditorGUIUtility.IconContent($"{m_BuildTargetGroupData.ValidPlatforms[i].iconName}");
+                    m_ValidPlatforms[t] = EditorGUIUtility.IconContent($"{m_BuildTargetGroupData.ValidPlatforms[i].IconName}");
                 }
 
                 m_OverrideForPlatforms = new bool[m_ValidPlatforms.Length - 1];
@@ -175,7 +175,7 @@ namespace StansAssets.SceneManagement.Build
                     var active = GUILayout.Button("Build", GUILayout.Width(100));
                     if (active)
                     {
-                        BuildScenesPreprocessor.SetupAddressableScenes(EditorUserBuildSettings.activeBuildTarget);
+                        BuildScenesPreprocessor.SetupAddressableScenes(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup);
                     }
                 }
             }
@@ -213,7 +213,7 @@ namespace StansAssets.SceneManagement.Build
                         }
                         else
                         {
-                            m_OverrideForPlatforms[m_SelectedPlatform - 1] = EditorGUILayout.Toggle("Override for " + m_ValidPlatforms[m_SelectedPlatform],
+                            m_OverrideForPlatforms[m_SelectedPlatform - 1] = EditorGUILayout.Toggle("Override for " + m_BuildTargetGroupData.ValidPlatforms[m_SelectedPlatform - 1].BuildTargetGroup,
                                 m_OverrideForPlatforms[m_SelectedPlatform - 1]);
                             CopyScenesFromDefaultConfiguration(conf, m_OverrideForPlatforms[m_SelectedPlatform - 1]);
                             if (m_OverrideForPlatforms[m_SelectedPlatform - 1])
@@ -229,8 +229,13 @@ namespace StansAssets.SceneManagement.Build
         void CopyScenesFromDefaultConfiguration(BuildConfiguration conf, bool isOverride)
         {
             List<SceneAssetInfo> defaultScenes = conf.DefaultSceneConfigurations[0].Scenes;
-            if (defaultScenes.Count == 0) return;
             List<SceneAssetInfo> selectedPlatformScenes = conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes;
+            if (!isOverride)
+            {
+                conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes = defaultScenes;
+                return;
+            }
+
             if (defaultScenes.Count != selectedPlatformScenes.Count)
             {
                 selectedPlatformScenes.Clear();
@@ -242,11 +247,6 @@ namespace StansAssets.SceneManagement.Build
                         Name = sceneAssetInfo.Name,
                         Guid = sceneAssetInfo.Guid
                     };
-                    if (isOverride)
-                    {
-                        item.Addressable = sceneAssetInfo.Addressable;
-                    }
-
                     selectedPlatformScenes.Add(item);
                 }
 
@@ -261,8 +261,8 @@ namespace StansAssets.SceneManagement.Build
                 conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(-1, new SceneAssetInfo()));
                 for (int i = 1; i < m_ValidPlatforms.Length; i++)
                 {
-                    BuildTargetGroup buildTargetGroup = m_BuildTargetGroupData.ValidPlatforms[i-1].group;
-                    conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(buildTargetGroup, new SceneAssetInfo()));
+                    BuildTargetGroup buildTargetGroup = m_BuildTargetGroupData.ValidPlatforms[i - 1].BuildTargetGroup;
+                    conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(buildTargetGroup.ConvertBuildTargetGroupToRuntime(), new SceneAssetInfo()));
                 }
             }
         }
@@ -426,8 +426,9 @@ namespace StansAssets.SceneManagement.Build
 
         static GUIContent s_AddressableGuiContent;
 
-        static GUIContent AddressableGuiContent => s_AddressableGuiContent ?? (s_AddressableGuiContent = new GUIContent("",
-            "Mark scene Addressable?\nIf true - scene will be added as Addressable asset into \"Scenes\" group, otherwise - scene will be added into build settings."));
+        static GUIContent AddressableGuiContent =>
+            s_AddressableGuiContent ?? (s_AddressableGuiContent = new GUIContent("",
+                "Mark scene Addressable?\nIf true - scene will be added as Addressable asset into \"Scenes\" group, otherwise - scene will be added into build settings."));
 
         public void AddItemsToMenu(GenericMenu menu)
         {

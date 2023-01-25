@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEditor;
-using UnityEngine.Serialization;
 
 namespace StansAssets.SceneManagement.Build
 {
@@ -11,16 +9,16 @@ namespace StansAssets.SceneManagement.Build
     [Serializable]
     public class DefaultSceneConfiguration
     {
-        public BuildTargetGroup BuildTargetGroup;
+        public BuildTargetGroupRuntime BuildTargetGroup;
         public List<SceneAssetInfo> Scenes = new List<SceneAssetInfo>();
 
         public DefaultSceneConfiguration(int buildTargets, SceneAssetInfo sceneAssetInfo)
         { 
-            BuildTargetGroup = (BuildTargetGroup)buildTargets;
+            BuildTargetGroup = (BuildTargetGroupRuntime)buildTargets;
             Scenes.Add(sceneAssetInfo);
         }
 
-        public DefaultSceneConfiguration(BuildTargetGroup buildTargets, SceneAssetInfo sceneAssetInfo)
+        public DefaultSceneConfiguration(BuildTargetGroupRuntime buildTargets, SceneAssetInfo sceneAssetInfo)
         { 
             BuildTargetGroup = buildTargets;
             Scenes.Add(sceneAssetInfo);
@@ -28,7 +26,7 @@ namespace StansAssets.SceneManagement.Build
 
         public DefaultSceneConfiguration(int buildTargets)
         {
-            BuildTargetGroup = (BuildTargetGroup)buildTargets;
+            BuildTargetGroup = (BuildTargetGroupRuntime)buildTargets;
         }
     }
 }
