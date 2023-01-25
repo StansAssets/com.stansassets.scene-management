@@ -10,7 +10,7 @@ namespace StansAssets.SceneManagement.Build
 {
     class BuildConfigurationWindow : IMGUISettingsWindow<BuildConfigurationWindow>, IHasCustomMenu
     {
-        const string k_DefaultScenesDescription = "If you are leaving the default scene empty, " +
+        const string k_DefaultScenesDescription = "If you are leaving the default scenes empty, " +
             "projects settings defined scene will be added to the build. " +
             "When Defult Scenes have atleaest one scene defined, " +
             "project scenes are ignored and only scene defined in this configuration will be used.";
