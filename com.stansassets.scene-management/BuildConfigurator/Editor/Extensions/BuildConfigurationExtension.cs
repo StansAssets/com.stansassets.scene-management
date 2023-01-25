@@ -11,23 +11,20 @@ namespace StansAssets.SceneManagement.Build
     {
         public static List<SceneAsset> GetAddressableDefaultScenes(this BuildConfiguration configuration, BuildTargetGroup currentBuildTargetGroup)
         {
-            DefaultSceneConfiguration defaultSceneConfiguration = configuration.DefaultSceneConfigurations.FirstOrDefault(sceneConfiguration => sceneConfiguration.BuildTargetGroup == currentBuildTargetGroup.ConvertBuildTargetGroupToRuntime());
-            if (defaultSceneConfiguration == null)
-            {
-                defaultSceneConfiguration = configuration.DefaultSceneConfigurations[0];
-            }
+            DefaultSceneConfiguration defaultSceneConfiguration = configuration.DefaultSceneConfigurations
+                    .FirstOrDefault(sceneConfiguration => sceneConfiguration.BuildTargetGroup == currentBuildTargetGroup.ConvertBuildTargetGroupToRuntime())
+                ?? configuration.DefaultSceneConfigurations[0];
 
-            return defaultSceneConfiguration.Scenes.Where(scene => scene.GetSceneAsset() != null && scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset())
+            return defaultSceneConfiguration.Scenes.Where(scene => scene.GetSceneAsset() != null && scene.Addressable)
+                .Select(addressableScene => addressableScene.GetSceneAsset())
                 .ToList();
         }
 
         public static List<SceneAsset> GetNonAddressableDefaultScenes(this BuildConfiguration configuration, BuildTargetGroup currentBuildTargetGroup)
         {
-            DefaultSceneConfiguration defaultSceneConfiguration = configuration.DefaultSceneConfigurations.FirstOrDefault(sceneConfiguration => sceneConfiguration.BuildTargetGroup == currentBuildTargetGroup.ConvertBuildTargetGroupToRuntime());
-            if (defaultSceneConfiguration == null)
-            {
-                defaultSceneConfiguration = configuration.DefaultSceneConfigurations[0];
-            }
+            DefaultSceneConfiguration defaultSceneConfiguration = configuration.DefaultSceneConfigurations
+                    .FirstOrDefault(sceneConfiguration => sceneConfiguration.BuildTargetGroup == currentBuildTargetGroup.ConvertBuildTargetGroupToRuntime())
+                ?? configuration.DefaultSceneConfigurations[0];
 
             return defaultSceneConfiguration.Scenes.Where(scene => scene.GetSceneAsset() != null && !scene.Addressable)
                 .Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
@@ -69,12 +66,19 @@ namespace StansAssets.SceneManagement.Build
             }
         }
 
-        public static IEnumerable<SceneAssetInfo> BuildScenesCollection(this BuildConfiguration configuration, BuildTarget builtTarget, BuildTargetGroup buildTargetGroup, bool stripAddressables)
+        public static IEnumerable<SceneAssetInfo> BuildScenesCollection(this BuildConfiguration configuration, BuildTarget builtTarget,
+            BuildTargetGroup buildTargetGroup, bool stripAddressables)
         {
             var scenes = new List<SceneAssetInfo>();
-            var defaultSceneConfig = configuration.DefaultSceneConfigurations.First(sceneConfiguration => sceneConfiguration.BuildTargetGroup == buildTargetGroup.ConvertBuildTargetGroupToRuntime());
 
-            List<SceneAssetInfo> sceneAssetInfos = stripAddressables ? defaultSceneConfig.Scenes.Where(s => !s.Addressable).ToList() : defaultSceneConfig.Scenes;
+            DefaultSceneConfiguration defaultSceneConfiguration = configuration.DefaultSceneConfigurations
+                    .FirstOrDefault(sceneConfiguration => sceneConfiguration.BuildTargetGroup == buildTargetGroup.ConvertBuildTargetGroupToRuntime()) 
+                ?? configuration.DefaultSceneConfigurations[0];
+
+            List<SceneAssetInfo> sceneAssetInfos = stripAddressables
+                ? defaultSceneConfiguration.Scenes
+                    .Where(s => !s.Addressable).ToList()
+                : defaultSceneConfiguration.Scenes;
 
             if (configuration.DefaultScenesFirst)
             {
@@ -137,7 +141,9 @@ namespace StansAssets.SceneManagement.Build
             var buildSettingsSceneGuids = new HashSet<string>(buildSettingsScenes.Select(s => s.guid.ToString()));
 
             bool shouldUpdateBuildSettings = false;
-            var configurationSceneGuids = configuration.BuildScenesCollection(buildTarget, buildTargetGroup, false).Select(s => s.Guid);
+            var configurationSceneGuids = configuration.BuildScenesCollection(buildTarget, buildTargetGroup, false)
+                .Select(s => s.Guid);
+
             foreach (var sceneGuid in configurationSceneGuids)
             {
                 if (buildSettingsSceneGuids.Contains(sceneGuid) == false)

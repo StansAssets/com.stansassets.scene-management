@@ -15,7 +15,8 @@ namespace StansAssets.SceneManagement.Build
             switch (state) {
                 case PlayModeStateChange.EnteredPlayMode:
                     if (BuildConfigurationSettings.Instance.HasValidConfiguration) {
-                        BuildConfigurationSettings.Instance.Configuration.SetupBuildSettings(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup);
+                        BuildConfigurationSettings.Instance.Configuration
+                            .SetupBuildSettings(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup);
                     }
                     break;
             }

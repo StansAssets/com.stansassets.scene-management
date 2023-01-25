@@ -453,7 +453,8 @@ namespace StansAssets.SceneManagement.Build
                 selectedSceneAssetInfo.Add(newElement);
             }
 
-            selectedSceneAssetInfo = selectedSceneAssetInfo.OrderBy(x => defaultScenes.IndexOf(defaultScenes.First(y => y.Guid == x.Guid))).ToList();
+            selectedSceneAssetInfo = selectedSceneAssetInfo
+                .OrderBy(x => defaultScenes.IndexOf(defaultScenes.First(y => y.Guid == x.Guid))).ToList();
 
             conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes = selectedSceneAssetInfo;
         }
