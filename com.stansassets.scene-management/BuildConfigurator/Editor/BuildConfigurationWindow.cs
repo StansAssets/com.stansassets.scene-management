@@ -164,7 +164,8 @@ namespace StansAssets.SceneManagement.Build
                     var active = GUILayout.Button("Build", GUILayout.Width(100));
                     if (active)
                     {
-                        BuildScenesPreprocessor.SetupAddressableScenes(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup);
+                        BuildTargetGroup buildTargetGroup = BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget);
+                        BuildScenesPreprocessor.SetupAddressableScenes(EditorUserBuildSettings.activeBuildTarget, buildTargetGroup);
                     }
                 }
             }
