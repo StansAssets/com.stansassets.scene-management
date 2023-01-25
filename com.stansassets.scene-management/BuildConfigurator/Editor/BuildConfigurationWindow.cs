@@ -14,6 +14,7 @@ namespace StansAssets.SceneManagement.Build
             "projects settings defined scene will be added to the build. " +
             "When Defult Scenes have atleaest one scene defined, " +
             "project scenes are ignored and only scene defined in this configuration will be used.";
+        const int k_DefaultBuildTarget = -1;
 
         static readonly Color s_ErrorColor = new Color(1f, 0.8f, 0.0f);
         static readonly Color s_InactiveColor = new Color(1f, 0.8f, 0.0f);
@@ -213,7 +214,9 @@ namespace StansAssets.SceneManagement.Build
 
                             if (conf.DefaultSceneConfigurations[m_SelectedPlatform].Override)
                             {
-                                ReorderableListGUI.ListField(conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes, ContentTypeListItem, DrawEmptyScene);
+                                ReorderableListGUI.ListField(conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes,
+                                    ImmutableContentTypeListItem, DrawEmptyScene,
+                                    ReorderableListFlags.DisableReordering | ReorderableListFlags.HideAddButton | ReorderableListFlags.HideRemoveButtons);
                             }
                         }
                     }
@@ -226,27 +229,38 @@ namespace StansAssets.SceneManagement.Build
             List<SceneAssetInfo> defaultScenes = conf.DefaultSceneConfigurations[0].Scenes;
             if (!isOverride || defaultScenes.Count != conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes.Count)
             {
-                conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes = defaultScenes;
+                conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes.Clear();
+                for (var i = 0; i < defaultScenes.Count; i++)
+                {
+                    conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes.Add(new SceneAssetInfo
+                    {
+                        Name = defaultScenes[i].Name,
+                        Guid = defaultScenes[i].Guid,
+                        Addressable = defaultScenes[i].Addressable
+                    });
+                }
+
                 return;
             }
 
-            var firstGuids = defaultScenes.Select(x => x.Guid).ToList();
-            var secondGuids = conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes.Select(x => x.Guid).ToList();
-
-            if (firstGuids.Equals(secondGuids))
+            for (int i = 0; i < defaultScenes.Count; i++)
             {
-                conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes = defaultScenes;
+                if (defaultScenes[i].Guid == conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes[i].Guid) continue;
+                conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes.Clear();
+                conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes.AddRange(defaultScenes);
+                break;
             }
         }
 
         void InitializeDefaultSceneConfigurations(BuildConfiguration conf)
         {
             if (conf.DefaultSceneConfigurations.Count == m_ValidPlatformsGUIContent.Length) return;
-            conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(-1, new SceneAssetInfo()));
+            var newSceneAssetInfo = new SceneAssetInfo();
+            conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(k_DefaultBuildTarget, newSceneAssetInfo));
             for (int i = 1; i < m_ValidPlatformsGUIContent.Length; i++)
             {
                 BuildTargetGroup buildTargetGroup = m_BuildTargetGroupData.ValidPlatforms[i - 1].BuildTargetGroup;
-                conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(buildTargetGroup.ConvertBuildTargetGroupToRuntime(), new SceneAssetInfo()));
+                conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(buildTargetGroup.ConvertBuildTargetGroupToRuntime(), newSceneAssetInfo));
             }
         }
 
@@ -365,6 +379,46 @@ namespace StansAssets.SceneManagement.Build
             return itemValue;
         }
 
+        SceneAssetInfo ImmutableContentTypeListItem(Rect pos, SceneAssetInfo itemValue)
+        {
+            if (itemValue == null)
+                itemValue = new SceneAssetInfo();
+
+            int indentLevel = EditorGUI.indentLevel;
+            EditorGUI.indentLevel = 0;
+
+            Rect sceneIndexRect = m_ShowBuildIndex ? new Rect(pos.x, pos.y, 20f, pos.height) : new Rect(pos.x, pos.y, 0f, 0f);
+            Rect objectFieldRect = new Rect(pos.x + sceneIndexRect.width, pos.y + 2, pos.width - 20f - sceneIndexRect.width, 16);
+            Rect addressableToggleRect = new Rect(objectFieldRect.x + objectFieldRect.width + 2, pos.y, 20f, pos.height);
+
+            if (m_ShowBuildIndex)
+            {
+                int sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue);
+                GUI.Label(sceneIndexRect, sceneIndex.ToString());
+            }
+
+            EditorGUI.BeginDisabledGroup(true);
+            {
+                var sceneAsset = itemValue.GetSceneAsset();
+                bool sceneWithError = sceneAsset == null;
+                GUI.color = sceneWithError ? s_ErrorColor : Color.white;
+
+                EditorGUI.BeginChangeCheck();
+                var newSceneAsset = EditorGUI.ObjectField(objectFieldRect, sceneAsset, typeof(SceneAsset), false) as SceneAsset;
+                if (EditorGUI.EndChangeCheck())
+                {
+                    itemValue.SetSceneAsset(newSceneAsset);
+                }
+            }
+            EditorGUI.EndDisabledGroup();
+            GUI.color = Color.white;
+
+            itemValue.Addressable = GUI.Toggle(addressableToggleRect, itemValue.Addressable, AddressableGuiContent);
+            EditorGUI.indentLevel = indentLevel;
+
+            return itemValue;
+        }
+
         void DrawEmptyScene()
         {
             GUILayout.Label("Add a scenes", EditorStyles.miniLabel);
@@ -435,7 +489,7 @@ namespace StansAssets.SceneManagement.Build
                 {
                     var sceneAssetInfo = new SceneAssetInfo();
                     sceneAssetInfo.SetSceneAsset(scene);
-                    conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(-1, sceneAssetInfo));
+                    conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(k_DefaultBuildTarget, sceneAssetInfo));
                 }
 
                 BuildConfigurationSettings.Save();
