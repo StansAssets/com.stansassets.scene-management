@@ -10,7 +10,7 @@ namespace StansAssets.SceneManagement.Build
 {
     class BuildConfigurationWindow : IMGUISettingsWindow<BuildConfigurationWindow>, IHasCustomMenu
     {
-        const string k_DefaultScenesDescription = "If you are leaving the default scnese empty, " +
+        const string k_DefaultScenesDescription = "If you are leaving the default scene empty, " +
             "projects settings defined scene will be added to the build. " +
             "When Defult Scenes have atleaest one scene defined, " +
             "project scenes are ignored and only scene defined in this configuration will be used.";
@@ -225,46 +225,6 @@ namespace StansAssets.SceneManagement.Build
             }
         }
 
-        void CopyScenesFromDefaultConfiguration(BuildConfiguration conf, bool isOverride)
-        {
-            List<SceneAssetInfo> defaultScenes = conf.DefaultSceneConfigurations[0].Scenes;
-            if (!isOverride || defaultScenes.Count != conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes.Count)
-            {
-                conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes.Clear();
-                for (var i = 0; i < defaultScenes.Count; i++)
-                {
-                    conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes.Add(new SceneAssetInfo
-                    {
-                        Name = defaultScenes[i].Name,
-                        Guid = defaultScenes[i].Guid,
-                        Addressable = defaultScenes[i].Addressable
-                    });
-                }
-
-                return;
-            }
-
-            for (int i = 0; i < defaultScenes.Count; i++)
-            {
-                if (defaultScenes[i].Guid == conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes[i].Guid) continue;
-                conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes.Clear();
-                conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes.AddRange(defaultScenes);
-                break;
-            }
-        }
-
-        void InitializeDefaultSceneConfigurations(BuildConfiguration conf)
-        {
-            if (conf.DefaultSceneConfigurations.Count == m_ValidPlatformsGUIContent.Length) return;
-            var newSceneAssetInfo = new SceneAssetInfo();
-            conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(k_DefaultBuildTarget, newSceneAssetInfo));
-            for (int i = 1; i < m_ValidPlatformsGUIContent.Length; i++)
-            {
-                BuildTargetGroup buildTargetGroup = m_BuildTargetGroupData.ValidPlatforms[i - 1].BuildTargetGroup;
-                conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(buildTargetGroup.ConvertBuildTargetGroupToRuntime(), newSceneAssetInfo));
-            }
-        }
-
         void DrawPlatforms(BuildConfiguration conf)
         {
             using (new IMGUIBlockWithIndent(new GUIContent("Platforms")))
@@ -460,6 +420,54 @@ namespace StansAssets.SceneManagement.Build
             EditorGUILayout.EndVertical();
 
             return index;
+        }
+
+        void CopyScenesFromDefaultConfiguration(BuildConfiguration conf, bool isOverride)
+        {
+            List<SceneAssetInfo> defaultScenes = conf.DefaultSceneConfigurations[0].Scenes;
+            List<SceneAssetInfo> selectedSceneAssetInfo = conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes;
+
+            if (!isOverride)
+            {
+                conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes.Clear();
+                for (var i = 0; i < defaultScenes.Count; i++)
+                {
+                    conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes
+                        .Add(new SceneAssetInfo(defaultScenes[i].Guid, defaultScenes[i].Name, defaultScenes[i].Addressable));
+                }
+
+                return;
+            }
+
+            for (var i = 0; i < selectedSceneAssetInfo.Count; i++)
+            {
+                if (defaultScenes.Any(x => x.Guid == selectedSceneAssetInfo[i].Guid)) continue;
+                selectedSceneAssetInfo.RemoveAt(i);
+                i--;
+            }
+
+            for (var i = 0; i < defaultScenes.Count; i++)
+            {
+                if (selectedSceneAssetInfo.Any(x => x.Guid == defaultScenes[i].Guid)) continue;
+                var newElement = new SceneAssetInfo(defaultScenes[i].Name, defaultScenes[i].Guid, defaultScenes[i].Addressable);
+                selectedSceneAssetInfo.Add(newElement);
+            }
+
+            selectedSceneAssetInfo = selectedSceneAssetInfo.OrderBy(x => defaultScenes.IndexOf(defaultScenes.First(y => y.Guid == x.Guid))).ToList();
+
+            conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes = selectedSceneAssetInfo;
+        }
+
+        void InitializeDefaultSceneConfigurations(BuildConfiguration conf)
+        {
+            if (conf.DefaultSceneConfigurations.Count == m_ValidPlatformsGUIContent.Length) return;
+            var newSceneAssetInfo = new SceneAssetInfo();
+            conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(k_DefaultBuildTarget, newSceneAssetInfo));
+            for (int i = 1; i < m_ValidPlatformsGUIContent.Length; i++)
+            {
+                BuildTargetGroup buildTargetGroup = m_BuildTargetGroupData.ValidPlatforms[i - 1].BuildTargetGroup;
+                conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(buildTargetGroup.ConvertBuildTargetGroupToRuntime(), newSceneAssetInfo));
+            }
         }
 
         void InitializeValidPlatform()

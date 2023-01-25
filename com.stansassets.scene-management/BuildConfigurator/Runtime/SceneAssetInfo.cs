@@ -11,5 +11,13 @@ namespace StansAssets.SceneManagement.Build
         public string Name;
         public string Guid;
         public bool Addressable;
+        public SceneAssetInfo() { }
+
+        public SceneAssetInfo(string name, string guid, bool addressable)
+        {
+            Name = name;
+            Guid = guid;
+            Addressable = addressable;
+        }
     }
 }
