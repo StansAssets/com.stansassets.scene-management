@@ -25,8 +25,7 @@ namespace StansAssets.SceneManagement.Build
 
         bool m_ShowBuildIndex;
         int m_SelectedPlatform;
-        bool[] m_OverrideForPlatforms;
-        GUIContent[] m_ValidPlatforms;
+        GUIContent[] m_ValidPlatformsGUIContent;
         BuildTargetGroupData m_BuildTargetGroupData;
 
         protected override void OnAwake()
@@ -53,18 +52,6 @@ namespace StansAssets.SceneManagement.Build
 
             m_AddButton = new IMGUIHyperLabel(new GUIContent("+"), EditorStyles.miniLabel);
             m_AddButton.SetMouseOverColor(SettingsWindowStyles.SelectedElementColor);
-
-            m_BuildTargetGroupData = new BuildTargetGroupData();
-
-            m_ValidPlatforms = new GUIContent[m_BuildTargetGroupData.ValidPlatforms.Length + 1];
-            m_ValidPlatforms[0] = new GUIContent("Default");
-            for (var i = 0; i < m_BuildTargetGroupData.ValidPlatforms.Length; i++)
-            {
-                int t = i + 1;
-                m_ValidPlatforms[t] = EditorGUIUtility.IconContent($"{m_BuildTargetGroupData.ValidPlatforms[i].IconName}");
-            }
-
-            m_OverrideForPlatforms = new bool[m_ValidPlatforms.Length - 1];
         }
 
         void UpdateActiveConfUI()
@@ -115,6 +102,8 @@ namespace StansAssets.SceneManagement.Build
         {
             DrawToolbar();
             DrawHeader();
+
+            InitializeValidPlatform();
 
             m_SelectionIndex = DrawTabs();
 
@@ -202,7 +191,7 @@ namespace StansAssets.SceneManagement.Build
                     using (new IMGUIBeginVertical())
                     {
                         EditorGUILayout.LabelField("Selected Platform: ");
-                        m_SelectedPlatform = GUILayout.SelectionGrid(m_SelectedPlatform, m_ValidPlatforms, m_ValidPlatforms.Length);
+                        m_SelectedPlatform = GUILayout.SelectionGrid(m_SelectedPlatform, m_ValidPlatformsGUIContent, m_ValidPlatformsGUIContent.Length);
 
                         InitializeDefaultSceneConfigurations(conf);
 
@@ -212,11 +201,15 @@ namespace StansAssets.SceneManagement.Build
                         }
                         else
                         {
-                            conf.DefaultSceneConfigurations[m_SelectedPlatform].Override
-                                = EditorGUILayout.Toggle("Override for " + m_BuildTargetGroupData.ValidPlatforms[m_SelectedPlatform - 1].BuildTargetGroup,
-                                    conf.DefaultSceneConfigurations[m_SelectedPlatform].Override);
+                            GUILayout.BeginHorizontal();
+                            {
+                                conf.DefaultSceneConfigurations[m_SelectedPlatform].Override
+                                    = EditorGUILayout.Toggle(GUIContent.none, conf.DefaultSceneConfigurations[m_SelectedPlatform].Override, GUILayout.Width(15));
+                                EditorGUILayout.LabelField($"Override for {m_BuildTargetGroupData.ValidPlatforms[m_SelectedPlatform - 1].BuildTargetGroup}");
+                            }
+                            GUILayout.EndHorizontal();
 
-                            CopyScenesFromDefaultConfiguration(conf, m_OverrideForPlatforms[m_SelectedPlatform - 1]);
+                            CopyScenesFromDefaultConfiguration(conf, conf.DefaultSceneConfigurations[m_SelectedPlatform].Override);
 
                             if (conf.DefaultSceneConfigurations[m_SelectedPlatform].Override)
                             {
@@ -248,14 +241,12 @@ namespace StansAssets.SceneManagement.Build
 
         void InitializeDefaultSceneConfigurations(BuildConfiguration conf)
         {
-            if (conf.DefaultSceneConfigurations.Count != m_ValidPlatforms.Length)
+            if (conf.DefaultSceneConfigurations.Count == m_ValidPlatformsGUIContent.Length) return;
+            conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(-1, new SceneAssetInfo()));
+            for (int i = 1; i < m_ValidPlatformsGUIContent.Length; i++)
             {
-                conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(-1, new SceneAssetInfo()));
-                for (int i = 1; i < m_ValidPlatforms.Length; i++)
-                {
-                    BuildTargetGroup buildTargetGroup = m_BuildTargetGroupData.ValidPlatforms[i - 1].BuildTargetGroup;
-                    conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(buildTargetGroup.ConvertBuildTargetGroupToRuntime(), new SceneAssetInfo()));
-                }
+                BuildTargetGroup buildTargetGroup = m_BuildTargetGroupData.ValidPlatforms[i - 1].BuildTargetGroup;
+                conf.DefaultSceneConfigurations.Add(new DefaultSceneConfiguration(buildTargetGroup.ConvertBuildTargetGroupToRuntime(), new SceneAssetInfo()));
             }
         }
 
@@ -414,6 +405,19 @@ namespace StansAssets.SceneManagement.Build
             EditorGUILayout.EndVertical();
 
             return index;
+        }
+
+        void InitializeValidPlatform()
+        {
+            m_BuildTargetGroupData = new BuildTargetGroupData();
+
+            m_ValidPlatformsGUIContent = new GUIContent[m_BuildTargetGroupData.ValidPlatforms.Length + 1];
+            m_ValidPlatformsGUIContent[0] = new GUIContent("Default");
+            for (var i = 0; i < m_BuildTargetGroupData.ValidPlatforms.Length; i++)
+            {
+                int t = i + 1;
+                m_ValidPlatformsGUIContent[t] = EditorGUIUtility.IconContent($"{m_BuildTargetGroupData.ValidPlatforms[i].IconName}");
+            }
         }
 
         static GUIContent s_AddressableGuiContent;
