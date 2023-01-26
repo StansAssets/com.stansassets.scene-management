@@ -185,6 +185,8 @@ namespace StansAssets.SceneManagement.Build
                     return BuildTargetGroupRuntime.PS4;
                 case BuildTargetGroup.XboxOne:
                     return BuildTargetGroupRuntime.XboxOne;
+                case BuildTargetGroup.iOS:
+                    return BuildTargetGroupRuntime.iOS;
                 case BuildTargetGroup.tvOS:
                     return BuildTargetGroupRuntime.tvOS;
                 case BuildTargetGroup.Switch:
