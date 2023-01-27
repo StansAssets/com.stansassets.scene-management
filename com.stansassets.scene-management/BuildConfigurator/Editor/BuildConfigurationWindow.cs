@@ -2,6 +2,7 @@
 using UnityEditor;
 using Rotorz.ReorderableList;
 using StansAssets.Plugins.Editor;
+using StansAssets.SceneManagement.Utilities;
 
 namespace StansAssets.SceneManagement.Build
 {
@@ -218,7 +219,7 @@ namespace StansAssets.SceneManagement.Build
                                 }
                                 EditorGUILayout.EndVertical();
 
-                                EditorGUILayout.BeginVertical(GUILayout.Width(220f));
+                                EditorGUILayout.BeginVertical(GUILayout.Width(235f));
                                 {
                                     ReorderableListGUI.Title("Build Targets");
 
@@ -226,7 +227,7 @@ namespace StansAssets.SceneManagement.Build
                                 }
                                 EditorGUILayout.EndVertical();
 
-                                EditorGUILayout.BeginVertical(GUILayout.ExpandWidth(true));
+                                EditorGUILayout.BeginVertical();
                                 {
                                     GUI.backgroundColor = m_ShowBuildIndex ? GUI.skin.settings.selectionColor : Color.white;
                                     ReorderableListGUI.Title("Scenes");
@@ -269,37 +270,47 @@ namespace StansAssets.SceneManagement.Build
             if (itemValue == null)
                 itemValue = new SceneAssetInfo();
 
-            int indentLevel = EditorGUI.indentLevel;
-            EditorGUI.indentLevel = 0;
-
-            Rect sceneIndexRect = m_ShowBuildIndex ? new Rect(pos.x, pos.y, 20f, pos.height) : new Rect(pos.x, pos.y, 0f, 0f);
-            Rect objectFieldRect = new Rect(pos.x + sceneIndexRect.width, pos.y + 2, pos.width - 20f - sceneIndexRect.width, 16);
-            float addressableToggleStartX = objectFieldRect.x + objectFieldRect.width + 2;
-            objectFieldRect.width = Mathf.Clamp(objectFieldRect.width, 40, addressableToggleStartX - objectFieldRect.x);
-            Rect addressableToggleRect = new Rect(objectFieldRect.x + objectFieldRect.width + 2, pos.y, 20f, pos.height);
-
-            if (pos.width <= 65f) return itemValue;
-            
-            if (m_ShowBuildIndex) {
-                int sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue);
-                GUI.Label(sceneIndexRect, sceneIndex.ToString());
-            }
-
-            var sceneAsset = itemValue.GetSceneAsset();
-            bool sceneWithError = sceneAsset == null;
-            GUI.color = sceneWithError ? s_ErrorColor : Color.white;
-
-            EditorGUI.BeginChangeCheck();
-            var newSceneAsset = EditorGUI.ObjectField(objectFieldRect, sceneAsset, typeof(SceneAsset), false) as SceneAsset;
-            if (EditorGUI.EndChangeCheck())
+            GUI.BeginGroup(pos);
             {
-                itemValue.SetSceneAsset(newSceneAsset);
+                const float addressablesToggleWidth = 20.0f;
+                const float objectFieldRectWidth = 60.0f;
+
+                var indentLevel = EditorGUI.indentLevel;
+                EditorGUI.indentLevel = 0;
+
+                var rect = Rect.zero.WithSize(pos.size);
+                var sceneIndexRect = m_ShowBuildIndex ? rect.WithWidth(addressablesToggleWidth) : rect.WithSize(Vector2.zero);
+                var objectFieldRect = rect.WithWidth(Mathf.Clamp(rect.width - sceneIndexRect.width - addressablesToggleWidth,
+                        objectFieldRectWidth,
+                        float.MaxValue))
+                    .RightOf(sceneIndexRect);
+                var addressableToggleRect = rect.WithWidth(addressablesToggleWidth).RightOf(objectFieldRect).ShiftHorizontally(4.0f);
+
+                if (m_ShowBuildIndex)
+                {
+                    var sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue);
+                    GUI.Label(sceneIndexRect, sceneIndex.ToString());
+                }
+
+                var sceneAsset = itemValue.GetSceneAsset();
+                var sceneWithError = sceneAsset == null;
+                GUI.color = sceneWithError ? s_ErrorColor : Color.white;
+
+                EditorGUI.indentLevel = 0;
+                EditorGUI.BeginChangeCheck();
+                var newSceneAsset = EditorGUI.ObjectField(objectFieldRect, sceneAsset, typeof(SceneAsset), false) as SceneAsset;
+                if (EditorGUI.EndChangeCheck())
+                {
+                    itemValue.SetSceneAsset(newSceneAsset);
+                }
+
+                GUI.color = Color.white;
+
+                itemValue.Addressable = GUI.Toggle(addressableToggleRect, itemValue.Addressable, AddressableGuiContent);
+
+                EditorGUI.indentLevel = indentLevel;
             }
-
-            GUI.color = Color.white;
-
-            itemValue.Addressable = GUI.Toggle(addressableToggleRect, itemValue.Addressable, AddressableGuiContent);
-            EditorGUI.indentLevel = indentLevel;
+            GUI.EndGroup();
 
             return itemValue;
         }
