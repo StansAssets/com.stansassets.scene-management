@@ -98,5 +98,6 @@ namespace StansAssets.SceneManagement.Build
         /// </summary>
         Switch = 38, // 0x00000026
         Lumin = 39, // 0x00000027
+        Editor = 1242023, // No listed in 'UnityEditor.BuildTarget'!
     }
 }

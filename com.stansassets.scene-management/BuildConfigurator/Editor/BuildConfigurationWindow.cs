@@ -159,6 +159,30 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
 
+            var needScenesSync = EditorBuildSettingsValidator.CompareScenesWithBuildSettings();
+            if (needScenesSync)
+            {
+                using (new IMGUIBlockWithIndent(new GUIContent("Editor & Build Settings")))
+                {
+                    EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesSyncDescription, MessageType.Warning);
+
+                    using (new IMGUIBeginHorizontal())
+                    {
+                        GUILayout.FlexibleSpace();
+
+                        var active = GUILayout.Button("Clear Build Settings & Sync", GUILayout.Width(240));
+                        if (active)
+                        {
+                            if (BuildConfigurationSettings.Instance.HasValidConfiguration)
+                            {
+                                BuildConfigurationSettings.Instance.Configuration.SetupEditorSettings(
+                                    EditorUserBuildSettings.activeBuildTarget, true);
+                            }
+                        }
+                    }
+                }
+            }
+
             if (conf.DefaultScenesFirst)
             {
                 DrawDefaultScenes(conf);
@@ -219,7 +243,7 @@ namespace StansAssets.SceneManagement.Build
                                 }
                                 EditorGUILayout.EndVertical();
 
-                                EditorGUILayout.BeginVertical(GUILayout.Width(235f));
+                                EditorGUILayout.BeginVertical(GUILayout.Width(150));
                                 {
                                     ReorderableListGUI.Title("Build Targets");
 
@@ -227,7 +251,7 @@ namespace StansAssets.SceneManagement.Build
                                 }
                                 EditorGUILayout.EndVertical();
 
-                                EditorGUILayout.BeginVertical();
+                                EditorGUILayout.BeginVertical(GUILayout.ExpandWidth(true));
                                 {
                                     GUI.backgroundColor = m_ShowBuildIndex ? GUI.skin.settings.selectionColor : Color.white;
                                     ReorderableListGUI.Title("Scenes");
@@ -292,8 +316,11 @@ namespace StansAssets.SceneManagement.Build
                     GUI.Label(sceneIndexRect, sceneIndex.ToString());
                 }
 
+                var sceneSynced = BuildConfigurationSettings.Instance.Configuration
+                    .CheckIntersectSceneWhBuildSettings(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
+
                 var sceneAsset = itemValue.GetSceneAsset();
-                var sceneWithError = sceneAsset == null;
+                var sceneWithError = sceneAsset == null || !sceneSynced;
                 GUI.color = sceneWithError ? s_ErrorColor : Color.white;
 
                 EditorGUI.indentLevel = 0;

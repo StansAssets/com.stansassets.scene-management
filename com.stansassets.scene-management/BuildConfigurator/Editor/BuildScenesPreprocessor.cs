@@ -74,7 +74,7 @@ namespace StansAssets.SceneManagement.Build
             }
 
             var configuration = BuildConfigurationSettings.Instance.Configuration;
-            var sceneAssets = configuration.BuildScenesCollection(target, true);
+            var sceneAssets = configuration.BuildScenesCollection(target, true, false);
             var scenes = sceneAssets.Select(s => AssetDatabase.GUIDToAssetPath(s.Guid)).ToArray();
             return scenes;
         }
