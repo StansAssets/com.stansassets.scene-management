@@ -9,7 +9,8 @@
         "StansAssets.SceneManagement.Editor",
         "Unity.Addressables",
         "Unity.Addressables.Editor",
-        "Unity.ScriptableBuildPipeline.Editor"
+        "Unity.ScriptableBuildPipeline.Editor",
+        "StansAssets.SceneManagement"
     ],
     "includePlatforms": [
         "Editor"
