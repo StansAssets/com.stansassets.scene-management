@@ -53,8 +53,12 @@ namespace StansAssets.SceneManagement.Build
         }
 
         public static IEnumerable<SceneAssetInfo> BuildScenesCollection(this BuildConfiguration configuration,
-            BuildTarget builtTarget, bool stripAddressables, bool includeEditorScene)
+            BuildScenesParams buildScenesParams)
         {
+            var builtTarget = buildScenesParams.BuiltTarget;
+            var stripAddressables = buildScenesParams.StripAddressables;
+            var includeEditorScene = buildScenesParams.IncludeEditorScene;
+            
             var scenes = new List<SceneAssetInfo>();
             var defaultSceneAssets = stripAddressables
                 ? configuration.DefaultScenes.Where(s => !s.Addressable).ToList()
@@ -121,7 +125,7 @@ namespace StansAssets.SceneManagement.Build
 
             bool shouldUpdateBuildSettings = false;
             var configurationSceneGuids =
-                configuration.BuildScenesCollection(buildTarget, false, false).Select(s => s.Guid);
+                configuration.BuildScenesCollection(new BuildScenesParams(buildTarget, false, false)).Select(s => s.Guid);
             foreach (var sceneGuid in configurationSceneGuids)
             {
                 if (buildSettingsSceneGuids.Contains(sceneGuid) == false)
@@ -159,7 +163,7 @@ namespace StansAssets.SceneManagement.Build
 
             bool shouldUpdateBuildSettings = false;
             var configurationSceneGuids =
-                configuration.BuildScenesCollection(buildTarget, false, true).Select(s => s.Guid);
+                configuration.BuildScenesCollection(new BuildScenesParams(buildTarget, false, true)).Select(s => s.Guid);
             foreach (var sceneGuid in configurationSceneGuids)
             {
                 if (buildSettingsSceneGuids.Contains(sceneGuid) == false)
@@ -241,7 +245,7 @@ namespace StansAssets.SceneManagement.Build
                 .ToList();
 
             var configurationSceneGuids = configuration
-                .BuildScenesCollection(buildTarget, false, true)
+                .BuildScenesCollection(new BuildScenesParams(buildTarget, false, true))
                 .Select(s => s.Guid.ToString())
                 .ToList();
 
@@ -255,7 +259,7 @@ namespace StansAssets.SceneManagement.Build
             BuildTarget buildTarget, string sceneGuid)
         {
             var configurationSceneGuids = configuration
-                .BuildScenesCollection(buildTarget, false, true)
+                .BuildScenesCollection(new BuildScenesParams(buildTarget, false, true))
                 .Select(s => s.Guid.ToString())
                 .ToList();
 
@@ -267,6 +271,25 @@ namespace StansAssets.SceneManagement.Build
 
             var synced = EditorBuildSettings.scenes.Any(i => i.guid.ToString().Equals(sceneGuid));
             return synced;
+        }
+    }
+
+    internal struct BuildScenesParams
+    {
+        internal readonly BuildTarget BuiltTarget; 
+        internal readonly bool StripAddressables;
+        
+        /// <summary>
+        /// Include in the collection the "Editor" platform scenes.
+        /// It is only needed to work in the editor, otherwise set to "false" to prepare the collection for build.
+        /// </summary>
+        internal readonly bool IncludeEditorScene;
+
+        public BuildScenesParams(BuildTarget builtTarget, bool stripAddressables, bool includeEditorScene)
+        {
+            BuiltTarget = builtTarget;
+            StripAddressables = stripAddressables;
+            IncludeEditorScene = includeEditorScene;
         }
     }
 }
