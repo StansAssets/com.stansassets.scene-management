@@ -10,14 +10,12 @@ namespace StansAssets.SceneManagement.Build
     {
         public static List<SceneAsset> GetAddressableDefaultScenes(this BuildConfiguration configuration)
         {
-            return configuration.DefaultScenes.Where(scene => scene.GetSceneAsset() != null && scene.Addressable)
-                .Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
+            return configuration.DefaultScenes.Where(scene => scene.GetSceneAsset() != null && scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
         }
 
         public static List<SceneAsset> GetNonAddressableDefaultScenes(this BuildConfiguration configuration)
         {
-            return configuration.DefaultScenes.Where(scene => scene.GetSceneAsset() != null && !scene.Addressable)
-                .Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
+            return configuration.DefaultScenes.Where(scene => scene.GetSceneAsset() != null && !scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
         }
 
         public static void InitializeBuildData(this BuildConfiguration buildConfiguration, BuildTarget buildTarget)
@@ -32,7 +30,7 @@ namespace StansAssets.SceneManagement.Build
         {
             foreach (var scene in buildConfiguration.DefaultScenes)
             {
-                if (scene == null)
+                if(scene == null)
                     continue;
 
                 var path = AssetDatabase.GUIDToAssetPath(scene.Guid);
@@ -43,7 +41,7 @@ namespace StansAssets.SceneManagement.Build
             {
                 foreach (var scene in platform.Scenes)
                 {
-                    if (scene == null)
+                    if(scene == null)
                         continue;
 
                     var path = AssetDatabase.GUIDToAssetPath(scene.Guid);
@@ -52,8 +50,7 @@ namespace StansAssets.SceneManagement.Build
             }
         }
 
-        public static IEnumerable<SceneAssetInfo> BuildScenesCollection(this BuildConfiguration configuration,
-            BuildScenesParams buildScenesParams)
+        public static IEnumerable<SceneAssetInfo> BuildScenesCollection(this BuildConfiguration configuration, BuildScenesParams buildScenesParams)
         {
             var builtTarget = buildScenesParams.BuiltTarget;
             var stripAddressables = buildScenesParams.StripAddressables;
@@ -66,22 +63,19 @@ namespace StansAssets.SceneManagement.Build
 
             if (configuration.DefaultScenesFirst)
             {
-                ProcessPlatforms(ref scenes, builtTarget, configuration.Platforms, stripAddressables,
-                    includeEditorScene);
+                ProcessPlatforms(ref scenes, builtTarget, configuration.Platforms, stripAddressables, includeEditorScene);
                 InsertScenes(ref scenes, defaultSceneAssets);
             }
             else
             {
                 InsertScenes(ref scenes, defaultSceneAssets);
-                ProcessPlatforms(ref scenes, builtTarget, configuration.Platforms, stripAddressables,
-                    includeEditorScene);
+                ProcessPlatforms(ref scenes, builtTarget, configuration.Platforms, stripAddressables, includeEditorScene);
             }
 
             return scenes;
         }
 
-        public static bool IsActive(this BuildConfiguration configuration,
-            PlatformsConfiguration platformsConfiguration)
+        public static bool IsActive(this BuildConfiguration configuration, PlatformsConfiguration platformsConfiguration)
         {
             BuildTargetRuntime buildTarget = (BuildTargetRuntime)(int)EditorUserBuildSettings.activeBuildTarget;
             return platformsConfiguration.BuildTargets.Contains(buildTarget);
@@ -97,9 +91,7 @@ namespace StansAssets.SceneManagement.Build
                     var platformIndex = platformConfiguration.Scenes.IndexOf(scene);
                     if (platformIndex >= 0)
                     {
-                        return configuration.DefaultScenesFirst
-                            ? configuration.DefaultScenes.Count + platformIndex
-                            : platformIndex;
+                        return configuration.DefaultScenesFirst ? configuration.DefaultScenes.Count + platformIndex : platformIndex;
                     }
 
                     platformScenesCount = platformConfiguration.Scenes.Count;
@@ -124,8 +116,7 @@ namespace StansAssets.SceneManagement.Build
             var buildSettingsSceneGuids = new HashSet<string>(buildSettingsScenes.Select(s => s.guid.ToString()));
 
             bool shouldUpdateBuildSettings = false;
-            var configurationSceneGuids =
-                configuration.BuildScenesCollection(new BuildScenesParams(buildTarget, false, false)).Select(s => s.Guid);
+            var configurationSceneGuids = configuration.BuildScenesCollection(new BuildScenesParams(buildTarget, false, false)).Select(s => s.Guid);
             foreach (var sceneGuid in configurationSceneGuids)
             {
                 if (buildSettingsSceneGuids.Contains(sceneGuid) == false)
@@ -212,7 +203,6 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
         }
-
 
         static void InsertScenes(ref List<SceneAssetInfo> scenes, List<SceneAssetInfo> sceneToInsert)
         {
