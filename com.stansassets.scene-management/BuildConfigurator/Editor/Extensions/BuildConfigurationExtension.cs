@@ -52,10 +52,7 @@ namespace StansAssets.SceneManagement.Build
 
         public static IEnumerable<SceneAssetInfo> BuildScenesCollection(this BuildConfiguration configuration, BuildScenesParams buildScenesParams)
         {
-            var builtTarget = buildScenesParams.BuiltTarget;
             var stripAddressables = buildScenesParams.StripAddressables;
-            var includeEditorScene = buildScenesParams.IncludeEditorScene;
-            
             var scenes = new List<SceneAssetInfo>();
             var defaultSceneAssets = stripAddressables
                 ? configuration.DefaultScenes.Where(s => !s.Addressable).ToList()
@@ -63,13 +60,13 @@ namespace StansAssets.SceneManagement.Build
 
             if (configuration.DefaultScenesFirst)
             {
-                ProcessPlatforms(ref scenes, builtTarget, configuration.Platforms, stripAddressables, includeEditorScene);
+                ProcessPlatforms(ref scenes, configuration.Platforms, buildScenesParams);
                 InsertScenes(ref scenes, defaultSceneAssets);
             }
             else
             {
                 InsertScenes(ref scenes, defaultSceneAssets);
-                ProcessPlatforms(ref scenes, builtTarget, configuration.Platforms, stripAddressables, includeEditorScene);
+                ProcessPlatforms(ref scenes, configuration.Platforms, buildScenesParams);
             }
 
             return scenes;
@@ -182,9 +179,12 @@ namespace StansAssets.SceneManagement.Build
             }
         }
 
-        static void ProcessPlatforms(ref List<SceneAssetInfo> scenes, BuildTarget buildTarget,
-            List<PlatformsConfiguration> platforms, bool stripAddressable, bool includeEditorScene)
+        static void ProcessPlatforms(ref List<SceneAssetInfo> scenes, List<PlatformsConfiguration> platforms, BuildScenesParams buildScenesParams)
         {
+            var buildTarget = buildScenesParams.BuiltTarget;
+            var stripAddressable = buildScenesParams.StripAddressables;
+            var includeEditorScene = buildScenesParams.IncludeEditorScene;
+            
             foreach (var platformsConfiguration in platforms)
             {
                 var editorBuildTargets = platformsConfiguration.GetBuildTargetsEditor();
