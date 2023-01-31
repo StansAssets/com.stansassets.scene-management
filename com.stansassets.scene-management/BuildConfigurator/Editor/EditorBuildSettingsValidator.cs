@@ -12,6 +12,8 @@ namespace StansAssets.SceneManagement.Build
         const string k_HintDescription= "Scenes can be synchronized through the " +
                                         "'Scene Management -> Build Settings'.";
 
+        public static readonly Color OutOfSyncColor = new Color(0.93f, 0.39f, 0.32f);
+
         public static bool CompareScenesWithBuildSettings()
         {
             var needToSync = BuildConfigurationSettings.Instance.Configuration
