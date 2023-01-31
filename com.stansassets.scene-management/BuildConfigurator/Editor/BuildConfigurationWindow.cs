@@ -324,7 +324,19 @@ namespace StansAssets.SceneManagement.Build
 
                 var sceneAsset = itemValue.GetSceneAsset();
                 var sceneWithError = sceneAsset == null || !sceneSynced;
-                GUI.color = sceneWithError ? s_ErrorColor : Color.white;
+               
+                if (sceneWithError)
+                {
+                    GUI.color = s_ErrorColor;
+                }
+                else if (!sceneSynced)
+                {
+                    GUI.color = EditorBuildSettingsValidator.OutOfSyncColor;
+                }
+                else
+                {
+                    GUI.color = Color.white;
+                }
 
                 EditorGUI.indentLevel = 0;
                 EditorGUI.BeginChangeCheck();
@@ -389,9 +401,7 @@ namespace StansAssets.SceneManagement.Build
 
         static GUIContent s_AddressableGuiContent;
 
-        static GUIContent AddressableGuiContent => s_AddressableGuiContent ?? (s_AddressableGuiContent =
-            new GUIContent("",
-                "Mark scene Addressable?\nIf true - scene will be added as Addressable asset into \"Scenes\" group, otherwise - scene will be added into build settings."));
+        static GUIContent AddressableGuiContent => s_AddressableGuiContent ?? (s_AddressableGuiContent = new GUIContent("", "Mark scene Addressable?\nIf true - scene will be added as Addressable asset into \"Scenes\" group, otherwise - scene will be added into build settings."));
 
         public void AddItemsToMenu(GenericMenu menu)
         {
