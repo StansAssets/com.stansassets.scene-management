@@ -23,6 +23,8 @@ namespace StansAssets.SceneManagement.Build
 
         bool m_ShowBuildIndex;
 
+        readonly EditorNBuildSettingsDrawer m_EditorNBuildSettingsDrawer = new EditorNBuildSettingsDrawer();
+        
         protected override void OnAwake()
         {
             titleContent = new GUIContent("Cross-Platform build configuration");
@@ -158,30 +160,8 @@ namespace StansAssets.SceneManagement.Build
                     }
                 }
             }
-
-            var needScenesSync = EditorBuildSettingsValidator.CompareScenesWithBuildSettings();
-            if (needScenesSync)
-            {
-                using (new IMGUIBlockWithIndent(new GUIContent("Editor & Build Settings")))
-                {
-                    EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesSyncDescription, MessageType.Warning);
-
-                    using (new IMGUIBeginHorizontal())
-                    {
-                        GUILayout.FlexibleSpace();
-
-                        var active = GUILayout.Button("Clear Build Settings & Sync", GUILayout.Width(240));
-                        if (active)
-                        {
-                            if (BuildConfigurationSettings.Instance.HasValidConfiguration)
-                            {
-                                BuildConfigurationSettings.Instance.Configuration.SetupEditorSettings(
-                                    EditorUserBuildSettings.activeBuildTarget, true);
-                            }
-                        }
-                    }
-                }
-            }
+            
+            m_EditorNBuildSettingsDrawer.DrawSettings();
 
             if (conf.DefaultScenesFirst)
             {

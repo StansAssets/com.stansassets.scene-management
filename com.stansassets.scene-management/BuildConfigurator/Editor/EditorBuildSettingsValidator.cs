@@ -6,13 +6,16 @@ namespace StansAssets.SceneManagement.Build
     [InitializeOnLoad]
     public class EditorBuildSettingsValidator
     {
-        public const string ScenesSyncDescription = "Current Editor Build Settings are our of sync " +
-                                                    "with the Scene Management build configuration.";
+        public const string ScenesSyncWarningDescription = "Current Editor Build Settings are our of sync " +
+                                                           "with the Scene Management build configuration.";
 
-        const string k_HintDescription= "Scenes can be synchronized through the " +
-                                        "'Scene Management -> Build Settings'.";
+        public const string ScenesSyncOkDescription = "Editor Build Settings are synced " +
+                                                      "with the Scene Management build configuration.";
 
         public static readonly Color OutOfSyncColor = new Color(0.93f, 0.39f, 0.32f);
+
+        const string k_HintDescription = "Scenes can be synchronized through the " +
+                                         "'Scene Management -> Build Settings'.";
 
         public static bool CompareScenesWithBuildSettings()
         {
@@ -27,7 +30,7 @@ namespace StansAssets.SceneManagement.Build
             EditorBuildSettings.sceneListChanged += EditorBuildSettingsOnSceneListChanged;
         }
 
-        private static void EditorBuildSettingsOnSceneListChanged()
+        static void EditorBuildSettingsOnSceneListChanged()
         {
             if (!CompareScenesWithBuildSettings())
             {
@@ -35,7 +38,7 @@ namespace StansAssets.SceneManagement.Build
             }
 
             BuildConfigurationMenu.OpenBuildSettings();
-            Debug.LogError($"{ScenesSyncDescription}\n* {k_HintDescription}");
+            Debug.LogError($"{ScenesSyncWarningDescription}\n* {k_HintDescription}");
         }
     }
 }
