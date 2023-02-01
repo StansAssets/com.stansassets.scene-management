@@ -12,13 +12,14 @@ namespace StansAssets.SceneManagement.Build
             "projects settings defined scene will be added to the build. " +
             "When Defult Scenes have atleaest one scene defined, " +
             "project scenes are ignored and only scene defined in this configuration will be used.";
-        
+
         static readonly Color s_ErrorColor = new Color(1f, 0.8f, 0.0f);
         static readonly Color s_InactiveColor = new Color(1f, 0.8f, 0.0f);
         static readonly  GUIContent s_DuplicatesGUIContent = new GUIContent("","Scene is duplicated!");
         static readonly GUIContent s_EmptySceneGUIContent = new GUIContent("","Scene is empty! Please drop a scene or remove this element.");
 
-        [SerializeField] IMGUIHyperLabel m_AddButton;
+        [SerializeField]
+        IMGUIHyperLabel m_AddButton;
 
         bool m_ShowBuildIndex;
 
@@ -81,7 +82,7 @@ namespace StansAssets.SceneManagement.Build
             if (EditorGUI.EndChangeCheck())
             {
                 UpdateActiveConfUI();
-                foreach (var buildConfiguration in BuildConfigurationSettings.Instance.BuildConfigurations){
+                foreach (var buildConfiguration in BuildConfigurationSettings.Instance.BuildConfigurations) {
                     buildConfiguration.UpdateSceneNames();
                 }
                 BuildConfigurationSettings.Save();
@@ -142,12 +143,11 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
 
-            using (new IMGUIBlockWithIndent(new GUIContent("Addressables")))
-            {
+            using (new IMGUIBlockWithIndent(new GUIContent("Addressables"))) {
                 conf.UseAddressablesInEditor = IMGUILayout.ToggleFiled("Use Addressables InEditor", conf.UseAddressablesInEditor, IMGUIToggleStyle.ToggleType.YesNo);
 
                 conf.ClearAllAddressablesCache = IMGUILayout.ToggleFiled("Clear All Addressables Cache", conf.ClearAllAddressablesCache, IMGUIToggleStyle.ToggleType.YesNo);
-
+                
                 using (new IMGUIBeginHorizontal())
                 {
                     GUILayout.FlexibleSpace();
@@ -194,7 +194,7 @@ namespace StansAssets.SceneManagement.Build
                 DrawDefaultScenes(conf);
             }
         }
-        
+
         void DrawDefaultScenes(BuildConfiguration conf)
         {
             using (new IMGUIBlockWithIndent(new GUIContent("Default Scenes")))
@@ -230,8 +230,7 @@ namespace StansAssets.SceneManagement.Build
                                     using (new IMGUIBeginHorizontal())
                                     {
                                         GUILayout.Space(2);
-                                        bool delete = GUILayout.Button("-", EditorStyles.miniButton,
-                                            GUILayout.Width(18));
+                                        bool delete = GUILayout.Button("-", EditorStyles.miniButton, GUILayout.Width(18));
                                         if (delete)
                                         {
                                             conf.Platforms.Remove(platform);
@@ -248,15 +247,13 @@ namespace StansAssets.SceneManagement.Build
                                 {
                                     ReorderableListGUI.Title("Build Targets");
 
-                                    ReorderableListGUI.ListField(platform.BuildTargets, BuildTargetListItem,
-                                        DrawEmptyPlatform);
+                                    ReorderableListGUI.ListField(platform.BuildTargets, BuildTargetListItem, DrawEmptyPlatform);
                                 }
                                 EditorGUILayout.EndVertical();
 
                                 EditorGUILayout.BeginVertical(GUILayout.ExpandWidth(true));
                                 {
-                                    GUI.backgroundColor =
-                                        m_ShowBuildIndex ? GUI.skin.settings.selectionColor : Color.white;
+                                    GUI.backgroundColor = m_ShowBuildIndex ? GUI.skin.settings.selectionColor : Color.white;
                                     ReorderableListGUI.Title("Scenes");
                                     GUI.backgroundColor = Color.white;
 
@@ -403,10 +400,8 @@ namespace StansAssets.SceneManagement.Build
 
         static GUIContent AddressableGuiContent => s_AddressableGuiContent ?? (s_AddressableGuiContent = new GUIContent("", "Mark scene Addressable?\nIf true - scene will be added as Addressable asset into \"Scenes\" group, otherwise - scene will be added into build settings."));
 
-        public void AddItemsToMenu(GenericMenu menu)
-        {
-            menu.AddItem(new GUIContent("Add Build Settings Scenes to Default"), false, () =>
-            {
+        public void AddItemsToMenu(GenericMenu menu) {
+            menu.AddItem(new GUIContent("Add Build Settings Scenes to Default"), false, () => {
                 var conf = BuildConfigurationSettings.Instance.BuildConfigurations[m_SelectionIndex];
                 foreach (var scene in EditorBuildSettings.scenes)
                 {
