@@ -243,7 +243,7 @@ namespace StansAssets.SceneManagement.Build
                                 }
                                 EditorGUILayout.EndVertical();
 
-                                EditorGUILayout.BeginVertical(GUILayout.Width(150));
+                                EditorGUILayout.BeginVertical(GUILayout.Width(235f));
                                 {
                                     ReorderableListGUI.Title("Build Targets");
 
@@ -251,7 +251,7 @@ namespace StansAssets.SceneManagement.Build
                                 }
                                 EditorGUILayout.EndVertical();
 
-                                EditorGUILayout.BeginVertical(GUILayout.ExpandWidth(true));
+                                EditorGUILayout.BeginVertical();
                                 {
                                     GUI.backgroundColor = m_ShowBuildIndex ? GUI.skin.settings.selectionColor : Color.white;
                                     ReorderableListGUI.Title("Scenes");
