@@ -296,24 +296,9 @@ namespace StansAssets.SceneManagement.Build
                     GUI.Label(sceneIndexRect, sceneIndex.ToString());
                 }
 
-                var sceneSynced = BuildConfigurationSettings.Instance.Configuration
-                    .CheckIntersectSceneWhBuildSettings(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
+                GUI.color = LookForFieldColor(itemValue);
 
                 var sceneAsset = itemValue.GetSceneAsset();
-                var sceneWithError = sceneAsset == null || !sceneSynced;
-               
-                if (sceneWithError)
-                {
-                    GUI.color = s_ErrorColor;
-                }
-                else if (!sceneSynced)
-                {
-                    GUI.color = EditorBuildSettingsValidator.OutOfSyncColor;
-                }
-                else
-                {
-                    GUI.color = Color.white;
-                }
 
                 EditorGUI.indentLevel = 0;
                 EditorGUI.BeginChangeCheck();
@@ -392,6 +377,34 @@ namespace StansAssets.SceneManagement.Build
 
                 BuildConfigurationSettings.Save();
             });
+        }
+        
+        Color LookForFieldColor(SceneAssetInfo itemValue)
+        {
+            var sceneAsset = itemValue.GetSceneAsset();
+            var sceneSynced = BuildConfigurationSettings.Instance.Configuration
+                .CheckIntersectSceneWhBuildSettings(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
+
+            var sceneDuplicate = BuildConfigurationSettings.Instance.Configuration
+                .CheckSceneDuplicate(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
+
+            var sceneWithError = sceneAsset == null;
+            var color = Color.white;
+            
+            if (sceneWithError)
+            {
+                color = s_ErrorColor;
+            }
+            else if (sceneDuplicate)
+            {
+                color = EditorBuildSettingsValidator.DuplicateColor;
+            }
+            else if (!sceneSynced)
+            {
+                color = EditorBuildSettingsValidator.OutOfSyncColor;
+            }
+
+            return color;
         }
     }
 }

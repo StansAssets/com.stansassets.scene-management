@@ -18,7 +18,7 @@ namespace StansAssets.SceneManagement.Build
         void DrawScenesSync()
         {
             var needScenesSync = EditorBuildSettingsValidator.CompareScenesWithBuildSettings();
-            
+
             if (needScenesSync)
             {
                 EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesSyncWarningDescription, MessageType.Error);
@@ -52,7 +52,17 @@ namespace StansAssets.SceneManagement.Build
 
         void DrawDuplicates()
         {
-            // TODO: Implement
+            var hasDuplicates = EditorBuildSettingsValidator.HasScenesDuplicates();
+            
+            if (hasDuplicates)
+            {
+                EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesDuplicatesWarningDescription,
+                    MessageType.Warning);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesDuplicatesOkDescription, MessageType.Info);
+            }
         }
     }
 }

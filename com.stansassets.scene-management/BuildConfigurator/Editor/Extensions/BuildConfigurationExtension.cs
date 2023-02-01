@@ -262,6 +262,34 @@ namespace StansAssets.SceneManagement.Build
             var synced = EditorBuildSettings.scenes.Any(i => i.guid.ToString().Equals(sceneGuid));
             return synced;
         }
+        
+        public static bool CheckSceneDuplicate(this BuildConfiguration configuration, BuildTarget buildTarget, string sceneGuid)
+        {
+            var duplicates = GetDuplicateScenes(configuration, buildTarget);
+            return duplicates.Any(i => i.Guid.Equals(sceneGuid));
+        }
+        
+        public static IEnumerable<SceneAssetInfo> GetDuplicateScenes(this BuildConfiguration configuration, BuildTarget buildTarget)
+        {
+            var configurationSceneGuids = configuration
+                .BuildScenesCollection(new BuildScenesParams(buildTarget, false, true))
+                .ToArray();
+            var scenesPaths = configurationSceneGuids.Select(s => AssetDatabase.GUIDToAssetPath(s.Guid)).ToArray();
+            var duplicates = new List<SceneAssetInfo>();
+
+            foreach (var sceneAssetInfo in configurationSceneGuids)
+            {
+                var scenePath = AssetDatabase.GUIDToAssetPath(sceneAssetInfo.Guid);
+                var duplicated = scenesPaths.Count(i => i.Equals(scenePath)) > 1;
+
+                if (duplicated)
+                {
+                    duplicates.Add(sceneAssetInfo);
+                }
+            }
+   
+            return duplicates;
+        }
     }
 
     internal struct BuildScenesParams
