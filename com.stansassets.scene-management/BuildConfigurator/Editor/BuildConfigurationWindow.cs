@@ -159,6 +159,30 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
 
+            var needScenesSync = EditorBuildSettingsValidator.CompareScenesWithBuildSettings();
+            if (needScenesSync)
+            {
+                using (new IMGUIBlockWithIndent(new GUIContent("Editor & Build Settings")))
+                {
+                    EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesSyncDescription, MessageType.Warning);
+
+                    using (new IMGUIBeginHorizontal())
+                    {
+                        GUILayout.FlexibleSpace();
+
+                        var active = GUILayout.Button("Clear Build Settings & Sync", GUILayout.Width(240));
+                        if (active)
+                        {
+                            if (BuildConfigurationSettings.Instance.HasValidConfiguration)
+                            {
+                                BuildConfigurationSettings.Instance.Configuration.SetupEditorSettings(
+                                    EditorUserBuildSettings.activeBuildTarget, true);
+                            }
+                        }
+                    }
+                }
+            }
+
             if (conf.DefaultScenesFirst)
             {
                 DrawDefaultScenes(conf);
@@ -292,9 +316,24 @@ namespace StansAssets.SceneManagement.Build
                     GUI.Label(sceneIndexRect, sceneIndex.ToString());
                 }
 
+                var sceneSynced = BuildConfigurationSettings.Instance.Configuration
+                    .CheckIntersectSceneWhBuildSettings(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
+
                 var sceneAsset = itemValue.GetSceneAsset();
-                var sceneWithError = sceneAsset == null;
-                GUI.color = sceneWithError ? s_ErrorColor : Color.white;
+                var sceneWithError = sceneAsset == null || !sceneSynced;
+               
+                if (sceneWithError)
+                {
+                    GUI.color = s_ErrorColor;
+                }
+                else if (!sceneSynced)
+                {
+                    GUI.color = EditorBuildSettingsValidator.OutOfSyncColor;
+                }
+                else
+                {
+                    GUI.color = Color.white;
+                }
 
                 EditorGUI.indentLevel = 0;
                 EditorGUI.BeginChangeCheck();

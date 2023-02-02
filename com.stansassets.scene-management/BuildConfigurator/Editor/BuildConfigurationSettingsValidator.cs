@@ -14,9 +14,6 @@ namespace StansAssets.SceneManagement.Build
         static void OnPlayModeStateChanged(PlayModeStateChange state) {
             switch (state) {
                 case PlayModeStateChange.EnteredPlayMode:
-                    if (BuildConfigurationSettings.Instance.HasValidConfiguration) {
-                        BuildConfigurationSettings.Instance.Configuration.SetupBuildSettings(EditorUserBuildSettings.activeBuildTarget);
-                    }
                     break;
             }
         }
