@@ -24,6 +24,10 @@ namespace StansAssets.SceneManagement.Build
         const string k_HintDescription = "Scenes can be synchronized through the " +
                                          "'Scene Management -> Build Settings'.";
 
+        /// <summary>
+        /// Check current Editor Build Settings with the Scene Management build configuration to prevent out of sync scenes.
+        /// </summary>
+        /// <returns>True - if scenes are out of sync</returns>
         public static bool CompareScenesWithBuildSettings()
         {
             var needToSync = BuildConfigurationSettings.Instance.Configuration

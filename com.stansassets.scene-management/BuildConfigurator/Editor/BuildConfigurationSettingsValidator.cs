@@ -13,7 +13,42 @@ namespace StansAssets.SceneManagement.Build
 
         static void OnPlayModeStateChanged(PlayModeStateChange state) {
             switch (state) {
-                case PlayModeStateChange.EnteredPlayMode:
+                case PlayModeStateChange.ExitingEditMode:
+                    PreventOfPlayingOutOfSync();
+                    break;
+            }
+        }
+
+        static void PreventOfPlayingOutOfSync()
+        {
+            if (!BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog)
+            {
+                return;
+            }
+
+            var outOfSync = EditorBuildSettingsValidator.CompareScenesWithBuildSettings();
+
+            if (!outOfSync)
+            {
+                return;
+            }
+            
+            var result = EditorUtility.DisplayDialogComplex(
+                "Scenes Management",
+                EditorBuildSettingsValidator.ScenesSyncWarningDescription,
+                "Ok, continue",
+                "Cancel",
+                "Ok, neven show again");
+
+            switch (result)
+            {
+                case 0:
+                    break;
+                case 1:
+                    EditorApplication.isPlaying = false;
+                    break;
+                case 2:
+                    BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog = false;
                     break;
             }
         }

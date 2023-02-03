@@ -10,15 +10,24 @@ namespace StansAssets.SceneManagement.Build
         {
             using (new IMGUIBlockWithIndent(new GUIContent("Editor & Build Settings")))
             {
-                DrawScenesSync();
+                PreventingDialogs();
                 DrawDuplicates();
+                DrawScenesSync();
             }
+        }
+
+        void PreventingDialogs()
+        {
+            EditorGUIUtility.labelWidth = 300f;
+            BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog = EditorGUILayout
+                .Toggle("Show scene sync warning on Entering Playmode",
+                    BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog);
         }
 
         void DrawScenesSync()
         {
             var needScenesSync = EditorBuildSettingsValidator.CompareScenesWithBuildSettings();
-
+            
             if (needScenesSync)
             {
                 EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesSyncWarningDescription, MessageType.Error);
@@ -53,7 +62,7 @@ namespace StansAssets.SceneManagement.Build
         void DrawDuplicates()
         {
             var hasDuplicates = EditorBuildSettingsValidator.HasScenesDuplicates();
-            
+
             if (hasDuplicates)
             {
                 EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesDuplicatesWarningDescription,
