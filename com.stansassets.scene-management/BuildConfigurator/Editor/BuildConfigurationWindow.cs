@@ -161,7 +161,7 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
             
-            m_EditorNBuildSettingsDrawer.DrawSettings();
+            m_EditorNBuildSettingsDrawer.DrawSettings(conf);
 
             if (conf.DefaultScenesFirst)
             {
@@ -295,10 +295,12 @@ namespace StansAssets.SceneManagement.Build
                     var sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue);
                     GUI.Label(sceneIndexRect, sceneIndex.ToString());
                 }
-
-                GUI.color = LookForFieldColor(itemValue);
-
+                
                 var sceneAsset = itemValue.GetSceneAsset();
+                var sceneSynced = BuildConfigurationSettings.Instance.Configuration
+                    .CheckIntersectSceneWhBuildSettings(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
+                
+                GUI.color = LookForFieldColor(itemValue, sceneAsset, sceneSynced);
 
                 EditorGUI.indentLevel = 0;
                 EditorGUI.BeginChangeCheck();
@@ -306,6 +308,12 @@ namespace StansAssets.SceneManagement.Build
                 if (EditorGUI.EndChangeCheck())
                 {
                     itemValue.SetSceneAsset(newSceneAsset);
+                    
+                    if (sceneSynced)
+                    {
+                        BuildConfigurationSettings.Instance.Configuration.SetupEditorSettings(
+                            EditorUserBuildSettings.activeBuildTarget, true);
+                    }
                 }
 
                 GUI.color = Color.white;
@@ -379,12 +387,8 @@ namespace StansAssets.SceneManagement.Build
             });
         }
         
-        Color LookForFieldColor(SceneAssetInfo itemValue)
+        Color LookForFieldColor(SceneAssetInfo itemValue, SceneAsset sceneAsset, bool scenesSynced)
         {
-            var sceneAsset = itemValue.GetSceneAsset();
-            var sceneSynced = BuildConfigurationSettings.Instance.Configuration
-                .CheckIntersectSceneWhBuildSettings(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
-
             var sceneDuplicate = BuildConfigurationSettings.Instance.Configuration
                 .CheckSceneDuplicate(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
 
@@ -399,7 +403,7 @@ namespace StansAssets.SceneManagement.Build
             {
                 color = EditorBuildSettingsValidator.DuplicateColor;
             }
-            else if (!sceneSynced)
+            else if (!scenesSynced)
             {
                 color = EditorBuildSettingsValidator.OutOfSyncColor;
             }

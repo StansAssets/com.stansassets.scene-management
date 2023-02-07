@@ -1,3 +1,4 @@
+using System.Linq;
 using StansAssets.Plugins.Editor;
 using UnityEditor;
 using UnityEngine;
@@ -6,8 +7,12 @@ namespace StansAssets.SceneManagement.Build
 {
     internal class EditorNBuildSettingsDrawer
     {
-        internal void DrawSettings()
+        AutoSyncParams m_AutoSyncParams;
+
+        internal void DrawSettings(BuildConfiguration buildConfiguration)
         {
+            CheckNTryAutoSync(buildConfiguration);
+
             using (new IMGUIBlockWithIndent(new GUIContent("Editor & Build Settings")))
             {
                 PreventingDialogs();
@@ -26,9 +31,7 @@ namespace StansAssets.SceneManagement.Build
 
         void DrawScenesSync()
         {
-            var needScenesSync = EditorBuildSettingsValidator.CompareScenesWithBuildSettings();
-            
-            if (needScenesSync)
+            if (m_AutoSyncParams.NeedScenesSync)
             {
                 EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesSyncWarningDescription, MessageType.Error);
             }
@@ -37,7 +40,7 @@ namespace StansAssets.SceneManagement.Build
                 EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesSyncOkDescription, MessageType.Info);
             }
 
-            GUI.enabled = needScenesSync;
+            GUI.enabled = m_AutoSyncParams.NeedScenesSync;
             using (new IMGUIBeginHorizontal())
             {
                 GUILayout.FlexibleSpace();
@@ -48,11 +51,7 @@ namespace StansAssets.SceneManagement.Build
 
                 if (active)
                 {
-                    if (BuildConfigurationSettings.Instance.HasValidConfiguration)
-                    {
-                        BuildConfigurationSettings.Instance.Configuration.SetupEditorSettings(
-                            EditorUserBuildSettings.activeBuildTarget, true);
-                    }
+                    SyncScenes();
                 }
             }
 
@@ -71,6 +70,55 @@ namespace StansAssets.SceneManagement.Build
             else
             {
                 EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesDuplicatesOkDescription, MessageType.Info);
+            }
+        }
+
+        void SyncScenes()
+        {
+            if (BuildConfigurationSettings.Instance.HasValidConfiguration)
+            {
+                BuildConfigurationSettings.Instance.Configuration.SetupEditorSettings(
+                    EditorUserBuildSettings.activeBuildTarget, true);
+            }
+        }
+
+        void CheckNTryAutoSync(BuildConfiguration buildConfiguration)
+        {
+            m_AutoSyncParams.NeedScenesSync = EditorBuildSettingsValidator.CompareScenesWithBuildSettings();
+
+            var scenesCount = buildConfiguration.DefaultScenes.Count +
+                              buildConfiguration.Platforms.Sum(i => i.Scenes.Count);
+
+            if (scenesCount == m_AutoSyncParams.LastScenesCount)
+            {
+                return;
+            }
+
+            if (m_AutoSyncParams.Synced && m_AutoSyncParams.NeedScenesSync)
+            {
+                SyncScenes();
+                return;
+            }
+
+            if (!m_AutoSyncParams.Synced && !m_AutoSyncParams.NeedScenesSync)
+            {
+                m_AutoSyncParams.Synced = true;
+                m_AutoSyncParams.LastScenesCount = buildConfiguration.DefaultScenes.Count +
+                                                   buildConfiguration.Platforms.Sum(i => i.Scenes.Count);
+            }
+        }
+
+        struct AutoSyncParams
+        {
+            public int LastScenesCount;
+            public bool Synced;
+            public bool NeedScenesSync;
+
+            public AutoSyncParams(int lastScenesCount, bool synced, bool needScenesSync)
+            {
+                LastScenesCount = lastScenesCount;
+                Synced = synced;
+                NeedScenesSync = needScenesSync;
             }
         }
     }
