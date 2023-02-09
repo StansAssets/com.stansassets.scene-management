@@ -4,14 +4,13 @@ using UnityEngine;
 
 namespace StansAssets.SceneManagement.Build
 {
-    internal class EditorNBuildSettingsDrawer
+    class EditorNBuildSettingsDrawer
     {
         internal void DrawSettings()
         {
             using (new IMGUIBlockWithIndent(new GUIContent("Editor & Build Settings")))
             {
                 DrawScenesSync();
-                DrawDuplicates();
             }
         }
 
@@ -48,11 +47,6 @@ namespace StansAssets.SceneManagement.Build
             }
 
             GUI.enabled = true;
-        }
-
-        void DrawDuplicates()
-        {
-            // TODO: Implement
         }
     }
 }
