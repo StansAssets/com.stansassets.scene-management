@@ -5,7 +5,7 @@ using UnityEngine;
 namespace StansAssets.SceneManagement.Build
 {
     [InitializeOnLoad]
-    class EditorBuildSettingsValidator
+    static class EditorBuildSettingsValidator
     {
         internal const string ScenesSyncWarningDescription = "Current Editor Build Settings are our of sync " +
                                                              "with the Scene Management build configuration.";
