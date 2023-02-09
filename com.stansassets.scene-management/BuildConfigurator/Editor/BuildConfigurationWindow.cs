@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEditor;
 using Rotorz.ReorderableList;
 using StansAssets.Plugins.Editor;
@@ -13,10 +14,16 @@ namespace StansAssets.SceneManagement.Build
             "When Defult Scenes have atleaest one scene defined, " +
             "project scenes are ignored and only scene defined in this configuration will be used.";
 
+        const string k_ScenesSyncDescription = "Current Editor Build Settings are our of sync " +
+                                                      "with the Scene Management build configuration.";
+        
+        const string k_SceneMissingWarningDescription = "Your configuration has missing scenes, consider fixing it.";
+
         static readonly Color s_ErrorColor = new Color(1f, 0.8f, 0.0f);
         static readonly Color s_InactiveColor = new Color(1f, 0.8f, 0.0f);
         static readonly  GUIContent s_DuplicatesGUIContent = new GUIContent("","Scene is duplicated!");
         static readonly GUIContent s_EmptySceneGUIContent = new GUIContent("","Scene is empty! Please drop a scene or remove this element.");
+        static readonly Color s_OutOfSyncColor = new Color(0.93f, 0.39f, 0.32f);
 
         [SerializeField]
         IMGUIHyperLabel m_AddButton;
@@ -159,29 +166,7 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
 
-            var needScenesSync = EditorBuildSettingsValidator.CompareScenesWithBuildSettings();
-            if (needScenesSync)
-            {
-                using (new IMGUIBlockWithIndent(new GUIContent("Editor & Build Settings")))
-                {
-                    EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesSyncDescription, MessageType.Warning);
-
-                    using (new IMGUIBeginHorizontal())
-                    {
-                        GUILayout.FlexibleSpace();
-
-                        var active = GUILayout.Button("Clear Build Settings & Sync", GUILayout.Width(240));
-                        if (active)
-                        {
-                            if (BuildConfigurationSettings.Instance.HasValidConfiguration)
-                            {
-                                BuildConfigurationSettings.Instance.Configuration.SetupEditorSettings(
-                                    EditorUserBuildSettings.activeBuildTarget, true);
-                            }
-                        }
-                    }
-                }
-            }
+            DrawSettings();
 
             if (conf.DefaultScenesFirst)
             {
@@ -316,24 +301,11 @@ namespace StansAssets.SceneManagement.Build
                     GUI.Label(sceneIndexRect, sceneIndex.ToString());
                 }
 
+                var sceneAsset = itemValue.GetSceneAsset();
                 var sceneSynced = BuildConfigurationSettings.Instance.Configuration
                     .CheckIntersectSceneWhBuildSettings(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
 
-                var sceneAsset = itemValue.GetSceneAsset();
-                var sceneWithError = sceneAsset == null || !sceneSynced;
-               
-                if (sceneWithError)
-                {
-                    GUI.color = s_ErrorColor;
-                }
-                else if (!sceneSynced)
-                {
-                    GUI.color = EditorBuildSettingsValidator.OutOfSyncColor;
-                }
-                else
-                {
-                    GUI.color = Color.white;
-                }
+                GUI.color = LookForFieldColor(sceneAsset, sceneSynced);
 
                 EditorGUI.indentLevel = 0;
                 EditorGUI.BeginChangeCheck();
@@ -412,6 +384,80 @@ namespace StansAssets.SceneManagement.Build
 
                 BuildConfigurationSettings.Save();
             });
+        }
+        
+        Color LookForFieldColor(SceneAsset sceneAsset, bool scenesSynced)
+        {
+            var sceneWithError = sceneAsset == null;
+            var color = Color.white;
+            
+            if (sceneWithError)
+            {
+                color = s_ErrorColor;
+            }
+            else if (!scenesSynced)
+            {
+                color = s_OutOfSyncColor;
+            }
+
+            return color;
+        }
+        
+        void DrawSettings()
+        {
+            using (new IMGUIBlockWithIndent(new GUIContent("Editor & Build Settings")))
+            {
+                var needScenesSync = BuildConfigurationSettingsValidator.CompareScenesWithBuildSettings();
+                if (needScenesSync)
+                {
+                    DrawMessage(k_ScenesSyncDescription, MessageType.Error,
+                        "Clear Build Settings & Sync", SyncScenes);
+                    return;
+                }
+
+                var hasMissingScenes = BuildConfigurationSettingsValidator.HasMissingScenes();
+                if (hasMissingScenes)
+                {
+                    DrawMessage(k_SceneMissingWarningDescription,
+                        MessageType.Warning);
+                    return;
+                }
+                
+                DrawMessage("All good", MessageType.Info);
+            }
+        }
+
+        void DrawMessage(string message, MessageType messageType, string actionText = "", Action actionCallback = null)
+        {
+            EditorGUILayout.HelpBox(message, messageType);
+
+            using (new IMGUIBeginHorizontal())
+            {
+                GUILayout.FlexibleSpace();
+
+                if (!string.IsNullOrEmpty(actionText))
+                {
+                    var active = GUILayout.Button(actionText);
+
+                    if (active)
+                    {
+                        actionCallback?.Invoke();
+                    }
+                }
+                else
+                {
+                    GUILayout.Label("", GUILayout.Height(17f));
+                }
+            }
+        }
+
+        void SyncScenes()
+        {
+            if (BuildConfigurationSettings.Instance.HasValidConfiguration)
+            {
+                BuildConfigurationSettings.Instance.Configuration.SetupEditorSettings(
+                    EditorUserBuildSettings.activeBuildTarget, true);
+            }
         }
     }
 }
