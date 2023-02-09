@@ -16,6 +16,8 @@ namespace StansAssets.SceneManagement.Build
         
         internal static readonly Color DuplicateColor = new Color(1f, 0.78f, 1f);
 
+        internal const string SceneMissingWarningDescription = "Your configuration has missing scenes, consider fixing it.";
+        
         const string k_HintDescription = "Scenes can be synchronized through the " +
                                          "'Scene Management -> Build Settings'.";
 
@@ -53,6 +55,16 @@ namespace StansAssets.SceneManagement.Build
 
             BuildConfigurationMenu.OpenBuildSettings();
             Debug.LogError($"{ScenesSyncWarningDescription}\n* {k_HintDescription}");
+        }
+
+        internal static bool HasMissingScenes()
+        {
+            if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
+
+            return BuildConfigurationSettings.Instance.Configuration
+                       .DefaultScenes.Any(s => string.IsNullOrEmpty(s.Guid)) 
+                   || BuildConfigurationSettings.Instance.Configuration
+                       .Platforms.Any(p => p.Scenes.Any(s => string.IsNullOrEmpty(s.Guid)));
         }
     }
 }

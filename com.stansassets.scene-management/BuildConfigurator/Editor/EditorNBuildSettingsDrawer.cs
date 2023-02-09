@@ -12,10 +12,8 @@ namespace StansAssets.SceneManagement.Build
             using (new IMGUIBlockWithIndent(new GUIContent("Editor & Build Settings")))
             {
                 PreventingDialogs();
-                
-                var needScenesSync = EditorBuildSettingsValidator.CompareScenesWithBuildSettings();
-                var hasDuplicates = EditorBuildSettingsValidator.HasScenesDuplicates();
 
+                var needScenesSync = EditorBuildSettingsValidator.CompareScenesWithBuildSettings();
                 if (needScenesSync)
                 {
                     DrawMessage(EditorBuildSettingsValidator.ScenesSyncWarningDescription, MessageType.Error,
@@ -23,6 +21,15 @@ namespace StansAssets.SceneManagement.Build
                     return;
                 }
 
+                var hasMissingScenes = EditorBuildSettingsValidator.HasMissingScenes();
+                if (hasMissingScenes)
+                {
+                    DrawMessage(EditorBuildSettingsValidator.SceneMissingWarningDescription,
+                        MessageType.Warning);
+                    return;
+                }
+
+                var hasDuplicates = EditorBuildSettingsValidator.HasScenesDuplicates();
                 if (hasDuplicates)
                 {
                     DrawMessage(EditorBuildSettingsValidator.ScenesDuplicatesWarningDescription,
@@ -66,12 +73,16 @@ namespace StansAssets.SceneManagement.Build
                     EditorUserBuildSettings.activeBuildTarget, true);
             }
         }
-        
+
         void PreventingDialogs()
         {
-            BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog = EditorGUILayout
-                .Toggle("Show scene sync warning on Entering Playmode",
-                    BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog);
+            using (new IMGUIBeginHorizontal())
+            {
+                EditorGUILayout.LabelField("Show scene sync warning on Entering Playmode");
+
+                BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog =
+                    EditorGUILayout.Toggle(BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog);
+            }
         }
     }
 }
