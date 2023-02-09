@@ -1,3 +1,4 @@
+using System;
 using StansAssets.Plugins.Editor;
 using UnityEditor;
 using UnityEngine;
@@ -11,67 +12,66 @@ namespace StansAssets.SceneManagement.Build
             using (new IMGUIBlockWithIndent(new GUIContent("Editor & Build Settings")))
             {
                 PreventingDialogs();
-                DrawDuplicates();
-                DrawScenesSync();
+                
+                var needScenesSync = EditorBuildSettingsValidator.CompareScenesWithBuildSettings();
+                var hasDuplicates = EditorBuildSettingsValidator.HasScenesDuplicates();
+
+                if (needScenesSync)
+                {
+                    DrawMessage(EditorBuildSettingsValidator.ScenesSyncWarningDescription, MessageType.Error,
+                        "Clear Build Settings & Sync", SyncScenes);
+                    return;
+                }
+
+                if (hasDuplicates)
+                {
+                    DrawMessage(EditorBuildSettingsValidator.ScenesDuplicatesWarningDescription,
+                        MessageType.Warning);
+                    return;
+                }
+
+                DrawMessage("All good", MessageType.Info);
             }
         }
 
-        void PreventingDialogs()
+        void DrawMessage(string message, MessageType messageType, string actionText = "", Action actionCallback = null)
         {
-            EditorGUIUtility.labelWidth = 300f;
-            BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog = EditorGUILayout
-                .Toggle("Show scene sync warning on Entering Playmode",
-                    BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog);
-        }
+            EditorGUILayout.HelpBox(message, messageType);
 
-        void DrawScenesSync()
-        {
-            var needScenesSync = EditorBuildSettingsValidator.CompareScenesWithBuildSettings();
-            
-            if (needScenesSync)
-            {
-                EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesSyncWarningDescription, MessageType.Error);
-            }
-            else
-            {
-                EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesSyncOkDescription, MessageType.Info);
-            }
-
-            GUI.enabled = needScenesSync;
             using (new IMGUIBeginHorizontal())
             {
                 GUILayout.FlexibleSpace();
 
-                var active = GUILayout.Button(
-                    "Clear Build Settings & Sync",
-                    GUILayout.Width(240));
-
-                if (active)
+                if (!string.IsNullOrEmpty(actionText))
                 {
-                    if (BuildConfigurationSettings.Instance.HasValidConfiguration)
+                    var active = GUILayout.Button(actionText);
+
+                    if (active)
                     {
-                        BuildConfigurationSettings.Instance.Configuration.SetupEditorSettings(
-                            EditorUserBuildSettings.activeBuildTarget, true);
+                        actionCallback?.Invoke();
                     }
                 }
+                else
+                {
+                    GUILayout.Label("", GUILayout.Height(17f));
+                }
             }
-
-            GUI.enabled = true;
         }
 
-        void DrawDuplicates()
+        void SyncScenes()
         {
-            var hasDuplicates = EditorBuildSettingsValidator.HasScenesDuplicates();
-
-            if (hasDuplicates)
+            if (BuildConfigurationSettings.Instance.HasValidConfiguration)
             {
-                EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesDuplicatesWarningDescription,
-                    MessageType.Warning);
+                BuildConfigurationSettings.Instance.Configuration.SetupEditorSettings(
+                    EditorUserBuildSettings.activeBuildTarget, true);
             }
-            else
-            {
-                EditorGUILayout.HelpBox(EditorBuildSettingsValidator.ScenesDuplicatesOkDescription, MessageType.Info);
-            }
+        }
+        
+        void PreventingDialogs()
+        {
+            BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog = EditorGUILayout
+                .Toggle("Show scene sync warning on Entering Playmode",
+                    BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog);
         }
     }
 }
