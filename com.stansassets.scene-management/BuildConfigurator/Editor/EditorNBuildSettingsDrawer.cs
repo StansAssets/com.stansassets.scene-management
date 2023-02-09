@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace StansAssets.SceneManagement.Build
 {
-    internal class EditorNBuildSettingsDrawer
+    class EditorNBuildSettingsDrawer
     {
         internal void DrawSettings()
         {
