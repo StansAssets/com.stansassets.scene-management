@@ -37,8 +37,8 @@ namespace StansAssets.SceneManagement.Build
                 "Scenes Management",
                 EditorBuildSettingsValidator.ScenesSyncWarningDescription,
                 "Ok, continue",
-                "Cancel",
-                "Ok, neven show again");
+                "Cancel, exit playmode",
+                "Don't show again");
 
             switch (result)
             {

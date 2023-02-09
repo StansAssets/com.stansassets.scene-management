@@ -1,10 +1,9 @@
 using UnityEditor;
-using UnityEngine;
 
 namespace StansAssets.SceneManagement.Build
 {
     [InitializeOnLoad]
-    internal static class BuildConfigurationSettingsConfig
+    static class BuildConfigurationSettingsConfig
     {
         const string k_ShowOutOfSyncPreventingDialogPref = "show_out_of_sync_preventing_dialog";
 
@@ -12,7 +11,7 @@ namespace StansAssets.SceneManagement.Build
 
         static BuildConfigurationSettingsConfig()
         {
-            s_ShowOutOfSyncPreventingDialog = PlayerPrefs.GetInt(k_ShowOutOfSyncPreventingDialogPref, 1) == 1;
+            s_ShowOutOfSyncPreventingDialog = EditorPrefs.GetBool(k_ShowOutOfSyncPreventingDialogPref, true);
         }
 
         internal static bool ShowOutOfSyncPreventingDialog
@@ -21,8 +20,7 @@ namespace StansAssets.SceneManagement.Build
             set
             {
                 s_ShowOutOfSyncPreventingDialog = value;
-                PlayerPrefs.SetInt(k_ShowOutOfSyncPreventingDialogPref, value ? 1 : 0);
-                PlayerPrefs.Save();
+                EditorPrefs.SetBool(k_ShowOutOfSyncPreventingDialogPref, value);
             }
         }
     }
