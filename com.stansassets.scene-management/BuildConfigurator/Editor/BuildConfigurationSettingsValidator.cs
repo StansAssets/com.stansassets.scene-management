@@ -55,5 +55,15 @@ namespace StansAssets.SceneManagement.Build
                    || BuildConfigurationSettings.Instance.Configuration
                        .Platforms.Any(p => p.Scenes.Any(s => s != null && string.IsNullOrEmpty(s.Guid)));
         }
+
+        public static bool HasScenesDuplicates()
+        {
+            if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
+            
+            var hasDuplicates = BuildConfigurationSettings.Instance.Configuration
+                .GetDuplicateScenes(EditorUserBuildSettings.activeBuildTarget).Any();
+
+            return hasDuplicates;
+        }
     }
 }
