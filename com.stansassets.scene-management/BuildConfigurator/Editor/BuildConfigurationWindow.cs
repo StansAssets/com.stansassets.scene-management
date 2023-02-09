@@ -18,13 +18,15 @@ namespace StansAssets.SceneManagement.Build
                                                       "with the Scene Management build configuration.";
         
         const string k_SceneMissingWarningDescription = "Your configuration has missing scenes, consider fixing it.";
+        const string k_RepetitiveScenesWarningDescription = "Your configuration has duplicated scenes, consider fixing it.";
 
         static readonly Color s_ErrorColor = new Color(1f, 0.8f, 0.0f);
         static readonly Color s_InactiveColor = new Color(1f, 0.8f, 0.0f);
         static readonly  GUIContent s_DuplicatesGUIContent = new GUIContent("","Scene is duplicated!");
         static readonly GUIContent s_EmptySceneGUIContent = new GUIContent("","Scene is empty! Please drop a scene or remove this element.");
         static readonly Color s_OutOfSyncColor = new Color(0.93f, 0.39f, 0.32f);
-
+        static readonly Color s_DuplicateColor = new Color(1f, 0.78f, 1f);
+        
         [SerializeField]
         IMGUIHyperLabel m_AddButton;
 
@@ -305,7 +307,7 @@ namespace StansAssets.SceneManagement.Build
                 var sceneSynced = BuildConfigurationSettings.Instance.Configuration
                     .CheckIntersectSceneWhBuildSettings(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
 
-                GUI.color = LookForFieldColor(sceneAsset, sceneSynced);
+                GUI.color = LookForFieldColor(sceneAsset, sceneSynced, itemValue);
 
                 EditorGUI.indentLevel = 0;
                 EditorGUI.BeginChangeCheck();
@@ -386,8 +388,10 @@ namespace StansAssets.SceneManagement.Build
             });
         }
         
-        Color LookForFieldColor(SceneAsset sceneAsset, bool scenesSynced)
+        Color LookForFieldColor(SceneAsset sceneAsset, bool scenesSynced, SceneAssetInfo itemValue)
         {
+            var sceneDuplicate = BuildConfigurationSettings.Instance.Configuration
+                .CheckSceneDuplicate(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
             var sceneWithError = sceneAsset == null;
             var color = Color.white;
             
@@ -398,6 +402,10 @@ namespace StansAssets.SceneManagement.Build
             else if (!scenesSynced)
             {
                 color = s_OutOfSyncColor;
+            }
+            else if (sceneDuplicate)
+            {
+                color = s_DuplicateColor;
             }
 
             return color;
@@ -419,6 +427,14 @@ namespace StansAssets.SceneManagement.Build
                 if (hasMissingScenes)
                 {
                     DrawMessage(k_SceneMissingWarningDescription,
+                        MessageType.Warning);
+                    return;
+                }
+                
+                var hasDuplicates = BuildConfigurationSettingsValidator.HasScenesDuplicates();
+                if (hasDuplicates)
+                {
+                    DrawMessage(k_RepetitiveScenesWarningDescription,
                         MessageType.Warning);
                     return;
                 }
