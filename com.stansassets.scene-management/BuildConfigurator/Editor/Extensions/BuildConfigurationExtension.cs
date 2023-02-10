@@ -206,9 +206,10 @@ namespace StansAssets.SceneManagement.Build
 
         static void InsertScenes(ref List<SceneAssetInfo> scenes, List<SceneAssetInfo> sceneToInsert)
         {
-            for (var index = 0; index < sceneToInsert.Count; index++)
+            var index = 0;
+
+            foreach (var scene in sceneToInsert)
             {
-                var scene = sceneToInsert[index];
                 if (scene == null || string.IsNullOrEmpty(scene.Guid))
                     continue;
 
@@ -218,6 +219,7 @@ namespace StansAssets.SceneManagement.Build
                 }
 
                 scenes.Insert(index, scene);
+                index++;
             }
         }
 
