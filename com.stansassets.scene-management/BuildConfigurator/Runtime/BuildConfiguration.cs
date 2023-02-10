@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace StansAssets.SceneManagement.Build
@@ -177,6 +178,12 @@ namespace StansAssets.SceneManagement.Build
                 default:
                     throw new ArgumentOutOfRangeException(nameof(platform), platform, null);
             }
+        }
+        
+        internal bool HasScene(string sceneName)
+        {
+            return DefaultScenes.Any(i => i.Name.Equals(sceneName)) || 
+                   Platforms.Any( p => p.Scenes.Any(i => i.Name.Equals(sceneName)));
         }
     }
 }
