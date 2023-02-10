@@ -415,6 +415,8 @@ namespace StansAssets.SceneManagement.Build
         {
             using (new IMGUIBlockWithIndent(new GUIContent("Editor & Build Settings")))
             {
+                PreventingDialogs();
+                
                 var needScenesSync = BuildConfigurationSettingsValidator.CompareScenesWithBuildSettings();
                 if (needScenesSync)
                 {
@@ -473,6 +475,17 @@ namespace StansAssets.SceneManagement.Build
             {
                 BuildConfigurationSettings.Instance.Configuration.SetupEditorSettings(
                     EditorUserBuildSettings.activeBuildTarget, true);
+            }
+        }
+        
+        void PreventingDialogs()
+        {
+            using (new IMGUIBeginHorizontal())
+            {
+                EditorGUILayout.LabelField("Show scene sync warning on Entering Playmode");
+ 
+                BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog =
+                    EditorGUILayout.Toggle(BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog);
             }
         }
     }
