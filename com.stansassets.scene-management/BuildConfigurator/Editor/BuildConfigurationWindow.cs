@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using Rotorz.ReorderableList;
@@ -31,7 +32,8 @@ namespace StansAssets.SceneManagement.Build
         IMGUIHyperLabel m_AddButton;
 
         bool m_ShowBuildIndex;
-
+        AutoSyncParams m_AutoSyncParams;
+        
         protected override void OnAwake()
         {
             titleContent = new GUIContent("Cross-Platform build configuration");
@@ -168,6 +170,7 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
 
+            CheckNTryAutoSync(conf);
             DrawSettings();
 
             if (conf.DefaultScenesFirst)
@@ -315,6 +318,12 @@ namespace StansAssets.SceneManagement.Build
                 if (EditorGUI.EndChangeCheck())
                 {
                     itemValue.SetSceneAsset(newSceneAsset);
+                    
+                    if (sceneSynced)
+                    {
+                        BuildConfigurationSettings.Instance.Configuration.SetupEditorSettings(
+                            EditorUserBuildSettings.activeBuildTarget, true);
+                    }
                 }
 
                 GUI.color = Color.white;
@@ -486,6 +495,45 @@ namespace StansAssets.SceneManagement.Build
  
                 BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog =
                     EditorGUILayout.Toggle(BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog);
+            }
+        }
+        
+        void CheckNTryAutoSync(BuildConfiguration buildConfiguration)
+        {
+            m_AutoSyncParams.NeedScenesSync = BuildConfigurationSettingsValidator.CompareScenesWithBuildSettings();
+
+            var scenesCount = buildConfiguration.DefaultScenes.Count +
+                              buildConfiguration.Platforms.Sum(i => i.Scenes.Count);
+
+            if (scenesCount == m_AutoSyncParams.LastScenesCount)
+            {
+                return;
+            }
+            
+            if (m_AutoSyncParams.Synced && m_AutoSyncParams.NeedScenesSync)
+            {
+                SyncScenes();
+            }
+            else if (!m_AutoSyncParams.Synced && !m_AutoSyncParams.NeedScenesSync)
+            {
+                m_AutoSyncParams.Synced = true;
+            }
+            
+            m_AutoSyncParams.LastScenesCount = buildConfiguration.DefaultScenes.Count +
+                                               buildConfiguration.Platforms.Sum(i => i.Scenes.Count);
+        }
+
+        struct AutoSyncParams
+        {
+            public int LastScenesCount;
+            public bool Synced;
+            public bool NeedScenesSync;
+
+            public AutoSyncParams(int lastScenesCount, bool synced, bool needScenesSync)
+            {
+                LastScenesCount = lastScenesCount;
+                Synced = synced;
+                NeedScenesSync = needScenesSync;
             }
         }
     }
