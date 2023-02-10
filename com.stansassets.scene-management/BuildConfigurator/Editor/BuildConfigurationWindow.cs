@@ -225,7 +225,7 @@ namespace StansAssets.SceneManagement.Build
                             m_ShowBuildIndex = conf.IsActive(platform);
                             EditorGUILayout.BeginHorizontal(GUI.skin.box);
                             {
-                                EditorGUILayout.BeginVertical(GUILayout.Width(10));
+                                using (new IMGUIBeginVertical(GUILayout.Width(10)))
                                 {
                                     using (new IMGUIBeginHorizontal())
                                     {
@@ -241,17 +241,15 @@ namespace StansAssets.SceneManagement.Build
                                         GUILayout.Space(-5);
                                     }
                                 }
-                                EditorGUILayout.EndVertical();
 
-                                EditorGUILayout.BeginVertical(GUILayout.Width(235f));
+                                using (new IMGUIBeginVertical(GUILayout.MinWidth(100f), GUILayout.MaxWidth(Screen.width / 2f)))
                                 {
                                     ReorderableListGUI.Title("Build Targets");
 
                                     ReorderableListGUI.ListField(platform.BuildTargets, BuildTargetListItem, DrawEmptyPlatform);
                                 }
-                                EditorGUILayout.EndVertical();
 
-                                EditorGUILayout.BeginVertical();
+                                using (new IMGUIBeginVertical(GUILayout.MinWidth(100f), GUILayout.MaxWidth(Screen.width)))
                                 {
                                     GUI.backgroundColor = m_ShowBuildIndex ? GUI.skin.settings.selectionColor : Color.white;
                                     ReorderableListGUI.Title("Scenes");
@@ -259,7 +257,6 @@ namespace StansAssets.SceneManagement.Build
 
                                     ReorderableListGUI.ListField(platform.Scenes, ContentTypeListItem, DrawEmptyScene);
                                 }
-                                EditorGUILayout.EndVertical();
                             }
                             EditorGUILayout.EndHorizontal();
                         }
