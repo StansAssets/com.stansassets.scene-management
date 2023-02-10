@@ -450,7 +450,7 @@ namespace StansAssets.SceneManagement.Build
                     return;
                 }
                 
-                DrawMessage("All good", MessageType.Info);
+                DrawMessage("No issues found with the configuration.", MessageType.Info);
             }
         }
 
