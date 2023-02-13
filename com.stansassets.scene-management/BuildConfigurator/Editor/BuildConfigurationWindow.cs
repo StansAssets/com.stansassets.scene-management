@@ -395,7 +395,11 @@ namespace StansAssets.SceneManagement.Build
             var sceneWithError = sceneAsset == null;
             var color = Color.white;
             
-            if (sceneWithError)
+            if (sceneDuplicate)
+            {
+                color = s_DuplicateColor;
+            }
+            else if (sceneWithError)
             {
                 color = s_ErrorColor;
             }
@@ -403,11 +407,7 @@ namespace StansAssets.SceneManagement.Build
             {
                 color = s_OutOfSyncColor;
             }
-            else if (sceneDuplicate)
-            {
-                color = s_DuplicateColor;
-            }
-
+            
             return color;
         }
         
