@@ -25,7 +25,7 @@ namespace StansAssets.SceneManagement.Build
         /// Check current Editor Build Settings with the Scene Management build configuration to prevent out of sync scenes.
         /// </summary>
         /// <returns>True - if scenes are out of sync</returns>
-        internal static bool CompareScenesWithBuildSettings()
+        public static bool CompareScenesWithBuildSettings()
         {
             var needToSync = BuildConfigurationSettings.Instance.Configuration
                 .CheckIntersectScenesWhBuildSettings(EditorUserBuildSettings.activeBuildTarget);
@@ -46,7 +46,7 @@ namespace StansAssets.SceneManagement.Build
                            $"'Scene Management -> Build Settings'.");
         }
 
-        internal static bool HasMissingScenes()
+        public static bool HasMissingScenes()
         {
             if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
 
