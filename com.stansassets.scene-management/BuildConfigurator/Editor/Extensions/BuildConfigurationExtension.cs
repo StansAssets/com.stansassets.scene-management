@@ -182,25 +182,31 @@ namespace StansAssets.SceneManagement.Build
         static void ProcessPlatforms(ref List<SceneAssetInfo> scenes, List<PlatformsConfiguration> platforms, BuildScenesParams buildScenesParams)
         {
             var buildTarget = buildScenesParams.BuiltTarget;
-            var stripAddressable = buildScenesParams.StripAddressables;
+            var stripAddressables = buildScenesParams.StripAddressables;
             var includeEditorScene = buildScenesParams.IncludeEditorScene;
-            
-            foreach (var platformsConfiguration in platforms)
-            {
-                var editorBuildTargets = platformsConfiguration.GetBuildTargetsEditor();
-                if (editorBuildTargets.Contains(buildTarget)
-                    || (
-                        includeEditorScene &&
-                        platformsConfiguration.BuildTargets.Contains(BuildTargetRuntime.Editor)
-                    )
-                   )
-                {
-                    var platformScenes = stripAddressable
-                        ? platformsConfiguration.GetNonAddressableScenes()
-                        : platformsConfiguration.Scenes;
 
-                    InsertScenes(ref scenes, platformScenes);
+            if (includeEditorScene)
+            {
+                foreach (var platformsConfiguration in platforms
+                        .Where(b => b.BuildTargets.Contains(BuildTargetRuntime.Editor)))
+                {
+                    ProcessScene(ref scenes, platformsConfiguration, stripAddressables);
                 }
+            }
+
+            foreach (var platformsConfiguration in platforms
+                         .Where(b => b.GetBuildTargetsEditor().Contains(buildTarget)))
+            {
+                ProcessScene(ref scenes, platformsConfiguration, stripAddressables);
+            }
+
+            void ProcessScene(ref List<SceneAssetInfo> addIn, PlatformsConfiguration platformsConfiguration, bool stripAddressable)
+            {
+                var platformScenes = stripAddressable
+                    ? platformsConfiguration.GetNonAddressableScenes()
+                    : platformsConfiguration.Scenes;
+
+                InsertScenes(ref addIn, platformScenes);
             }
         }
 
