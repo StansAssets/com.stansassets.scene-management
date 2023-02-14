@@ -233,18 +233,21 @@ namespace StansAssets.SceneManagement.Build
             }
 
             var buildSettingsSceneGuids = new List<string>(EditorBuildSettings.scenes
-                    .Select(s => s.guid.ToString()))
-                .ToList();
+                    .Select(s => s.path)).ToArray();
 
             var configurationSceneGuids = configuration
                 .BuildScenesCollection(new BuildScenesParams(buildTarget, false, true))
-                .Select(s => s.Guid.ToString())
-                .ToList();
+                .Select(s => AssetDatabase.GUIDToAssetPath(s.Guid)).ToArray();
+            
+            var outOfSync = configurationSceneGuids.Except(buildSettingsSceneGuids).Any()
+                || buildSettingsSceneGuids.Except(configurationSceneGuids).Any();
+            
+            if(!outOfSync)
+            {
+                outOfSync = configurationSceneGuids.Where((t, i) => buildSettingsSceneGuids[i] != t).Any();
+            }
 
-            var intersect = configurationSceneGuids.Where(i => !buildSettingsSceneGuids.Contains(i)).ToList();
-            var viseVersaIntersect = buildSettingsSceneGuids.Where(i => !configurationSceneGuids.Contains(i)).ToList();
-
-            return intersect.Any() || viseVersaIntersect.Any();
+            return outOfSync;
         }
 
         public static bool CheckIntersectSceneWhBuildSettings(this BuildConfiguration configuration,

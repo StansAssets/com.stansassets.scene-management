@@ -170,7 +170,7 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
 
-            CheckNTryAutoSync(conf);
+            CheckNTryAutoSync();
             DrawSettings();
 
             if (conf.DefaultScenesFirst)
@@ -498,18 +498,10 @@ namespace StansAssets.SceneManagement.Build
             }
         }
         
-        void CheckNTryAutoSync(BuildConfiguration buildConfiguration)
+        void CheckNTryAutoSync()
         {
             m_AutoSyncParams.NeedScenesSync = BuildConfigurationSettingsValidator.CompareScenesWithBuildSettings();
 
-            var scenesCount = buildConfiguration.DefaultScenes.Count +
-                              buildConfiguration.Platforms.Sum(i => i.Scenes.Count);
-
-            if (scenesCount == m_AutoSyncParams.LastScenesCount)
-            {
-                return;
-            }
-            
             if (m_AutoSyncParams.Synced && m_AutoSyncParams.NeedScenesSync)
             {
                 SyncScenes();
@@ -518,23 +510,12 @@ namespace StansAssets.SceneManagement.Build
             {
                 m_AutoSyncParams.Synced = true;
             }
-            
-            m_AutoSyncParams.LastScenesCount = buildConfiguration.DefaultScenes.Count +
-                                               buildConfiguration.Platforms.Sum(i => i.Scenes.Count);
         }
 
         struct AutoSyncParams
         {
-            public int LastScenesCount;
             public bool Synced;
             public bool NeedScenesSync;
-
-            public AutoSyncParams(int lastScenesCount, bool synced, bool needScenesSync)
-            {
-                LastScenesCount = lastScenesCount;
-                Synced = synced;
-                NeedScenesSync = needScenesSync;
-            }
         }
     }
 }
