@@ -4,38 +4,60 @@ using NUnit.Framework;
 using StansAssets.SceneManagement.Build;
 using UnityEditor;
 
-namespace Tests
+namespace StansAssets.SceneManagement.Tests
 {
     public class BuildConfiguratorTests
     {
         IEnumerable<SceneAssetInfo> GetTestScenes()
         {
-            var fodlerName = "Tests/Scenes";
             var result = new List<SceneAssetInfo>();
 
             for (var i = 1; i <= 4; i++)
             {
+                var sceneGuid = AssetDatabase.FindAssets($"SceneManagementTestScene{i}").First();
+                var scenePath = AssetDatabase.GUIDToAssetPath(sceneGuid);
+                
                 result.Add(new SceneAssetInfo()
                 {
-                    Guid = GUID.Generate().ToString(),
-                    Name = $"{fodlerName}/Test{i}"
+                    Guid = sceneGuid,
+                    Name = scenePath
                 });
             }
 
             return result;
         }
 
+        struct SettingsBackup
+        {
+            List<EditorBuildSettingsScene> m_EditorBuildSettingsScenes;
+            SceneAssetInfo[] m_DefaultScenes;
+            PlatformsConfiguration[] m_PlatformsConfigurations;
+
+            public void BackUp()
+            {
+                m_EditorBuildSettingsScenes = EditorBuildSettings
+                    .scenes.ToList();
+
+                m_DefaultScenes = BuildConfigurationSettings.Instance.Configuration
+                    .DefaultScenes.ToArray();
+
+                m_PlatformsConfigurations = BuildConfigurationSettings.Instance.Configuration
+                    .Platforms.ToArray();
+            }
+
+            public void RestoreSettings()
+            {
+                BuildConfigurationSettings.Instance.Configuration.DefaultScenes = m_DefaultScenes.ToList();
+                BuildConfigurationSettings.Instance.Configuration.Platforms = m_PlatformsConfigurations.ToList();
+                EditorBuildSettings.scenes = m_EditorBuildSettingsScenes.ToArray();
+            }
+        }
+
         [Test]
         public void CompareScenesWithBuildSettingsExpectOutOfSync()
         {
-            var editorBuildSettingsScenes = EditorBuildSettings
-                .scenes.ToList();
-
-            var defaultScenes = BuildConfigurationSettings.Instance.Configuration
-                .DefaultScenes.ToArray();
-
-            var platformsConfigurations = BuildConfigurationSettings.Instance.Configuration
-                .Platforms.ToArray();
+            var backup = new SettingsBackup();
+            backup.BackUp();
 
             BuildConfigurationSettings.Instance.Configuration.DefaultScenes.Clear();
             BuildConfigurationSettings.Instance.Configuration.Platforms.Clear();
@@ -78,36 +100,33 @@ namespace Tests
             };
 
             EditorBuildSettings.scenes = editorTestScenes;
-            
-            var needScenesSyncExpectTrue = BuildConfigurationSettingsValidator.CompareScenesWithBuildSettings();
 
-            BuildConfigurationSettings.Instance.Configuration.DefaultScenes = defaultScenes.ToList();
-            BuildConfigurationSettings.Instance.Configuration.Platforms = platformsConfigurations.ToList();
-            EditorBuildSettings.scenes = editorBuildSettingsScenes.ToArray();
+            try
+            {
+                var needScenesSyncExpectTrue = BuildConfigurationSettingsValidator.CompareScenesWithBuildSettings();
 
-            Assert.IsTrue(needScenesSyncExpectTrue);
+                Assert.IsTrue(needScenesSyncExpectTrue);
+            }
+            finally
+            {
+                backup.RestoreSettings();
+            }
         }
 
         [Test]
         public void CompareScenesWithBuildSettingsExpectSyncedScenes()
         {
-            var editorBuildSettingsScenes = EditorBuildSettings
-                .scenes.ToList();
-
-            var defaultScenes = BuildConfigurationSettings.Instance.Configuration
-                .DefaultScenes.ToArray();
-
-            var platformsConfigurations = BuildConfigurationSettings.Instance.Configuration
-                .Platforms.ToArray();
+            var backup = new SettingsBackup();
+            backup.BackUp();
 
             BuildConfigurationSettings.Instance.Configuration.DefaultScenes.Clear();
             BuildConfigurationSettings.Instance.Configuration.Platforms.Clear();
-            
+
             var testScenes = GetTestScenes().ToArray();
             var testScene1 = testScenes[0];
             var testScene2 = testScenes[1];
             var testScene3 = testScenes[2];
-            
+
             EditorBuildSettings.scenes = new[]
             {
                 new EditorBuildSettingsScene(new GUID(testScene1.Guid), true),
@@ -156,13 +175,307 @@ namespace Tests
                     }
                 });
 
-            var needScenesSyncExpectFalse = BuildConfigurationSettingsValidator.CompareScenesWithBuildSettings();
+            try
+            {
+                var needScenesSyncExpectFalse = BuildConfigurationSettingsValidator.CompareScenesWithBuildSettings();
+                Assert.IsFalse(needScenesSyncExpectFalse);
+            }
+            finally
+            {
+                backup.RestoreSettings();
+            }
+        }
 
-            BuildConfigurationSettings.Instance.Configuration.DefaultScenes = defaultScenes.ToList();
-            BuildConfigurationSettings.Instance.Configuration.Platforms = platformsConfigurations.ToList();
-            EditorBuildSettings.scenes = editorBuildSettingsScenes.ToArray();
+        [Test]
+        public void CheckMissingScenesExpectMissing()
+        {
+            var backup = new SettingsBackup();
+            backup.BackUp();
 
-            Assert.IsFalse(needScenesSyncExpectFalse);
+            BuildConfigurationSettings.Instance.Configuration.DefaultScenes.Clear();
+            BuildConfigurationSettings.Instance.Configuration.Platforms.Clear();
+
+            var testScenes = GetTestScenes().ToArray();
+            var testScene1 = testScenes[0];
+            var testScene2 = testScenes[1];
+            var testScene3 = testScenes[2];
+
+            EditorBuildSettings.scenes = new[]
+            {
+                new EditorBuildSettingsScene(new GUID(testScene1.Guid), true),
+                new EditorBuildSettingsScene(new GUID(testScene2.Guid), true),
+                new EditorBuildSettingsScene(new GUID(testScene3.Guid), true)
+            };
+
+            BuildConfigurationSettings.Instance.Configuration.DefaultScenes
+                .Add(new SceneAssetInfo()
+                {
+                    Guid = "",
+                    Name = ""
+                });
+
+            BuildConfigurationSettings.Instance.Configuration.Platforms
+                .Add(new PlatformsConfiguration()
+                {
+                    BuildTargets = new List<BuildTargetRuntime>()
+                    {
+                        BuildTargetRuntime.Editor
+                    },
+                    Scenes = new List<SceneAssetInfo>()
+                    {
+                        new SceneAssetInfo()
+                        {
+                            Guid = testScene2.Guid,
+                            Name = testScene2.Name
+                        }
+                    }
+                });
+
+            BuildConfigurationSettings.Instance.Configuration.Platforms
+                .Add(new PlatformsConfiguration()
+                {
+                    BuildTargets = new List<BuildTargetRuntime>()
+                    {
+                        BuildTargetRuntime.StandaloneWindows64
+                    },
+                    Scenes = new List<SceneAssetInfo>()
+                    {
+                        new SceneAssetInfo()
+                        {
+                            Guid = testScene3.Guid,
+                            Name = testScene3.Name
+                        }
+                    }
+                });
+
+            try
+            {
+                var hasMissingScenesExpectTrue = BuildConfigurationSettingsValidator.HasMissingScenes();
+                Assert.IsTrue(hasMissingScenesExpectTrue);
+            }
+            finally
+            {
+                backup.RestoreSettings();
+            }
+        }
+
+        [Test]
+        public void CheckMissingScenesExpectNoMissing()
+        {
+            var backup = new SettingsBackup();
+            backup.BackUp();
+
+            BuildConfigurationSettings.Instance.Configuration.DefaultScenes.Clear();
+            BuildConfigurationSettings.Instance.Configuration.Platforms.Clear();
+
+            var testScenes = GetTestScenes().ToArray();
+            var testScene1 = testScenes[0];
+            var testScene2 = testScenes[1];
+            var testScene3 = testScenes[2];
+
+            EditorBuildSettings.scenes = new[]
+            {
+                new EditorBuildSettingsScene(new GUID(testScene1.Guid), true),
+                new EditorBuildSettingsScene(new GUID(testScene2.Guid), true),
+                new EditorBuildSettingsScene(new GUID(testScene3.Guid), true)
+            };
+
+            BuildConfigurationSettings.Instance.Configuration.DefaultScenes
+                .Add(new SceneAssetInfo()
+                {
+                    Guid = testScene1.Guid,
+                    Name = testScene1.Name
+                });
+
+            BuildConfigurationSettings.Instance.Configuration.Platforms
+                .Add(new PlatformsConfiguration()
+                {
+                    BuildTargets = new List<BuildTargetRuntime>()
+                    {
+                        BuildTargetRuntime.Editor
+                    },
+                    Scenes = new List<SceneAssetInfo>()
+                    {
+                        new SceneAssetInfo()
+                        {
+                            Guid = testScene2.Guid,
+                            Name = testScene2.Name
+                        }
+                    }
+                });
+
+            BuildConfigurationSettings.Instance.Configuration.Platforms
+                .Add(new PlatformsConfiguration()
+                {
+                    BuildTargets = new List<BuildTargetRuntime>()
+                    {
+                        BuildTargetRuntime.StandaloneWindows64
+                    },
+                    Scenes = new List<SceneAssetInfo>()
+                    {
+                        new SceneAssetInfo()
+                        {
+                            Guid = testScene3.Guid,
+                            Name = testScene3.Name
+                        }
+                    }
+                });
+
+            try
+            {
+                var hasMissingScenesExpectFalse = BuildConfigurationSettingsValidator.HasMissingScenes();
+                Assert.IsFalse(hasMissingScenesExpectFalse);
+            }
+            finally
+            {
+                backup.RestoreSettings();
+            }
+        }
+
+        [Test]
+        public void CheckRepetitiveScenesExpectRepetitive()
+        {
+            var backup = new SettingsBackup();
+            backup.BackUp();
+
+            BuildConfigurationSettings.Instance.Configuration.DefaultScenes.Clear();
+            BuildConfigurationSettings.Instance.Configuration.Platforms.Clear();
+
+            var testScenes = GetTestScenes().ToArray();
+            var testScene1 = testScenes[0];
+            var testScene2 = testScenes[1];
+            var testScene3 = testScenes[2];
+
+            EditorBuildSettings.scenes = new[]
+            {
+                new EditorBuildSettingsScene(new GUID(testScene1.Guid), true),
+                new EditorBuildSettingsScene(new GUID(testScene2.Guid), true),
+                new EditorBuildSettingsScene(new GUID(testScene3.Guid), true)
+            };
+
+            BuildConfigurationSettings.Instance.Configuration.DefaultScenes
+                .Add(new SceneAssetInfo()
+                {
+                    Guid = testScene2.Guid,
+                    Name = testScene2.Name
+                });
+
+            BuildConfigurationSettings.Instance.Configuration.Platforms
+                .Add(new PlatformsConfiguration()
+                {
+                    BuildTargets = new List<BuildTargetRuntime>()
+                    {
+                        BuildTargetRuntime.Editor
+                    },
+                    Scenes = new List<SceneAssetInfo>()
+                    {
+                        new SceneAssetInfo()
+                        {
+                            Guid = testScene2.Guid,
+                            Name = testScene2.Name
+                        }
+                    }
+                });
+
+            BuildConfigurationSettings.Instance.Configuration.Platforms
+                .Add(new PlatformsConfiguration()
+                {
+                    BuildTargets = new List<BuildTargetRuntime>()
+                    {
+                        BuildTargetRuntime.StandaloneWindows64
+                    },
+                    Scenes = new List<SceneAssetInfo>()
+                    {
+                        new SceneAssetInfo()
+                        {
+                            Guid = testScene3.Guid,
+                            Name = testScene3.Name
+                        }
+                    }
+                });
+
+            try
+            {
+                var hasDuplicatesExpectTrue = BuildConfigurationSettingsValidator.HasScenesDuplicates();
+                Assert.IsTrue(hasDuplicatesExpectTrue);
+            }
+            finally
+            {
+                backup.RestoreSettings();
+            }
+        }
+
+        [Test]
+        public void CheckRepetitiveScenesExpectNoRepetitive()
+        {
+            var backup = new SettingsBackup();
+            backup.BackUp();
+
+            BuildConfigurationSettings.Instance.Configuration.DefaultScenes.Clear();
+            BuildConfigurationSettings.Instance.Configuration.Platforms.Clear();
+
+            var testScenes = GetTestScenes().ToArray();
+            var testScene1 = testScenes[0];
+            var testScene2 = testScenes[1];
+            var testScene3 = testScenes[2];
+
+            EditorBuildSettings.scenes = new[]
+            {
+                new EditorBuildSettingsScene(new GUID(testScene1.Guid), true),
+                new EditorBuildSettingsScene(new GUID(testScene2.Guid), true),
+                new EditorBuildSettingsScene(new GUID(testScene3.Guid), true)
+            };
+
+            BuildConfigurationSettings.Instance.Configuration.DefaultScenes
+                .Add(new SceneAssetInfo()
+                {
+                    Guid = testScene1.Guid,
+                    Name = testScene1.Name
+                });
+
+            BuildConfigurationSettings.Instance.Configuration.Platforms
+                .Add(new PlatformsConfiguration()
+                {
+                    BuildTargets = new List<BuildTargetRuntime>()
+                    {
+                        BuildTargetRuntime.Editor
+                    },
+                    Scenes = new List<SceneAssetInfo>()
+                    {
+                        new SceneAssetInfo()
+                        {
+                            Guid = testScene2.Guid,
+                            Name = testScene2.Name
+                        }
+                    }
+                });
+
+            BuildConfigurationSettings.Instance.Configuration.Platforms
+                .Add(new PlatformsConfiguration()
+                {
+                    BuildTargets = new List<BuildTargetRuntime>()
+                    {
+                        BuildTargetRuntime.StandaloneWindows64
+                    },
+                    Scenes = new List<SceneAssetInfo>()
+                    {
+                        new SceneAssetInfo()
+                        {
+                            Guid = testScene3.Guid,
+                            Name = testScene3.Name
+                        }
+                    }
+                });
+
+            try
+            {
+                var hasDuplicatesExpectFalse = BuildConfigurationSettingsValidator.HasScenesDuplicates();
+                Assert.IsFalse(hasDuplicatesExpectFalse);
+            }
+            finally
+            {
+                backup.RestoreSettings();
+            }
         }
     }
 }
