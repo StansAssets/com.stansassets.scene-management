@@ -482,7 +482,12 @@ namespace StansAssets.SceneManagement.Build
         {
             using (new IMGUIBeginHorizontal())
             {
-                EditorGUILayout.LabelField("Show scene sync warning on Entering Playmode");
+                var labelStyle = new GUIStyle(GUI.skin.GetStyle("label"))
+                {
+                    wordWrap = true
+                };
+                
+                EditorGUILayout.LabelField("Show scene sync warning on Entering Playmode", labelStyle);
  
                 BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog =
                     EditorGUILayout.Toggle(BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog);
