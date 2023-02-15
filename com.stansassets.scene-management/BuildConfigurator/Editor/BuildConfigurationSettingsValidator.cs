@@ -86,8 +86,8 @@ namespace StansAssets.SceneManagement.Build
             var result = EditorUtility.DisplayDialogComplex(
                 "Scenes Management",
                 k_ScenesSyncDescription,
-                "Ok, continue",
-                "Cancel, exit playmode",
+                "Skip",
+                "Open Scene Management",
                 "Don't show again");
 
             switch (result)
@@ -96,6 +96,7 @@ namespace StansAssets.SceneManagement.Build
                     break;
                 case 1:
                     EditorApplication.isPlaying = false;
+                    BuildConfigurationMenu.OpenBuildSettings();
                     break;
                 case 2:
                     BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog = false;
