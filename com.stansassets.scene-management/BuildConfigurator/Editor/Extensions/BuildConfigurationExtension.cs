@@ -223,7 +223,7 @@ namespace StansAssets.SceneManagement.Build
             }
         }
 
-        public static bool CheckIntersectScenesWhBuildSettings(
+        internal static bool CheckIntersectScenesWhBuildSettings(
             this BuildConfiguration configuration,
             BuildTarget buildTarget)
         {
@@ -247,7 +247,7 @@ namespace StansAssets.SceneManagement.Build
             return intersect.Any() || viseVersaIntersect.Any();
         }
 
-        public static bool CheckIntersectSceneWhBuildSettings(this BuildConfiguration configuration,
+        internal static bool CheckIntersectSceneWhBuildSettings(this BuildConfiguration configuration,
             BuildTarget buildTarget, string sceneGuid)
         {
             var configurationSceneGuids = configuration
@@ -264,37 +264,31 @@ namespace StansAssets.SceneManagement.Build
             var synced = EditorBuildSettings.scenes.Any(i => i.guid.ToString().Equals(sceneGuid));
             return synced;
         }
-        
-        public static bool CheckSceneDuplicate(this BuildConfiguration configuration, BuildTarget buildTarget, string sceneGuid)
+
+        internal static bool CheckSceneDuplicate(this BuildConfiguration configuration, BuildTarget buildTarget, string sceneGuid)
         {
-            var duplicates = GetDuplicateScenes(configuration, buildTarget);
-            return duplicates.Any(i => i.Guid.Equals(sceneGuid));
+            var scenePath = AssetDatabase.GUIDToAssetPath(sceneGuid);
+            var duplicates = GetDuplicateScenes(configuration);
+            return duplicates.Any(i =>  AssetDatabase.GUIDToAssetPath(i.Guid).Equals(scenePath));
         }
-        
-        public static IEnumerable<SceneAssetInfo> GetDuplicateScenes(this BuildConfiguration configuration, BuildTarget buildTarget)
+
+        internal static IEnumerable<SceneAssetInfo> GetDuplicateScenes(this BuildConfiguration configuration)
         {
-            var configurationSceneGuids = configuration
-                .BuildScenesCollection(new BuildScenesParams(buildTarget, false, true))
-                .ToArray();
-            var scenesPaths = configurationSceneGuids.Select(s => AssetDatabase.GUIDToAssetPath(s.Guid)).ToArray();
-            var duplicates = new List<SceneAssetInfo>();
-
-            foreach (var sceneAssetInfo in configurationSceneGuids)
-            {
-                var scenePath = AssetDatabase.GUIDToAssetPath(sceneAssetInfo.Guid);
-                var duplicated = scenesPaths.Count(i => i.Equals(scenePath)) > 1;
-
-                if (duplicated)
-                {
-                    duplicates.Add(sceneAssetInfo);
-                }
-            }
-   
-            return duplicates;
+            var configurationSceneGuids = new List<SceneAssetInfo>();
+            configurationSceneGuids.AddRange(configuration.DefaultScenes);
+            configurationSceneGuids.AddRange(configuration.Platforms.SelectMany(p => p.Scenes));
+            
+            var scenesPaths = configurationSceneGuids
+                .Where(g => g != null && !string.IsNullOrEmpty(g.Guid))
+                .Select(s => AssetDatabase.GUIDToAssetPath(s.Guid)).ToArray();
+            
+            return configurationSceneGuids
+                .Where (i=> i != null && 
+                           scenesPaths.Count(x => x.Equals(AssetDatabase.GUIDToAssetPath(i.Guid))) > 1);
         }
     }
 
-    internal struct BuildScenesParams
+    struct BuildScenesParams
     {
         internal readonly BuildTarget BuiltTarget; 
         internal readonly bool StripAddressables;
