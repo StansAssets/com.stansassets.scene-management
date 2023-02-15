@@ -25,7 +25,7 @@ namespace StansAssets.SceneManagement.Build
         /// Check current Editor Build Settings with the Scene Management build configuration to prevent out of sync scenes.
         /// </summary>
         /// <returns>True - if scenes are out of sync</returns>
-        public static bool CompareScenesWithBuildSettings()
+        internal static bool CompareScenesWithBuildSettings()
         {
             var needToSync = BuildConfigurationSettings.Instance.Configuration
                 .CheckIntersectScenesWhBuildSettings(EditorUserBuildSettings.activeBuildTarget);
@@ -46,7 +46,7 @@ namespace StansAssets.SceneManagement.Build
                            $"'Scene Management -> Build Settings'.");
         }
 
-        public static bool HasMissingScenes()
+        internal static bool HasMissingScenes()
         {
             if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
 
@@ -56,7 +56,7 @@ namespace StansAssets.SceneManagement.Build
                        .Platforms.Any(p => p.Scenes.Any(s => s != null && string.IsNullOrEmpty(s.Guid)));
         }
 
-        public static bool HasScenesDuplicates()
+        internal static bool HasScenesDuplicates()
         {
             if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
             
