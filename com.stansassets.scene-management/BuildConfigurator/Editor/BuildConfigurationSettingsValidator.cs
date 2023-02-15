@@ -144,7 +144,7 @@ namespace StansAssets.SceneManagement.Build
             if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
             
             var hasDuplicates = BuildConfigurationSettings.Instance.Configuration
-                .GetDuplicateScenes(EditorUserBuildSettings.activeBuildTarget).Any();
+                .GetDuplicateScenes().Any();
 
             return hasDuplicates;
         }
