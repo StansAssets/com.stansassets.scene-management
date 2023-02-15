@@ -45,7 +45,8 @@ namespace StansAssets.SceneManagement.Build
             }
 
             BuildConfigurationMenu.OpenBuildSettings();
-            Debug.LogError($"{k_ScenesSyncDescription} Scenes can be synchronized through the " +
+            Debug.LogWarning($"Current Editor Build Settings are our of sync with the Scene Management " +
+                           $"build configuration. Scenes can be synchronized through the " +
                            $"'Scene Management -> Build Settings'.");
         }
 
