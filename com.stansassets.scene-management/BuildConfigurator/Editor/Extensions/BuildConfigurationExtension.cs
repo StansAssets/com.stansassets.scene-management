@@ -295,6 +295,14 @@ namespace StansAssets.SceneManagement.Build
                 .Where (i=> i != null && 
                            scenesPaths.Count(x => x.Equals(AssetDatabase.GUIDToAssetPath(i.Guid))) > 1);
         }
+
+        internal static void ClearMissingScenes(this BuildConfiguration configuration)
+        {
+            bool FindMissingScene(SceneAssetInfo i) => i == null || string.IsNullOrEmpty(i.Guid);
+
+            configuration.DefaultScenes.RemoveAll(FindMissingScene);
+            configuration.Platforms.ForEach(p => p.Scenes.RemoveAll(FindMissingScene));
+        }
     }
 
     struct BuildScenesParams

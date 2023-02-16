@@ -429,15 +429,15 @@ namespace StansAssets.SceneManagement.Build
                 if (needScenesSync)
                 {
                     DrawMessage(k_ScenesSyncDescription, MessageType.Error,
-                        "Clear Build Settings & Sync", SyncScenes);
+                        "Fix and sync", SyncScenes);
                     return;
                 }
 
                 var hasMissingScenes = BuildConfigurationSettingsValidator.HasMissingScenes();
                 if (hasMissingScenes)
                 {
-                    DrawMessage(k_SceneMissingWarningDescription,
-                        MessageType.Warning);
+                    DrawMessage(k_SceneMissingWarningDescription, MessageType.Warning,
+                        "Fix and sync", SyncScenes);
                     return;
                 }
                 
@@ -479,11 +479,12 @@ namespace StansAssets.SceneManagement.Build
 
         void SyncScenes()
         {
-            if (BuildConfigurationSettings.Instance.HasValidConfiguration)
-            {
-                BuildConfigurationSettings.Instance.Configuration.SetupEditorSettings(
-                    EditorUserBuildSettings.activeBuildTarget, true);
-            }
+            if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return;
+            
+            BuildConfigurationSettings.Instance.Configuration.ClearMissingScenes();
+            
+            BuildConfigurationSettings.Instance.Configuration
+                .SetupEditorSettings(EditorUserBuildSettings.activeBuildTarget, true);
         }
         
         void PreventingDialogs()
