@@ -250,7 +250,8 @@ namespace StansAssets.SceneManagement.Build
             
             if(!outOfSync)
             {
-                outOfSync = configurationSceneGuids.Where((t, i) => buildSettingsSceneGuids[i] != t).Any();
+                outOfSync = configurationSceneGuids.Length != buildSettingsSceneGuids.Length
+                || configurationSceneGuids.Where((t, i) => buildSettingsSceneGuids[i] != t).Any();
             }
 
             return outOfSync;
