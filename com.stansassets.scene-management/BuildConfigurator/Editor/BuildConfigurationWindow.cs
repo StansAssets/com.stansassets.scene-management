@@ -1,9 +1,14 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using Rotorz.ReorderableList;
+using Rotorz.ReorderableList.Internal;
 using StansAssets.Plugins.Editor;
 using StansAssets.SceneManagement.Utilities;
+using UnityEditorInternal;
 
 namespace StansAssets.SceneManagement.Build
 {
@@ -31,10 +36,19 @@ namespace StansAssets.SceneManagement.Build
         IMGUIHyperLabel m_AddButton;
 
         bool m_ShowBuildIndex;
+
         AutoSyncParams m_AutoSyncParams;
-        
+
+        ReorderableList m_DefaultScenesList;
+
+        readonly Dictionary<PlatformsConfiguration, (ReorderableList platforms, ReorderableList scenes)>
+            m_ReorderableLists
+                = new Dictionary<PlatformsConfiguration, (ReorderableList platforms, ReorderableList scenes)>();
+
         protected override void OnAwake()
         {
+            EditorBuildSettings.sceneListChanged += EditorBuildSettingsSceneListChanged;
+
             titleContent = new GUIContent("Cross-Platform build configuration");
             SetPackageName(SceneManagementPackage.PackageName);
 
@@ -116,6 +130,11 @@ namespace StansAssets.SceneManagement.Build
 
         void DrawConfiguration(int index)
         {
+            // TODO: Bug?
+            // Try to comment this code and ReorderableListResources won't work!
+            var ap = ReorderableListStyles.Title;
+            // ~ bug
+
             var conf = BuildConfigurationSettings.Instance.BuildConfigurations[index];
             using (new IMGUIBlockWithIndent(new GUIContent("Settings")))
             {
@@ -169,7 +188,6 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
 
-            CheckNTryAutoSync();
             DrawSettings();
 
             if (conf.DefaultScenesFirst)
@@ -186,15 +204,20 @@ namespace StansAssets.SceneManagement.Build
 
         void DrawDefaultScenes(BuildConfiguration conf)
         {
+            if (m_DefaultScenesList == null)
+            {
+                m_DefaultScenesList = CreateScenesReorderableList(conf.DefaultScenes, false);
+            }
+
             using (new IMGUIBlockWithIndent(new GUIContent("Default Scenes")))
             {
                 EditorGUILayout.HelpBox(k_DefaultScenesDescription, MessageType.Info);
                 using (new IMGUIBeginHorizontal())
                 {
                     GUILayout.Space(20);
-                    using (new IMGUIBeginVertical())
+                    using (new IMGUIBeginVertical(ReorderableListStyles.Container2))
                     {
-                        ReorderableListGUI.ListField(conf.DefaultScenes, ContentTypeListItem, DrawEmptyScene);
+                        m_DefaultScenesList.DoLayoutList();
                     }
                 }
             }
@@ -211,7 +234,10 @@ namespace StansAssets.SceneManagement.Build
                     {
                         foreach (var platform in conf.Platforms)
                         {
-                            m_ShowBuildIndex = conf.IsActive(platform);
+                            var reorderableList = GetPlatformReorderableList(platform);
+
+                            m_ShowBuildIndex = conf.IsActive(platform) ||
+                                               platform.BuildTargets.Contains(BuildTargetRuntime.Editor);
                             EditorGUILayout.BeginHorizontal(GUI.skin.box);
                             {
                                 EditorGUILayout.BeginVertical(GUILayout.Width(10));
@@ -234,19 +260,19 @@ namespace StansAssets.SceneManagement.Build
 
                                 EditorGUILayout.BeginVertical(GUILayout.Width(235f));
                                 {
-                                    ReorderableListGUI.Title("Build Targets");
-
-                                    ReorderableListGUI.ListField(platform.BuildTargets, BuildTargetListItem, DrawEmptyPlatform);
+                                    using (new IMGUIBeginVertical(ReorderableListStyles.Container2))
+                                    {
+                                        reorderableList.platforms.DoLayoutList();
+                                    }
                                 }
                                 EditorGUILayout.EndVertical();
 
                                 EditorGUILayout.BeginVertical();
                                 {
-                                    GUI.backgroundColor = m_ShowBuildIndex ? GUI.skin.settings.selectionColor : Color.white;
-                                    ReorderableListGUI.Title("Scenes");
-                                    GUI.backgroundColor = Color.white;
-
-                                    ReorderableListGUI.ListField(platform.Scenes, ContentTypeListItem, DrawEmptyScene);
+                                    using (new IMGUIBeginVertical(ReorderableListStyles.Container2))
+                                    {
+                                        reorderableList.scenes.DoLayoutList();
+                                    }
                                 }
                                 EditorGUILayout.EndVertical();
                             }
@@ -267,83 +293,6 @@ namespace StansAssets.SceneManagement.Build
             }
 
             m_ShowBuildIndex = true;
-        }
-
-        BuildTargetRuntime BuildTargetListItem(Rect pos, BuildTargetRuntime itemValue)
-        {
-            int indentLevel = EditorGUI.indentLevel;
-            EditorGUI.indentLevel = 0;
-            BuildTargetRuntime target = (BuildTargetRuntime)EditorGUI.EnumPopup(pos, itemValue);
-            EditorGUI.indentLevel = indentLevel;
-            return target;
-        }
-
-        SceneAssetInfo ContentTypeListItem(Rect pos, SceneAssetInfo itemValue)
-        {
-            if (itemValue == null)
-                itemValue = new SceneAssetInfo();
-
-            GUI.BeginGroup(pos);
-            {
-                const float addressablesToggleWidth = 20.0f;
-                const float objectFieldRectWidth = 60.0f;
-
-                var indentLevel = EditorGUI.indentLevel;
-                EditorGUI.indentLevel = 0;
-
-                var rect = Rect.zero.WithSize(pos.size);
-                var sceneIndexRect = m_ShowBuildIndex ? rect.WithWidth(addressablesToggleWidth) : rect.WithSize(Vector2.zero);
-                var objectFieldRect = rect.WithWidth(Mathf.Clamp(rect.width - sceneIndexRect.width - addressablesToggleWidth,
-                        objectFieldRectWidth,
-                        float.MaxValue))
-                    .RightOf(sceneIndexRect);
-                var addressableToggleRect = rect.WithWidth(addressablesToggleWidth).RightOf(objectFieldRect).ShiftHorizontally(4.0f);
-
-                if (m_ShowBuildIndex)
-                {
-                    var sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue);
-                    GUI.Label(sceneIndexRect, sceneIndex.ToString());
-                }
-
-                var sceneAsset = itemValue.GetSceneAsset();
-                var sceneSynced = BuildConfigurationSettings.Instance.Configuration
-                    .CheckIntersectSceneWhBuildSettings(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
-
-                GUI.color = LookForFieldColor(sceneAsset, sceneSynced, itemValue);
-
-                EditorGUI.indentLevel = 0;
-                EditorGUI.BeginChangeCheck();
-                var newSceneAsset = EditorGUI.ObjectField(objectFieldRect, sceneAsset, typeof(SceneAsset), false) as SceneAsset;
-                if (EditorGUI.EndChangeCheck())
-                {
-                    itemValue.SetSceneAsset(newSceneAsset);
-                    
-                    if (sceneSynced)
-                    {
-                        BuildConfigurationSettings.Instance.Configuration.SetupEditorSettings(
-                            EditorUserBuildSettings.activeBuildTarget, true);
-                    }
-                }
-
-                GUI.color = Color.white;
-
-                itemValue.Addressable = GUI.Toggle(addressableToggleRect, itemValue.Addressable, AddressableGuiContent);
-
-                EditorGUI.indentLevel = indentLevel;
-            }
-            GUI.EndGroup();
-
-            return itemValue;
-        }
-
-        void DrawEmptyScene()
-        {
-            GUILayout.Label("Add a scenes", EditorStyles.miniLabel);
-        }
-
-        void DrawEmptyPlatform()
-        {
-            GUILayout.Label("Add a build target", EditorStyles.miniLabel);
         }
 
         protected int DrawTabs()
@@ -502,18 +451,312 @@ namespace StansAssets.SceneManagement.Build
                     EditorGUILayout.Toggle(BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog);
             }
         }
-        
-        void CheckNTryAutoSync()
+
+        void CheckNTryAutoSync(bool ignoreCollectionsSize = false)
         {
+            /*
+             When auto Sync can not be executed:
+                When the editor builds setting missing scenes (error)
+                When the editor build setting has more scenes than the user specified in the config (warning)
+                When the editor builds the setting first scene does not match our config (warning)
+             */
+
+            var hasMissingScenes = BuildConfigurationSettingsValidator.HasMissingScenes();
+            if (hasMissingScenes)
+            {
+                return;
+            }
+
+            if (!ignoreCollectionsSize)
+            {
+                var scenesCollections = BuildConfigurationSettingsValidator.GetScenesCollections();
+                if (scenesCollections.buildScenes.Count() > scenesCollections.confScenes.Count())
+                {
+                    return;
+                }
+            }
+
             m_AutoSyncParams.NeedScenesSync = BuildConfigurationSettingsValidator.CompareScenesWithBuildSettings();
 
             if (m_AutoSyncParams.Synced && m_AutoSyncParams.NeedScenesSync)
             {
                 SyncScenes();
+                m_AutoSyncParams.Synced = true;
             }
             else if (!m_AutoSyncParams.Synced && !m_AutoSyncParams.NeedScenesSync)
             {
                 m_AutoSyncParams.Synced = true;
+            }
+        }
+
+        void EditorBuildSettingsSceneListChanged()
+        {
+            m_AutoSyncParams.Synced = false;
+        }
+
+        ReorderableList CreateScenesReorderableList(IList elementsList, bool showBuildIndex)
+        {
+            var reorderableList = new ReorderableList(elementsList, typeof(SceneAssetInfo),
+                true, true, true, false)
+            {
+                showDefaultBackground = false,
+                footerHeight = 18f,
+                elementHeightCallback = i => 22f,
+            };
+
+            // Draw element
+            reorderableList.drawNoneElementCallback =
+                rect => EditorGUI.LabelField(rect, "Add a scene", EditorStyles.miniLabel);
+            
+            reorderableList.drawElementCallback = (rect, index, active, focused) =>
+                DrawSceneListItem(rect, index, reorderableList);
+            
+            reorderableList.drawElementBackgroundCallback = (rect, i, b, focused) =>
+                DrawListItemBackground(rect, i, focused, reorderableList);
+
+            // Head/foot
+            reorderableList.drawHeaderCallback = rect =>
+                DrawListHeaderCallback(rect, "Scenes", showBuildIndex && m_ShowBuildIndex);
+            
+            reorderableList.drawFooterCallback = rect => DrawListFooterCallback(rect, reorderableList);
+
+            // Actions
+            reorderableList.onChangedCallback = list => { CheckNTryAutoSync(); };
+
+            reorderableList.onReorderCallback = list => { CheckNTryAutoSync(); };
+
+            reorderableList.onRemoveCallback = list => { CheckNTryAutoSync(true); };
+
+            return reorderableList;
+        }
+
+        ReorderableList CreatePlatformsReorderableList(IList elementsList)
+        {
+            var reorderableList = new ReorderableList(elementsList, typeof(BuildTargetRuntime),
+                true, true, true, false)
+            {
+                showDefaultBackground = false,
+                footerHeight = 18f,
+                elementHeightCallback = i => 22f,
+            };
+
+            // Draw element
+            reorderableList.drawNoneElementCallback = rect =>
+                EditorGUI.LabelField(rect, "Add a build target", EditorStyles.miniLabel);
+            
+            reorderableList.drawElementCallback = (rect, index, active, focused) =>
+                DrawBuildTargetListItem(rect, index, reorderableList);
+            
+            reorderableList.drawElementBackgroundCallback = (rect, i, b, focused) =>
+                DrawListItemBackground(rect, i, focused, reorderableList);
+
+            // Head/foot
+            reorderableList.drawHeaderCallback =
+                rect => DrawListHeaderCallback(rect, "Build Targets", m_ShowBuildIndex);
+            
+            reorderableList.drawFooterCallback = rect => DrawListFooterCallback(rect, reorderableList);
+
+            // Actions
+            reorderableList.onChangedCallback = list => { CheckNTryAutoSync(true); };
+
+            reorderableList.onRemoveCallback = list => { CheckNTryAutoSync(true); };
+
+            return reorderableList;
+        }
+
+        (ReorderableList platforms, ReorderableList scenes) GetPlatformReorderableList(PlatformsConfiguration platform)
+        {
+            if (m_ReorderableLists.ContainsKey(platform)) return m_ReorderableLists[platform];
+
+            var platforms = CreatePlatformsReorderableList(platform.BuildTargets);
+            var scenes = CreateScenesReorderableList(platform.Scenes, true);
+
+            m_ReorderableLists.Add(platform, (platforms, scenes));
+
+            return m_ReorderableLists[platform];
+        }
+
+        void DrawListHeaderCallback(Rect rect, string titleText, bool showBuildIndex = false)
+        {
+            var style = ReorderableListStyles.Title;
+
+            rect.x -= 20f;
+            rect.width += 25f;
+
+            GUI.backgroundColor = showBuildIndex ? GUI.skin.settings.selectionColor : Color.white;
+            EditorGUI.LabelField(rect, titleText, style);
+            GUI.backgroundColor = Color.white;
+        }
+
+        void DrawListFooterCallback(Rect rect, ReorderableList reorderableList)
+        {
+            var removeButtonRect = rect.RightOf(rect).ShiftHorizontally(-28.0f);
+            removeButtonRect.width = 24f;
+            removeButtonRect.height = 18f;
+
+            var iconNormal = ReorderableListResources.GetTexture(ReorderableListTexture.Icon_Add_Normal);
+            var iconActive = ReorderableListResources.GetTexture(ReorderableListTexture.Icon_Add_Active);
+
+            var removeButton = GUIHelper.IconButton(removeButtonRect, true, iconNormal, iconActive,
+                ReorderableListStyles.ItemButton);
+            if (removeButton)
+            {
+                var elementType = reorderableList.list.GetType().GetGenericArguments().Single();
+                reorderableList.list.Add(Activator.CreateInstance(elementType));
+            }
+        }
+
+        void DrawListItemBackground(Rect rect, int index, bool isFocused, ReorderableList reorderableList)
+        {
+            if (!isFocused && reorderableList.count - 1 <= index)
+            {
+                return;
+            }
+
+            var startPos = new Vector2(rect.xMin, rect.yMax);
+            var endPos = new Vector2(rect.xMax, rect.yMax);
+
+            Handles.color = isFocused
+                ? ReorderableListStyles.SelectionBackgroundColor
+                : ReorderableListStyles.HorizontalLineColor;
+            Handles.DrawLine(startPos, endPos);
+            Handles.color = Color.white;
+        }
+
+        void DrawSceneListItem(Rect rect, int index, ReorderableList reorderableList)
+        {
+            if (index >= reorderableList.count)
+            {
+                return;
+            }
+
+            var itemValue = reorderableList.list[index] as SceneAssetInfo ?? new SceneAssetInfo();
+
+            rect.y += 1f;
+            rect.height = 18f;
+
+            GUI.BeginGroup(rect);
+            {
+                const float addressablesToggleWidth = 20.0f;
+                const float removeButtonWidth = 24.0f;
+                const float objectFieldRectWidth = 60.0f;
+                const float removeButtonRectWidth = 24;
+
+                var indentLevel = EditorGUI.indentLevel;
+                EditorGUI.indentLevel = 0;
+
+                var positionRect = Rect.zero.WithSize(rect.size);
+                var sceneIndexRect = m_ShowBuildIndex
+                    ? positionRect.WithWidth(addressablesToggleWidth)
+                    : positionRect.WithSize(Vector2.zero);
+                var objectFieldRect = positionRect
+                    .WithWidth(
+                        Mathf.Clamp(
+                            positionRect.width - sceneIndexRect.width - addressablesToggleWidth - removeButtonWidth,
+                            objectFieldRectWidth, float.MaxValue)
+                    )
+                    .RightOf(sceneIndexRect);
+
+                var addressableToggleRect = positionRect.WithWidth(addressablesToggleWidth).RightOf(objectFieldRect)
+                    .ShiftHorizontally(4.0f);
+
+                if (m_ShowBuildIndex)
+                {
+                    var sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue);
+                    GUI.Label(sceneIndexRect, sceneIndex.ToString());
+                }
+
+                var sceneAsset = itemValue.GetSceneAsset();
+                var sceneSynced = BuildConfigurationSettings.Instance.Configuration
+                    .CheckIntersectSceneWhBuildSettings(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
+
+                GUI.color = LookForFieldColor(sceneAsset, sceneSynced, itemValue);
+
+                EditorGUI.indentLevel = 0;
+                EditorGUI.BeginChangeCheck();
+                var newSceneAsset =
+                    EditorGUI.ObjectField(objectFieldRect, sceneAsset, typeof(SceneAsset), false) as SceneAsset;
+                if (EditorGUI.EndChangeCheck())
+                {
+                    itemValue.SetSceneAsset(newSceneAsset);
+                    reorderableList.onChangedCallback?.Invoke(reorderableList);
+                }
+
+                GUI.color = Color.white;
+
+                itemValue.Addressable = GUI.Toggle(addressableToggleRect, itemValue.Addressable, AddressableGuiContent);
+
+                var removeButtonRect = positionRect.WithWidth(removeButtonWidth).RightOf(addressableToggleRect)
+                    .ShiftHorizontally(-2.0f);
+                removeButtonRect.width = removeButtonRectWidth;
+
+                var iconNormal = ReorderableListResources.GetTexture(ReorderableListTexture.Icon_Remove_Normal);
+                var iconActive = ReorderableListResources.GetTexture(ReorderableListTexture.Icon_Remove_Active);
+
+                var removeButton = GUIHelper.IconButton(removeButtonRect, true, iconNormal, iconActive,
+                    ReorderableListStyles.ItemButton);
+                if (removeButton)
+                {
+                    reorderableList.list.Remove(itemValue);
+                    reorderableList.onRemoveCallback.Invoke(reorderableList);
+                }
+
+                EditorGUI.indentLevel = indentLevel;
+            }
+            GUI.EndGroup();
+        }
+
+        void DrawBuildTargetListItem(Rect rect, int index, ReorderableList reorderableList)
+        {
+            if (index >= reorderableList.count)
+            {
+                return;
+            }
+
+            var element = (BuildTargetRuntime)reorderableList.list[index];
+
+            rect.y += 1f;
+            rect.height = 18f;
+
+            const float removeButtonWidth = 24.0f;
+
+            var positionRect = new Rect(rect);
+            positionRect.width -= removeButtonWidth;
+
+            var indentLevel = EditorGUI.indentLevel;
+            EditorGUI.indentLevel = 0;
+
+            var style = new GUIStyle(EditorStyles.popup)
+            {
+                fontStyle = element == (BuildTargetRuntime)EditorUserBuildSettings.activeBuildTarget ||
+                            element == BuildTargetRuntime.Editor
+                    ? FontStyle.Bold
+                    : FontStyle.Normal
+            };
+
+            EditorGUI.BeginChangeCheck();
+            element = (BuildTargetRuntime)EditorGUI.EnumPopup(positionRect, element, style);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                reorderableList.list[index] = element;
+                reorderableList.onChangedCallback?.Invoke(reorderableList);
+            }
+
+            EditorGUI.indentLevel = indentLevel;
+
+            var removeButtonRect = rect.RightOf(positionRect).ShiftHorizontally(+2.0f);
+            removeButtonRect.width = removeButtonWidth;
+
+            var iconNormal = ReorderableListResources.GetTexture(ReorderableListTexture.Icon_Remove_Normal);
+            var iconActive = ReorderableListResources.GetTexture(ReorderableListTexture.Icon_Remove_Active);
+
+            var removeButton = GUIHelper.IconButton(removeButtonRect, true, iconNormal, iconActive,
+                ReorderableListStyles.ItemButton);
+            if (removeButton)
+            {
+                reorderableList.list.Remove(reorderableList.list[index]);
+                reorderableList.onRemoveCallback?.Invoke(reorderableList);
             }
         }
 

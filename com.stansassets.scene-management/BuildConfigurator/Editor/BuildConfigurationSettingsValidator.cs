@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -35,6 +36,17 @@ namespace StansAssets.SceneManagement.Build
                 .CheckIntersectScenesWhBuildSettings(EditorUserBuildSettings.activeBuildTarget);
 
             return needToSync;
+        }
+        
+        internal static (IEnumerable<string> confScenes, IEnumerable<string> buildScenes) GetScenesCollections()
+        {
+            var configurationScenes = BuildConfigurationSettings.Instance.Configuration
+                .BuildScenesCollection(new BuildScenesParams(EditorUserBuildSettings.activeBuildTarget, false, true))
+                .Select(s=>s.Guid);
+
+            var buildSettingsScenes = EditorBuildSettings.scenes.Select(s=>s.guid.ToString());
+            
+            return (configurationScenes, buildSettingsScenes);
         }
         
         static void EditorBuildSettingsOnSceneListChanged()
