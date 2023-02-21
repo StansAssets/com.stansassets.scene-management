@@ -263,23 +263,17 @@ namespace StansAssets.SceneManagement.Build
                                 }
                                 EditorGUILayout.EndVertical();
 
-                                EditorGUILayout.BeginVertical(GUILayout.Width(235f));
+                                using (new IMGUIBeginVertical(ReorderableListStyles.Container2, 
+                                           GUILayout.MinWidth(100f), GUILayout.MaxWidth(Screen.width / 2f)))
                                 {
-                                    using (new IMGUIBeginVertical(ReorderableListStyles.Container2))
-                                    {
-                                        reorderableList.platforms.DoLayoutList();
-                                    }
+                                    reorderableList.platforms.DoLayoutList();
                                 }
-                                EditorGUILayout.EndVertical();
 
-                                EditorGUILayout.BeginVertical();
+                                using (new IMGUIBeginVertical(ReorderableListStyles.Container2, 
+                                           GUILayout.MinWidth(100f), GUILayout.MaxWidth(Screen.width)))
                                 {
-                                    using (new IMGUIBeginVertical(ReorderableListStyles.Container2))
-                                    {
-                                        reorderableList.scenes.DoLayoutList();
-                                    }
+                                    reorderableList.scenes.DoLayoutList();
                                 }
-                                EditorGUILayout.EndVertical();
                             }
                             EditorGUILayout.EndHorizontal();
                         }
