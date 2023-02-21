@@ -252,6 +252,7 @@ namespace StansAssets.SceneManagement.Build
                                         if (delete)
                                         {
                                             conf.Platforms.Remove(platform);
+                                            CheckNTryAutoSync(true);
                                             GUIUtility.ExitGUI();
                                             break;
                                         }
@@ -395,7 +396,15 @@ namespace StansAssets.SceneManagement.Build
                     DrawMessage("There are no scenes in the configuration", MessageType.Info);
                     return;
                 }
-                
+
+                var hasDuplicates = BuildConfigurationSettingsValidator.HasScenesDuplicates();
+                if (hasDuplicates)
+                {
+                    DrawMessage(k_RepetitiveScenesWarningDescription,
+                        MessageType.Warning);
+                    return;
+                }
+
                 var needScenesSync = BuildConfigurationSettingsValidator.CompareScenesWithBuildSettings();
                 if (needScenesSync)
                 {
@@ -411,15 +420,7 @@ namespace StansAssets.SceneManagement.Build
                         "Fix and sync", SyncScenes);
                     return;
                 }
-                
-                var hasDuplicates = BuildConfigurationSettingsValidator.HasScenesDuplicates();
-                if (hasDuplicates)
-                {
-                    DrawMessage(k_RepetitiveScenesWarningDescription,
-                        MessageType.Warning);
-                    return;
-                }
-                
+
                 DrawMessage("No issues found with the configuration.", MessageType.Info);
             }
         }
@@ -456,6 +457,8 @@ namespace StansAssets.SceneManagement.Build
             
             BuildConfigurationSettings.Instance.Configuration
                 .SetupEditorSettings(EditorUserBuildSettings.activeBuildTarget, true);
+            
+            m_AutoSyncParams.Synced = true;
         }
         
         void PreventingDialogs()
@@ -489,6 +492,12 @@ namespace StansAssets.SceneManagement.Build
                 m_AutoSyncParams.Synced = false;
                 return;
             }
+
+            var hasDuplicates = BuildConfigurationSettingsValidator.HasScenesDuplicates();
+            if (hasDuplicates)
+            {
+                return;    
+            }
             
             var hasMissingScenes = BuildConfigurationSettingsValidator.HasMissingScenes();
             if (hasMissingScenes)
@@ -505,7 +514,7 @@ namespace StansAssets.SceneManagement.Build
                     return;
                 }
             }
-
+            
             m_AutoSyncParams.NeedScenesSync = BuildConfigurationSettingsValidator.CompareScenesWithBuildSettings();
 
             if (m_AutoSyncParams.Synced && m_AutoSyncParams.NeedScenesSync)

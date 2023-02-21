@@ -79,6 +79,12 @@ namespace StansAssets.SceneManagement.Build
             if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
 
             var conf = BuildConfigurationSettings.Instance.Configuration;
+
+            var platformsDuplicates = conf.GetConfigurationRepetitiveScenes();
+            if (platformsDuplicates.Any(s => s.Value.Any()))
+            {
+                return true;
+            }
             
             var defaultInPlatform = conf.GetDefaultInPlatformsDuplicateScenes().Any();
             if (defaultInPlatform) return true;

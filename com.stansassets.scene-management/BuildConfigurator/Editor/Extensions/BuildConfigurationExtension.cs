@@ -298,6 +298,40 @@ namespace StansAssets.SceneManagement.Build
             return false;
         }
 
+        internal static Dictionary<PlatformsConfiguration, IEnumerable<SceneAssetInfo>> GetConfigurationRepetitiveScenes(this BuildConfiguration configuration)
+        {
+            var result = new Dictionary<PlatformsConfiguration, IEnumerable<SceneAssetInfo>>();
+            
+            foreach (var platform in configuration.Platforms)
+            {
+                var duplicates = GetPlatformsConfigurationDuplicates(platform).ToArray();
+
+                if (duplicates.Any())
+                {
+                    result.Add(platform, duplicates);
+                }
+            }
+            
+            return result;
+        }
+
+        internal static IEnumerable<SceneAssetInfo> GetPlatformsConfigurationDuplicates(PlatformsConfiguration platformsConfiguration)
+        {
+            var sceneAssetInfos = platformsConfiguration.Scenes
+                .Where(g => g != null && !string.IsNullOrEmpty(g.Guid))
+                .ToArray();
+
+            var paths = sceneAssetInfos
+                .ToDictionary(assetInfo => assetInfo, assetInfo => AssetDatabase.GUIDToAssetPath(assetInfo.Guid));
+
+            var duplicates = paths
+                .Where(d => paths.Count(p => p.Value.Equals(d.Value)) > 1)
+                .Select(s=>s.Key)
+                .ToArray();
+            
+            return duplicates;
+        }
+            
         internal static IEnumerable<SceneAssetInfo> GetConfigurationRepetitiveScenes(this BuildConfiguration configuration,
             BuildTarget buildTarget)
         {
@@ -327,19 +361,8 @@ namespace StansAssets.SceneManagement.Build
             {
                 return new SceneAssetInfo[]{};
             }
-            
-            var sceneAssetInfos = platform.Scenes
-                .Where(g => g != null && !string.IsNullOrEmpty(g.Guid))
-                .ToArray();
 
-            var paths = sceneAssetInfos
-                .ToDictionary(assetInfo => assetInfo, assetInfo => AssetDatabase.GUIDToAssetPath(assetInfo.Guid));
-
-            var duplicates = paths
-                .Where(d => paths.Count(p => p.Value.Equals(d.Value)) > 1)
-                .Select(s=>s.Key)
-                .ToArray();
-            
+            var duplicates = GetPlatformsConfigurationDuplicates(platform);
             return duplicates;
         }
         
