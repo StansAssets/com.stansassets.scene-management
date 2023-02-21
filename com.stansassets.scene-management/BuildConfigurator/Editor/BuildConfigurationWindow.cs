@@ -421,7 +421,7 @@ namespace StansAssets.SceneManagement.Build
                         "Fix and sync", SyncScenes);
                     return;
                 }
-
+                
                 DrawMessage("No issues found with the configuration.", MessageType.Info);
             }
         }

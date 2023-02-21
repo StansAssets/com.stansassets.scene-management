@@ -273,6 +273,7 @@ namespace StansAssets.SceneManagement.Build
         internal static bool CheckSceneDuplicate(this BuildConfiguration configuration, BuildTarget buildTarget, string sceneGuid)
         {
             var scenePath = AssetDatabase.GUIDToAssetPath(sceneGuid);
+            
             bool IsSceneEqual(SceneAssetInfo i) => 
                 i.Guid.Equals(sceneGuid) ||
                 AssetDatabase.GUIDToAssetPath(i.Guid).Equals(scenePath);
