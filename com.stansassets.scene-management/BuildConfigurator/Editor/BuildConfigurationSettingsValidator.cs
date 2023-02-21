@@ -53,10 +53,13 @@ namespace StansAssets.SceneManagement.Build
         {
             if (!CompareScenesWithBuildSettings())
             {
+                BuildConfigurationMenu.UpdateBuildSettingsWindowStatus();
                 return;
             }
 
             BuildConfigurationMenu.OpenBuildSettings();
+            BuildConfigurationMenu.UpdateBuildSettingsWindowStatus();
+
             Debug.LogError($"{k_ScenesSyncDescription} Scenes can be synchronized through the " +
                            $"'Scene Management -> Build Settings'.");
         }
@@ -74,11 +77,19 @@ namespace StansAssets.SceneManagement.Build
         internal static bool HasScenesDuplicates()
         {
             if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
-            
-            var hasDuplicates = BuildConfigurationSettings.Instance.Configuration
-                .GetDuplicateScenes().Any();
 
-            return hasDuplicates;
+            var conf = BuildConfigurationSettings.Instance.Configuration;
+            
+            var defaultInPlatform = conf.GetDefaultInPlatformsDuplicateScenes().Any();
+            if (defaultInPlatform) return true;
+            
+            var inConfig = conf.GetConfigurationRepetitiveScenes(EditorUserBuildSettings.activeBuildTarget).Any();
+            if (inConfig) return true;
+
+            var buildTarget = conf.GetBuildTargetDuplicateScenes(EditorUserBuildSettings.activeBuildTarget).Any();
+            if (buildTarget) return true;
+
+            return false;
         }
         
         static void PreventOfPlayingOutOfSync()
@@ -114,6 +125,16 @@ namespace StansAssets.SceneManagement.Build
                     BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog = false;
                     break;
             }
+        }
+
+        internal static bool HasAnyScene()
+        {
+            if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
+
+            return BuildConfigurationSettings.Instance.Configuration
+                       .DefaultScenes.Any(i => i != null && !string.IsNullOrEmpty(i.Guid)) 
+                   || BuildConfigurationSettings.Instance.Configuration
+                       .Platforms.Any(p => p.Scenes.Any(i => i != null && !string.IsNullOrEmpty(i.Guid)));
         }
     }
 }

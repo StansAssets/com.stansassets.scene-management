@@ -45,10 +45,13 @@ namespace StansAssets.SceneManagement.Build
             m_ReorderableLists
                 = new Dictionary<PlatformsConfiguration, (ReorderableList platforms, ReorderableList scenes)>();
 
+        internal void UpdateStatus()
+        {
+            EditorBuildSettingsSceneListChanged();
+        }
+        
         protected override void OnAwake()
         {
-            EditorBuildSettings.sceneListChanged += EditorBuildSettingsSceneListChanged;
-
             titleContent = new GUIContent("Cross-Platform build configuration");
             SetPackageName(SceneManagementPackage.PackageName);
 
@@ -234,10 +237,10 @@ namespace StansAssets.SceneManagement.Build
                     {
                         foreach (var platform in conf.Platforms)
                         {
+                            m_ShowBuildIndex = conf.IsActive(platform);
+                            
                             var reorderableList = GetPlatformReorderableList(platform);
-
-                            m_ShowBuildIndex = conf.IsActive(platform) ||
-                                               platform.BuildTargets.Contains(BuildTargetRuntime.Editor);
+                            
                             EditorGUILayout.BeginHorizontal(GUI.skin.box);
                             {
                                 EditorGUILayout.BeginVertical(GUILayout.Width(10));
@@ -345,10 +348,22 @@ namespace StansAssets.SceneManagement.Build
             });
         }
         
-        Color LookForFieldColor(SceneAsset sceneAsset, bool scenesSynced, SceneAssetInfo itemValue)
+        Color LookForFieldColor(SceneAsset sceneAsset, bool scenesSynced, SceneAssetInfo itemValue,
+            ReorderableList reorderableList)
         {
             var sceneDuplicate = BuildConfigurationSettings.Instance.Configuration
                 .CheckSceneDuplicate(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
+
+            if (!sceneDuplicate && itemValue.Guid != null && !string.IsNullOrEmpty(itemValue.Guid))
+            {
+                var scenes = new SceneAssetInfo[reorderableList.list.Count];
+                reorderableList.list.CopyTo(scenes, 0);
+
+                var itemPath = AssetDatabase.GUIDToAssetPath(itemValue.Guid);
+                sceneDuplicate = scenes.Count(i =>
+                    itemValue.Guid.Equals(i.Guid) || AssetDatabase.GUIDToAssetPath(i.Guid).Equals(itemPath)) > 1;
+            }
+            
             var sceneWithError = sceneAsset == null;
             var color = Color.white;
             
@@ -373,6 +388,13 @@ namespace StansAssets.SceneManagement.Build
             using (new IMGUIBlockWithIndent(new GUIContent("Editor & Build Settings")))
             {
                 PreventingDialogs();
+                
+                var hasAnyScene = BuildConfigurationSettingsValidator.HasAnyScene();
+                if (!hasAnyScene)
+                {
+                    DrawMessage("There are no scenes in the configuration", MessageType.Info);
+                    return;
+                }
                 
                 var needScenesSync = BuildConfigurationSettingsValidator.CompareScenesWithBuildSettings();
                 if (needScenesSync)
@@ -461,6 +483,13 @@ namespace StansAssets.SceneManagement.Build
                 When the editor builds the setting first scene does not match our config (warning)
              */
 
+            var hasAnyScene = BuildConfigurationSettingsValidator.HasAnyScene();
+            if (!hasAnyScene)
+            {
+                m_AutoSyncParams.Synced = false;
+                return;
+            }
+            
             var hasMissingScenes = BuildConfigurationSettingsValidator.HasMissingScenes();
             if (hasMissingScenes)
             {
@@ -472,6 +501,7 @@ namespace StansAssets.SceneManagement.Build
                 var scenesCollections = BuildConfigurationSettingsValidator.GetScenesCollections();
                 if (scenesCollections.buildScenes.Count() > scenesCollections.confScenes.Count())
                 {
+                    m_AutoSyncParams.Synced = false;
                     return;
                 }
             }
@@ -491,7 +521,8 @@ namespace StansAssets.SceneManagement.Build
 
         void EditorBuildSettingsSceneListChanged()
         {
-            m_AutoSyncParams.Synced = false;
+            m_AutoSyncParams.NeedScenesSync = BuildConfigurationSettingsValidator.CompareScenesWithBuildSettings();
+            m_AutoSyncParams.Synced = !m_AutoSyncParams.NeedScenesSync;
         }
 
         ReorderableList CreateScenesReorderableList(IList elementsList, bool showBuildIndex)
@@ -662,7 +693,7 @@ namespace StansAssets.SceneManagement.Build
 
                 if (m_ShowBuildIndex)
                 {
-                    var sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue);
+                    var sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue, EditorUserBuildSettings.activeBuildTarget);
                     GUI.Label(sceneIndexRect, sceneIndex.ToString());
                 }
 
@@ -670,7 +701,7 @@ namespace StansAssets.SceneManagement.Build
                 var sceneSynced = BuildConfigurationSettings.Instance.Configuration
                     .CheckIntersectSceneWhBuildSettings(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
 
-                GUI.color = LookForFieldColor(sceneAsset, sceneSynced, itemValue);
+                GUI.color = LookForFieldColor(sceneAsset, sceneSynced, itemValue, reorderableList);
 
                 EditorGUI.indentLevel = 0;
                 EditorGUI.BeginChangeCheck();
