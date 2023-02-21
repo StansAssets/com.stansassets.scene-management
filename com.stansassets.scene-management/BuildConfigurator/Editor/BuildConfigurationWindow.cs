@@ -71,6 +71,7 @@ namespace StansAssets.SceneManagement.Build
             }
 
             UpdateActiveConfUI();
+            UpdateStatus();
 
             m_AddButton = new IMGUIHyperLabel(new GUIContent("+"), EditorStyles.miniLabel);
             m_AddButton.SetMouseOverColor(SettingsWindowStyles.SelectedElementColor);

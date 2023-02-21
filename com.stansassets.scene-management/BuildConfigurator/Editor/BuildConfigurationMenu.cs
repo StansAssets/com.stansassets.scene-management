@@ -15,6 +15,7 @@ namespace StansAssets.SceneManagement.Build
             }
 
             s_Window.Show();
+            s_Window.UpdateStatus();
         }
 
         internal static void UpdateBuildSettingsWindowStatus()
