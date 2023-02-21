@@ -238,44 +238,7 @@ namespace StansAssets.SceneManagement.Build
                     {
                         foreach (var platform in conf.Platforms)
                         {
-                            m_ShowBuildIndex = conf.IsActive(platform);
-                            
-                            var reorderableList = GetPlatformReorderableList(platform);
-                            
-                            EditorGUILayout.BeginHorizontal(GUI.skin.box);
-                            {
-                                EditorGUILayout.BeginVertical(GUILayout.Width(10));
-                                {
-                                    using (new IMGUIBeginHorizontal())
-                                    {
-                                        GUILayout.Space(2);
-                                        bool delete = GUILayout.Button("-", EditorStyles.miniButton, GUILayout.Width(18));
-                                        if (delete)
-                                        {
-                                            conf.Platforms.Remove(platform);
-                                            CheckNTryAutoSync(true);
-                                            GUIUtility.ExitGUI();
-                                            break;
-                                        }
-
-                                        GUILayout.Space(-5);
-                                    }
-                                }
-                                EditorGUILayout.EndVertical();
-
-                                using (new IMGUIBeginVertical(ReorderableListStyles.Container2, 
-                                           GUILayout.MinWidth(100f), GUILayout.MaxWidth(Screen.width / 2f)))
-                                {
-                                    reorderableList.platforms.DoLayoutList();
-                                }
-
-                                using (new IMGUIBeginVertical(ReorderableListStyles.Container2, 
-                                           GUILayout.MinWidth(100f), GUILayout.MaxWidth(Screen.width)))
-                                {
-                                    reorderableList.scenes.DoLayoutList();
-                                }
-                            }
-                            EditorGUILayout.EndHorizontal();
+                            DrawPlatform(conf, platform);
                         }
                     }
                 }
@@ -285,13 +248,56 @@ namespace StansAssets.SceneManagement.Build
                     GUILayout.FlexibleSpace();
                     if (GUILayout.Button("+", GUILayout.Width(25)))
                     {
-                        PlatformsConfiguration s = new PlatformsConfiguration();
-                        conf.Platforms.Add(s);
+                        conf.Platforms.Add(new PlatformsConfiguration());
                     }
                 }
             }
 
             m_ShowBuildIndex = true;
+        }
+
+        void DrawPlatform(BuildConfiguration conf, PlatformsConfiguration platform)
+        {
+            m_ShowBuildIndex = conf.IsActive(platform);
+            
+            var reorderableList = GetPlatformReorderableList(platform);
+
+            using (new IMGUIBeginHorizontal(GUI.skin.box))
+            {
+                DrawPlatformRemoveButton(conf, platform);
+
+                using (new IMGUIBeginVertical(ReorderableListStyles.Container2, GUILayout.MinWidth(100f), GUILayout.MaxWidth(Screen.width / 2f)))
+                {
+                    reorderableList.platforms.DoLayoutList();
+                }
+
+                using (new IMGUIBeginVertical(ReorderableListStyles.Container2, GUILayout.MinWidth(100f), GUILayout.MaxWidth(Screen.width)))
+                {
+                    reorderableList.scenes.DoLayoutList();
+                }
+            }
+        }
+
+        void DrawPlatformRemoveButton(BuildConfiguration conf, PlatformsConfiguration platform)
+        {
+            using (new IMGUIBeginVertical(GUILayout.Width(10)))
+            {
+                using (new IMGUIBeginHorizontal())
+                {
+                    GUILayout.Space(2);
+                        
+                    var delete = GUILayout.Button("-", EditorStyles.miniButton, GUILayout.Width(18));
+                    if (delete)
+                    {
+                        conf.Platforms.Remove(platform);
+                        CheckNTryAutoSync(true);
+                        
+                        GUIUtility.ExitGUI();
+                    }
+
+                    GUILayout.Space(-5);
+                }
+            }
         }
 
         protected int DrawTabs()
@@ -474,13 +480,6 @@ namespace StansAssets.SceneManagement.Build
 
         void CheckNTryAutoSync(bool ignoreCollectionsSize = false)
         {
-            /*
-             When auto Sync can not be executed:
-                When the editor builds setting missing scenes (error)
-                When the editor build setting has more scenes than the user specified in the config (warning)
-                When the editor builds the setting first scene does not match our config (warning)
-             */
-
             var hasAnyScene = BuildConfigurationSettingsValidator.HasAnyScene();
             if (!hasAnyScene)
             {
@@ -660,11 +659,6 @@ namespace StansAssets.SceneManagement.Build
 
         void DrawSceneListItem(Rect rect, int index, ReorderableList reorderableList)
         {
-            if (index >= reorderableList.count)
-            {
-                return;
-            }
-
             var itemValue = reorderableList.list[index] as SceneAssetInfo ?? new SceneAssetInfo();
 
             rect.y += 1f;
@@ -725,16 +719,7 @@ namespace StansAssets.SceneManagement.Build
                     .ShiftHorizontally(-2.0f);
                 removeButtonRect.width = removeButtonRectWidth;
 
-                var iconNormal = ReorderableListResources.GetTexture(ReorderableListTexture.Icon_Remove_Normal);
-                var iconActive = ReorderableListResources.GetTexture(ReorderableListTexture.Icon_Remove_Active);
-
-                var removeButton = GUIHelper.IconButton(removeButtonRect, true, iconNormal, iconActive,
-                    ReorderableListStyles.ItemButton);
-                if (removeButton)
-                {
-                    reorderableList.list.Remove(itemValue);
-                    reorderableList.onRemoveCallback.Invoke(reorderableList);
-                }
+                DrawRemoveButtonOfListElement(removeButtonRect, reorderableList, index);
 
                 EditorGUI.indentLevel = indentLevel;
             }
@@ -743,11 +728,6 @@ namespace StansAssets.SceneManagement.Build
 
         void DrawBuildTargetListItem(Rect rect, int index, ReorderableList reorderableList)
         {
-            if (index >= reorderableList.count)
-            {
-                return;
-            }
-
             var element = (BuildTargetRuntime)reorderableList.list[index];
 
             rect.y += 1f;
@@ -783,18 +763,24 @@ namespace StansAssets.SceneManagement.Build
             var removeButtonRect = rect.RightOf(positionRect).ShiftHorizontally(+2.0f);
             removeButtonRect.width = removeButtonWidth;
 
+            DrawRemoveButtonOfListElement(removeButtonRect, reorderableList, index);
+        }
+
+        void DrawRemoveButtonOfListElement(Rect rect, ReorderableList reorderableList, int index)
+        {
             var iconNormal = ReorderableListResources.GetTexture(ReorderableListTexture.Icon_Remove_Normal);
             var iconActive = ReorderableListResources.GetTexture(ReorderableListTexture.Icon_Remove_Active);
 
-            var removeButton = GUIHelper.IconButton(removeButtonRect, true, iconNormal, iconActive,
-                ReorderableListStyles.ItemButton);
+            var removeButton = GUIHelper.IconButton(rect, true, iconNormal, iconActive, ReorderableListStyles.ItemButton);
             if (removeButton)
             {
                 reorderableList.list.Remove(reorderableList.list[index]);
                 reorderableList.onRemoveCallback?.Invoke(reorderableList);
+                
+                GUIUtility.ExitGUI();
             }
         }
-
+        
         struct AutoSyncParams
         {
             public bool Synced;
