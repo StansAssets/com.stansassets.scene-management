@@ -459,14 +459,8 @@ namespace StansAssets.SceneManagement
 
         static bool ValidateScene(string sceneName)
         {
-            // TODO let's reconsider the validation
-            /*
-            if (!Application.isEditor && BuildConfigurationSettings.Instance.HasValidConfiguration)
-            {
-                return BuildConfigurationSettings.Instance.Configuration.HasScene(sceneName);
-            }*/
-
-            return true;
+            return BuildConfigurationSettings.Instance.HasValidConfiguration 
+                   && BuildConfigurationSettings.Instance.Configuration.HasScene(sceneName);
         }
     }
 
