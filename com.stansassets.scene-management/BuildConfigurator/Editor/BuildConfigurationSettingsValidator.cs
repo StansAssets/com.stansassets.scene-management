@@ -1,4 +1,5 @@
-﻿using System.Linq;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -37,16 +38,29 @@ namespace StansAssets.SceneManagement.Build
             return needToSync;
         }
         
+        internal static (IEnumerable<string> confScenes, IEnumerable<string> buildScenes) GetScenesCollections()
+        {
+            var configurationScenes = BuildConfigurationSettings.Instance.Configuration
+                .BuildScenesCollection(new BuildScenesParams(EditorUserBuildSettings.activeBuildTarget, false, true))
+                .Select(s=>s.Guid);
+
+            var buildSettingsScenes = EditorBuildSettings.scenes.Select(s=>s.guid.ToString());
+            
+            return (configurationScenes, buildSettingsScenes);
+        }
+        
         static void EditorBuildSettingsOnSceneListChanged()
         {
             if (!CompareScenesWithBuildSettings())
             {
+                BuildConfigurationMenu.UpdateBuildSettingsWindowStatus();
                 return;
             }
 
             BuildConfigurationMenu.OpenBuildSettings();
-            Debug.LogWarning($"Current Editor Build Settings are our of sync with the Scene Management " +
-                           $"build configuration. Scenes can be synchronized through the " +
+            BuildConfigurationMenu.UpdateBuildSettingsWindowStatus();
+
+            Debug.LogError($"{k_ScenesSyncDescription} Scenes can be synchronized through the " +
                            $"'Scene Management -> Build Settings'.");
         }
 
@@ -63,11 +77,25 @@ namespace StansAssets.SceneManagement.Build
         internal static bool HasScenesDuplicates()
         {
             if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
-            
-            var hasDuplicates = BuildConfigurationSettings.Instance.Configuration
-                .GetDuplicateScenes().Any();
 
-            return hasDuplicates;
+            var conf = BuildConfigurationSettings.Instance.Configuration;
+
+            var platformsDuplicates = conf.GetConfigurationRepetitiveScenes();
+            if (platformsDuplicates.Any(s => s.Value.Any()))
+            {
+                return true;
+            }
+            
+            var defaultInPlatform = conf.GetDefaultInPlatformsDuplicateScenes().Any();
+            if (defaultInPlatform) return true;
+            
+            var inConfig = conf.GetConfigurationRepetitiveScenes(EditorUserBuildSettings.activeBuildTarget).Any();
+            if (inConfig) return true;
+
+            var buildTarget = conf.GetBuildTargetDuplicateScenes(EditorUserBuildSettings.activeBuildTarget).Any();
+            if (buildTarget) return true;
+
+            return false;
         }
         
         static void PreventOfPlayingOutOfSync()
@@ -103,6 +131,16 @@ namespace StansAssets.SceneManagement.Build
                     BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog = false;
                     break;
             }
+        }
+
+        internal static bool HasAnyScene()
+        {
+            if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
+
+            return BuildConfigurationSettings.Instance.Configuration
+                       .DefaultScenes.Any(i => i != null && !string.IsNullOrEmpty(i.Guid)) 
+                   || BuildConfigurationSettings.Instance.Configuration
+                       .Platforms.Any(p => p.Scenes.Any(i => i != null && !string.IsNullOrEmpty(i.Guid)));
         }
     }
 }
