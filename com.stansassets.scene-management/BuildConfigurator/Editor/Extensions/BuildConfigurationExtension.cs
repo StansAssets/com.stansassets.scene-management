@@ -75,33 +75,16 @@ namespace StansAssets.SceneManagement.Build
         public static bool IsActive(this BuildConfiguration configuration, PlatformsConfiguration platformsConfiguration)
         {
             BuildTargetRuntime buildTarget = (BuildTargetRuntime)(int)EditorUserBuildSettings.activeBuildTarget;
-            return platformsConfiguration.BuildTargets.Contains(buildTarget);
+            return platformsConfiguration.BuildTargets.Contains(buildTarget)
+                || platformsConfiguration.BuildTargets.Contains(BuildTargetRuntime.Editor);
         }
 
-        public static int GetSceneIndex(this BuildConfiguration configuration, SceneAssetInfo scene)
+        public static int GetSceneIndex(this BuildConfiguration configuration, SceneAssetInfo scene, BuildTarget builtTarget)
         {
-            int platformScenesCount = 0;
-            foreach (var platformConfiguration in configuration.Platforms)
-            {
-                if (IsActive(configuration, platformConfiguration))
-                {
-                    var platformIndex = platformConfiguration.Scenes.IndexOf(scene);
-                    if (platformIndex >= 0)
-                    {
-                        return configuration.DefaultScenesFirst ? configuration.DefaultScenes.Count + platformIndex : platformIndex;
-                    }
+            var configurationSceneGuids =
+                configuration.BuildScenesCollection(new BuildScenesParams(builtTarget, false, true));
 
-                    platformScenesCount = platformConfiguration.Scenes.Count;
-                }
-            }
-
-            var defaultIndex = configuration.DefaultScenes.IndexOf(scene);
-            if (defaultIndex >= 0)
-            {
-                return configuration.DefaultScenesFirst ? defaultIndex : defaultIndex + platformScenesCount;
-            }
-
-            return -1;
+            return configurationSceneGuids.ToList().IndexOf(scene);
         }
 
         public static void SetupBuildSettings(this BuildConfiguration configuration, BuildTarget buildTarget,
@@ -182,25 +165,34 @@ namespace StansAssets.SceneManagement.Build
         static void ProcessPlatforms(ref List<SceneAssetInfo> scenes, List<PlatformsConfiguration> platforms, BuildScenesParams buildScenesParams)
         {
             var buildTarget = buildScenesParams.BuiltTarget;
-            var stripAddressable = buildScenesParams.StripAddressables;
+            var stripAddressables = buildScenesParams.StripAddressables;
             var includeEditorScene = buildScenesParams.IncludeEditorScene;
-            
-            foreach (var platformsConfiguration in platforms)
-            {
-                var editorBuildTargets = platformsConfiguration.GetBuildTargetsEditor();
-                if (editorBuildTargets.Contains(buildTarget)
-                    || (
-                        includeEditorScene &&
-                        platformsConfiguration.BuildTargets.Contains(BuildTargetRuntime.Editor)
-                    )
-                   )
-                {
-                    var platformScenes = stripAddressable
-                        ? platformsConfiguration.GetNonAddressableScenes()
-                        : platformsConfiguration.Scenes;
 
-                    InsertScenes(ref scenes, platformScenes);
+            if (includeEditorScene)
+            {
+                var platformsConfiguration = platforms
+                    .Where(b => b.BuildTargets.Contains(BuildTargetRuntime.Editor))
+                    .ToArray();
+
+                for (var i = platformsConfiguration.Length -1; i >= 0; i--)
+                {
+                    ProcessScene(ref scenes, platformsConfiguration[i], stripAddressables);
                 }
+            }
+
+            foreach (var platformsConfiguration in platforms
+                         .Where(b => b.GetBuildTargetsEditor().Contains(buildTarget)))
+            {
+                ProcessScene(ref scenes, platformsConfiguration, stripAddressables);
+            }
+
+            void ProcessScene(ref List<SceneAssetInfo> addIn, PlatformsConfiguration platformsConfiguration, bool stripAddressable)
+            {
+                var platformScenes = stripAddressable
+                    ? platformsConfiguration.GetNonAddressableScenes()
+                    : platformsConfiguration.Scenes;
+
+                InsertScenes(ref addIn, platformScenes);
             }
         }
 
@@ -223,7 +215,7 @@ namespace StansAssets.SceneManagement.Build
             }
         }
 
-        public static bool CheckIntersectScenesWhBuildSettings(
+        internal static bool CheckIntersectScenesWhBuildSettings(
             this BuildConfiguration configuration,
             BuildTarget buildTarget)
         {
@@ -233,40 +225,186 @@ namespace StansAssets.SceneManagement.Build
             }
 
             var buildSettingsSceneGuids = new List<string>(EditorBuildSettings.scenes
-                    .Select(s => s.guid.ToString()))
-                .ToList();
+                    .Select(s => s.path)).ToArray();
 
             var configurationSceneGuids = configuration
                 .BuildScenesCollection(new BuildScenesParams(buildTarget, false, true))
-                .Select(s => s.Guid.ToString())
-                .ToList();
+                .Select(s => AssetDatabase.GUIDToAssetPath(s.Guid)).ToArray();
 
-            var intersect = configurationSceneGuids.Where(i => !buildSettingsSceneGuids.Contains(i)).ToList();
-            var viseVersaIntersect = buildSettingsSceneGuids.Where(i => !configurationSceneGuids.Contains(i)).ToList();
+            if (!configurationSceneGuids.Any())
+            {
+                return false;
+            }
+            
+            var outOfSync = configurationSceneGuids.Except(buildSettingsSceneGuids).Any()
+                            || buildSettingsSceneGuids.Except(configurationSceneGuids).Any();
+            
+            if(!outOfSync)
+            {
+                outOfSync = configurationSceneGuids.Length != buildSettingsSceneGuids.Length
+                || configurationSceneGuids.Where((t, i) => buildSettingsSceneGuids[i] != t).Any();
+            }
 
-            return intersect.Any() || viseVersaIntersect.Any();
+            return outOfSync;
         }
 
-        public static bool CheckIntersectSceneWhBuildSettings(this BuildConfiguration configuration,
+        internal static bool CheckIntersectSceneWhBuildSettings(this BuildConfiguration configuration,
             BuildTarget buildTarget, string sceneGuid)
         {
+            var scenePath = AssetDatabase.GUIDToAssetPath(sceneGuid);
+            
             var configurationSceneGuids = configuration
                 .BuildScenesCollection(new BuildScenesParams(buildTarget, false, true))
                 .Select(s => s.Guid.ToString())
                 .ToList();
 
-            var inCurrentConfiguration = configurationSceneGuids.Any(i => i.Equals(sceneGuid));
+            var inCurrentConfiguration = configurationSceneGuids
+                .Any(i => AssetDatabase.GUIDToAssetPath(i).Equals(scenePath));
             if (!inCurrentConfiguration)
             {
                 return true;
             }
 
-            var synced = EditorBuildSettings.scenes.Any(i => i.guid.ToString().Equals(sceneGuid));
+            var synced = EditorBuildSettings.scenes
+                .Any(i => AssetDatabase.GUIDToAssetPath(i.guid.ToString()).Equals(scenePath));
             return synced;
+        }
+
+        internal static bool CheckSceneDuplicate(this BuildConfiguration configuration, BuildTarget buildTarget, string sceneGuid)
+        {
+            var scenePath = AssetDatabase.GUIDToAssetPath(sceneGuid);
+            
+            bool IsSceneEqual(SceneAssetInfo i) => 
+                i.Guid.Equals(sceneGuid) ||
+                AssetDatabase.GUIDToAssetPath(i.Guid).Equals(scenePath);
+
+            var buildInPlatform = GetDefaultInPlatformsDuplicateScenes(configuration);
+            if (buildInPlatform.Any(IsSceneEqual))
+            {
+                return true;
+            }
+
+            var inConfig = GetConfigurationRepetitiveScenes(configuration, buildTarget);
+            if(inConfig.Any(IsSceneEqual))
+            {
+                return true;
+            }
+
+            var inBuildTarget = GetBuildTargetDuplicateScenes(configuration, buildTarget);
+            if(inBuildTarget.Any(IsSceneEqual))
+            {
+                return true;
+            }
+            
+            return false;
+        }
+
+        internal static Dictionary<PlatformsConfiguration, IEnumerable<SceneAssetInfo>> GetConfigurationRepetitiveScenes(this BuildConfiguration configuration)
+        {
+            var result = new Dictionary<PlatformsConfiguration, IEnumerable<SceneAssetInfo>>();
+            
+            foreach (var platform in configuration.Platforms)
+            {
+                var duplicates = GetPlatformsConfigurationDuplicates(platform).ToArray();
+
+                if (duplicates.Any())
+                {
+                    result.Add(platform, duplicates);
+                }
+            }
+            
+            return result;
+        }
+
+        internal static IEnumerable<SceneAssetInfo> GetPlatformsConfigurationDuplicates(PlatformsConfiguration platformsConfiguration)
+        {
+            var sceneAssetInfos = platformsConfiguration.Scenes
+                .Where(g => g != null && !string.IsNullOrEmpty(g.Guid))
+                .ToArray();
+
+            var paths = sceneAssetInfos
+                .ToDictionary(assetInfo => assetInfo, assetInfo => AssetDatabase.GUIDToAssetPath(assetInfo.Guid));
+
+            var duplicates = paths
+                .Where(d => paths.Count(p => p.Value.Equals(d.Value)) > 1)
+                .Select(s=>s.Key)
+                .ToArray();
+            
+            return duplicates;
+        }
+            
+        internal static IEnumerable<SceneAssetInfo> GetConfigurationRepetitiveScenes(this BuildConfiguration configuration,
+            BuildTarget buildTarget)
+        {
+            var configurationSceneGuids = configuration
+                .BuildScenesCollection(new BuildScenesParams(buildTarget, false, true))
+                .ToArray();
+
+            var scenesPaths = configurationSceneGuids
+                .Where(g => g != null && !string.IsNullOrEmpty(g.Guid))
+                .Select(s => AssetDatabase.GUIDToAssetPath(s.Guid)).ToArray();
+            
+            var duplicates = configurationSceneGuids
+                .Where (i=> i != null && 
+                            scenesPaths.Count(x => x.Equals(AssetDatabase.GUIDToAssetPath(i.Guid))) > 1);
+            return duplicates;
+        }
+
+        internal static IEnumerable<SceneAssetInfo> GetBuildTargetDuplicateScenes(this BuildConfiguration configuration,
+            BuildTarget buildTarget)
+        {
+            var platform = configuration.Platforms
+                .FirstOrDefault(f => 
+                    f.BuildTargets.Contains((BuildTargetRuntime)buildTarget) || 
+                    f.BuildTargets.Contains(BuildTargetRuntime.Editor));
+
+            if (platform == null)
+            {
+                return new SceneAssetInfo[]{};
+            }
+
+            var duplicates = GetPlatformsConfigurationDuplicates(platform);
+            return duplicates;
+        }
+        
+        internal static IEnumerable<SceneAssetInfo> GetDefaultInPlatformsDuplicateScenes(this BuildConfiguration configuration)
+        {
+            var defaultScenesGuids = configuration.DefaultScenes
+                .Where(g => g != null && !string.IsNullOrEmpty(g.Guid))
+                .ToArray();
+            
+            var platformsScenesGuids = configuration.Platforms
+                .SelectMany(p => p.Scenes)
+                .Where(g => g != null && !string.IsNullOrEmpty(g.Guid))
+                .ToArray();
+
+            var duplicates = new List<SceneAssetInfo>();
+            foreach (var sceneAssetInfo in defaultScenesGuids)
+            {
+                var scenePath = AssetDatabase.GUIDToAssetPath(sceneAssetInfo.Guid);
+                var inConfig = platformsScenesGuids
+                    .Where(s => AssetDatabase.GUIDToAssetPath(s.Guid).Equals(scenePath))
+                    .ToArray();
+
+                if (!inConfig.Any()) continue;
+                
+                duplicates.Add(sceneAssetInfo);
+                duplicates.AddRange(inConfig);
+            }
+
+            return duplicates;
+        }
+
+        internal static void ClearMissingScenes(this BuildConfiguration configuration)
+        {
+            bool FindMissingScene(SceneAssetInfo i) => i == null || string.IsNullOrEmpty(i.Guid);
+
+            configuration.DefaultScenes.RemoveAll(FindMissingScene);
+            configuration.Platforms.ForEach(p => p.Scenes.RemoveAll(FindMissingScene));
         }
     }
 
-    internal struct BuildScenesParams
+    struct BuildScenesParams
     {
         internal readonly BuildTarget BuiltTarget; 
         internal readonly bool StripAddressables;

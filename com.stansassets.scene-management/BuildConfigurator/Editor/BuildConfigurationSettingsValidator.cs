@@ -1,4 +1,5 @@
-﻿using System.Linq;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,6 +10,9 @@ namespace StansAssets.SceneManagement.Build
     {
         public const string TAG = "[Build Configuration]";
 
+        const string k_ScenesSyncDescription = "Current Editor Build Settings are our of sync " +
+                                               "with the Scene Management build configuration.";
+        
         static BuildConfigurationSettingsValidator() {
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             EditorBuildSettings.sceneListChanged += EditorBuildSettingsOnSceneListChanged;
@@ -16,7 +20,8 @@ namespace StansAssets.SceneManagement.Build
 
         static void OnPlayModeStateChanged(PlayModeStateChange state) {
             switch (state) {
-                case PlayModeStateChange.EnteredPlayMode:
+                case PlayModeStateChange.ExitingEditMode:
+                    PreventOfPlayingOutOfSync();
                     break;
             }
         }
@@ -33,16 +38,29 @@ namespace StansAssets.SceneManagement.Build
             return needToSync;
         }
         
+        internal static (IEnumerable<string> confScenes, IEnumerable<string> buildScenes) GetScenesCollections()
+        {
+            var configurationScenes = BuildConfigurationSettings.Instance.Configuration
+                .BuildScenesCollection(new BuildScenesParams(EditorUserBuildSettings.activeBuildTarget, false, true))
+                .Select(s=>s.Guid);
+
+            var buildSettingsScenes = EditorBuildSettings.scenes.Select(s=>s.guid.ToString());
+            
+            return (configurationScenes, buildSettingsScenes);
+        }
+        
         static void EditorBuildSettingsOnSceneListChanged()
         {
             if (!CompareScenesWithBuildSettings())
             {
+                BuildConfigurationMenu.UpdateBuildSettingsWindowStatus();
                 return;
             }
 
             BuildConfigurationMenu.OpenBuildSettings();
-            Debug.LogError($"Current Editor Build Settings are our of sync with the Scene Management " +
-                           $"build configuration. Scenes can be synchronized through the " +
+            BuildConfigurationMenu.UpdateBuildSettingsWindowStatus();
+
+            Debug.LogError($"{k_ScenesSyncDescription} Scenes can be synchronized through the " +
                            $"'Scene Management -> Build Settings'.");
         }
 
@@ -54,6 +72,75 @@ namespace StansAssets.SceneManagement.Build
                        .DefaultScenes.Any(s => s != null && string.IsNullOrEmpty(s.Guid)) 
                    || BuildConfigurationSettings.Instance.Configuration
                        .Platforms.Any(p => p.Scenes.Any(s => s != null && string.IsNullOrEmpty(s.Guid)));
+        }
+
+        internal static bool HasScenesDuplicates()
+        {
+            if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
+
+            var conf = BuildConfigurationSettings.Instance.Configuration;
+
+            var platformsDuplicates = conf.GetConfigurationRepetitiveScenes();
+            if (platformsDuplicates.Any(s => s.Value.Any()))
+            {
+                return true;
+            }
+            
+            var defaultInPlatform = conf.GetDefaultInPlatformsDuplicateScenes().Any();
+            if (defaultInPlatform) return true;
+            
+            var inConfig = conf.GetConfigurationRepetitiveScenes(EditorUserBuildSettings.activeBuildTarget).Any();
+            if (inConfig) return true;
+
+            var buildTarget = conf.GetBuildTargetDuplicateScenes(EditorUserBuildSettings.activeBuildTarget).Any();
+            if (buildTarget) return true;
+
+            return false;
+        }
+        
+        static void PreventOfPlayingOutOfSync()
+        {
+            if (!BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog)
+            {
+                return;
+            }
+
+            var outOfSync = CompareScenesWithBuildSettings();
+
+            if (!outOfSync)
+            {
+                return;
+            }
+            
+            var result = EditorUtility.DisplayDialogComplex(
+                "Scenes Management",
+                k_ScenesSyncDescription,
+                "Skip",
+                "Open Scene Management",
+                "Don't show again");
+
+            switch (result)
+            {
+                case 0:
+                    break;
+                case 1:
+                    EditorApplication.isPlaying = false;
+                    BuildConfigurationMenu.OpenBuildSettings();
+                    break;
+                case 2:
+                    BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog = false;
+                    break;
+            }
+        }
+
+        internal static bool HasAnyScene()
+        {
+            if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
+
+            return BuildConfigurationSettings.Instance.Configuration
+                       .DefaultScenes.Any(i => i != null && !string.IsNullOrEmpty(i.Guid)) 
+                   || BuildConfigurationSettings.Instance.Configuration
+                       .Platforms.Any(p => p.Scenes.Any(i => i != null && !string.IsNullOrEmpty(i.Guid)));
         }
     }
 }
