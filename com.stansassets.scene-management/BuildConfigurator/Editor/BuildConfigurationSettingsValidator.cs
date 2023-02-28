@@ -41,7 +41,7 @@ namespace StansAssets.SceneManagement.Build
             }
 
             BuildConfigurationMenu.OpenBuildSettings();
-            Debug.LogError($"Current Editor Build Settings are our of sync with the Scene Management " +
+            Debug.LogWarning($"Current Editor Build Settings are our of sync with the Scene Management " +
                            $"build configuration. Scenes can be synchronized through the " +
                            $"'Scene Management -> Build Settings'.");
         }
@@ -54,6 +54,16 @@ namespace StansAssets.SceneManagement.Build
                        .DefaultScenes.Any(s => s != null && string.IsNullOrEmpty(s.Guid)) 
                    || BuildConfigurationSettings.Instance.Configuration
                        .Platforms.Any(p => p.Scenes.Any(s => s != null && string.IsNullOrEmpty(s.Guid)));
+        }
+
+        internal static bool HasScenesDuplicates()
+        {
+            if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
+            
+            var hasDuplicates = BuildConfigurationSettings.Instance.Configuration
+                .GetDuplicateScenes().Any();
+
+            return hasDuplicates;
         }
     }
 }
