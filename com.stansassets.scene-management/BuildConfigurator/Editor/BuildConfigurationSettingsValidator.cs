@@ -9,6 +9,9 @@ namespace StansAssets.SceneManagement.Build
     {
         public const string TAG = "[Build Configuration]";
 
+        const string k_ScenesSyncDescription = "Current Editor Build Settings are our of sync " +
+                                               "with the Scene Management build configuration.";
+        
         static BuildConfigurationSettingsValidator() {
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             EditorBuildSettings.sceneListChanged += EditorBuildSettingsOnSceneListChanged;
@@ -16,7 +19,8 @@ namespace StansAssets.SceneManagement.Build
 
         static void OnPlayModeStateChanged(PlayModeStateChange state) {
             switch (state) {
-                case PlayModeStateChange.EnteredPlayMode:
+                case PlayModeStateChange.ExitingEditMode:
+                    PreventOfPlayingOutOfSync();
                     break;
             }
         }
@@ -64,6 +68,41 @@ namespace StansAssets.SceneManagement.Build
                 .GetDuplicateScenes().Any();
 
             return hasDuplicates;
+        }
+        
+        static void PreventOfPlayingOutOfSync()
+        {
+            if (!BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog)
+            {
+                return;
+            }
+
+            var outOfSync = CompareScenesWithBuildSettings();
+
+            if (!outOfSync)
+            {
+                return;
+            }
+            
+            var result = EditorUtility.DisplayDialogComplex(
+                "Scenes Management",
+                k_ScenesSyncDescription,
+                "Skip",
+                "Open Scene Management",
+                "Don't show again");
+
+            switch (result)
+            {
+                case 0:
+                    break;
+                case 1:
+                    EditorApplication.isPlaying = false;
+                    BuildConfigurationMenu.OpenBuildSettings();
+                    break;
+                case 2:
+                    BuildConfigurationSettingsConfig.ShowOutOfSyncPreventingDialog = false;
+                    break;
+            }
         }
     }
 }
