@@ -24,6 +24,7 @@ namespace StansAssets.SceneManagement.Build
         
         const string k_SceneMissingWarningDescription = "Your configuration has missing scenes, consider fixing it.";
         const string k_RepetitiveScenesWarningDescription = "Your configuration has duplicated scenes, consider fixing it.";
+        const string k_RepetitiveBuildTargetsWarningDescription = "Your configuration has duplicated build targets, consider fixing it.";
 
         static readonly Color s_ErrorColor = new Color(1f, 0.8f, 0.0f);
         static readonly Color s_InactiveColor = new Color(1f, 0.8f, 0.0f);
@@ -398,6 +399,14 @@ namespace StansAssets.SceneManagement.Build
                     return;
                 }
 
+                var hasBuildTargetDuplicates = BuildConfigurationSettingsValidator.HasBuildTargetsDuplicates();
+                if (hasBuildTargetDuplicates)
+                {
+                    DrawMessage(k_RepetitiveBuildTargetsWarningDescription,
+                        MessageType.Warning);
+                    return;
+                }
+
                 var hasDuplicates = BuildConfigurationSettingsValidator.HasScenesDuplicates();
                 if (hasDuplicates)
                 {
@@ -750,8 +759,11 @@ namespace StansAssets.SceneManagement.Build
             };
 
             EditorGUI.BeginChangeCheck();
+            
+            GUI.color = LookForBuildTargetFieldColor(element);
             element = (BuildTargetRuntime)EditorGUI.EnumPopup(positionRect, element, style);
-
+            GUI.color = Color.white;
+            
             if (EditorGUI.EndChangeCheck())
             {
                 reorderableList.list[index] = element;
@@ -764,6 +776,19 @@ namespace StansAssets.SceneManagement.Build
             removeButtonRect.width = removeButtonWidth;
 
             DrawRemoveButtonOfListElement(removeButtonRect, reorderableList, index);
+        }
+
+        Color LookForBuildTargetFieldColor(BuildTargetRuntime buildTargetRuntime)
+        {
+            if (buildTargetRuntime == BuildTargetRuntime.Editor)
+            {
+                return Color.white;
+            }
+            
+            var hasDuplicates = BuildConfigurationSettings.Instance.Configuration
+                .CheckBuildTargetDuplicate(buildTargetRuntime);
+
+            return hasDuplicates ? s_DuplicateColor : Color.white;
         }
 
         void DrawRemoveButtonOfListElement(Rect rect, ReorderableList reorderableList, int index)
