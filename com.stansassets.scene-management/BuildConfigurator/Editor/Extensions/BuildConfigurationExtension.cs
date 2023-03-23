@@ -402,6 +402,25 @@ namespace StansAssets.SceneManagement.Build
             configuration.DefaultScenes.RemoveAll(FindMissingScene);
             configuration.Platforms.ForEach(p => p.Scenes.RemoveAll(FindMissingScene));
         }
+
+        internal static bool CheckBuildTargetDuplicate(this BuildConfiguration configuration, BuildTargetRuntime buildTarget)
+        {
+            var left = configuration.Platforms
+                .Any(p => p.BuildTargets.Count(t => t == buildTarget) > 1);
+            if (left)
+            {
+                return true;
+            }
+            
+            var right = configuration.Platforms
+                .Count(p => p.BuildTargets.Any(t => t == buildTarget)) > 1;
+            if (right)
+            {
+                return true;
+            }
+
+            return false;
+        }
     }
 
     struct BuildScenesParams

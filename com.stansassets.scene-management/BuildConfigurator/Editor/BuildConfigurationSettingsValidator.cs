@@ -142,5 +142,24 @@ namespace StansAssets.SceneManagement.Build
                    || BuildConfigurationSettings.Instance.Configuration
                        .Platforms.Any(p => p.Scenes.Any(i => i != null && !string.IsNullOrEmpty(i.Guid)));
         }
+
+        internal static bool HasBuildTargetsDuplicates()
+        {
+            if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
+
+            var conf = BuildConfigurationSettings.Instance.Configuration;
+            var buildTargets = conf.Platforms
+                .SelectMany(x => x.BuildTargets)
+                .ToList();
+            
+            buildTargets.RemoveAll(runtime => runtime == BuildTargetRuntime.Editor);
+            
+            var duplicates = buildTargets
+                .GroupBy(x => x)
+                .Where(y => y.Count() > 1)
+                .Select(z => z.Key);
+            
+            return duplicates.Any();
+        }
     }
 }
