@@ -144,7 +144,16 @@ namespace StansAssets.SceneManagement.Build
             using (new IMGUIBlockWithIndent(new GUIContent("Settings")))
             {
                 conf.Name = IMGUILayout.TextField("Configuration Name:", conf.Name);
+                
+                EditorGUI.BeginChangeCheck();
                 conf.DefaultScenesFirst = IMGUILayout.ToggleFiled("Default Scenes First", conf.DefaultScenesFirst, IMGUIToggleStyle.ToggleType.YesNo);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    if (m_AutoSyncParams.Synced)
+                    {
+                        SyncScenes();
+                    }
+                }
 
                 GUILayout.Space(EditorGUIUtility.singleLineHeight);
                 using (new IMGUIBeginHorizontal())
