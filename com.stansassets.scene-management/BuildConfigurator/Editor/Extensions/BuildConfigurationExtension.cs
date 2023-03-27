@@ -74,11 +74,32 @@ namespace StansAssets.SceneManagement.Build
 
         public static bool IsActive(this BuildConfiguration configuration, PlatformsConfiguration platformsConfiguration)
         {
-            BuildTargetRuntime buildTarget = (BuildTargetRuntime)(int)EditorUserBuildSettings.activeBuildTarget;
-            return platformsConfiguration.BuildTargets.Contains(buildTarget)
-                || platformsConfiguration.BuildTargets.Contains(BuildTargetRuntime.Editor);
+            if (platformsConfiguration.BuildTargets.Contains(BuildTargetRuntime.Editor))
+            {
+                return true;
+            }
+
+            if (IsEditor(configuration))
+            {
+                return false;
+            }
+            
+            var buildTarget = (BuildTargetRuntime)(int)EditorUserBuildSettings.activeBuildTarget;
+            return platformsConfiguration.BuildTargets.Contains(buildTarget);
         }
 
+        /// <summary>
+        /// Does the current configuration contain an Editor build target
+        /// </summary>
+        /// <param name="configuration"><see cref="BuildConfiguration"/></param>
+        /// <returns></returns>
+        public static bool IsEditor(this BuildConfiguration configuration)
+        {
+            return configuration.Platforms
+                .Any(p => p.BuildTargets
+                    .Any(t => t == BuildTargetRuntime.Editor));
+        }
+        
         public static int GetSceneIndex(this BuildConfiguration configuration, SceneAssetInfo scene, BuildTarget builtTarget)
         {
             var configurationSceneGuids =
@@ -162,13 +183,16 @@ namespace StansAssets.SceneManagement.Build
             }
         }
 
-        static void ProcessPlatforms(ref List<SceneAssetInfo> scenes, List<PlatformsConfiguration> platforms, BuildScenesParams buildScenesParams)
+        static void ProcessPlatforms(ref List<SceneAssetInfo> scenes, IReadOnlyCollection<PlatformsConfiguration> platforms, BuildScenesParams buildScenesParams)
         {
             var buildTarget = buildScenesParams.BuiltTarget;
             var stripAddressables = buildScenesParams.StripAddressables;
             var includeEditorScene = buildScenesParams.IncludeEditorScene;
+            
+            var hasEditor = platforms.Any(b 
+                => b.BuildTargets.Any(t => t == BuildTargetRuntime.Editor));
 
-            if (includeEditorScene)
+            if (includeEditorScene && hasEditor)
             {
                 var platformsConfiguration = platforms
                     .Where(b => b.BuildTargets.Contains(BuildTargetRuntime.Editor))
@@ -179,11 +203,13 @@ namespace StansAssets.SceneManagement.Build
                     ProcessScene(ref scenes, platformsConfiguration[i], stripAddressables);
                 }
             }
-
-            foreach (var platformsConfiguration in platforms
-                         .Where(b => b.GetBuildTargetsEditor().Contains(buildTarget)))
+            else
             {
-                ProcessScene(ref scenes, platformsConfiguration, stripAddressables);
+                foreach (var platformsConfiguration in platforms
+                             .Where(b => b.GetBuildTargetsEditor().Contains(buildTarget)))
+                {
+                    ProcessScene(ref scenes, platformsConfiguration, stripAddressables);
+                }
             }
 
             void ProcessScene(ref List<SceneAssetInfo> addIn, PlatformsConfiguration platformsConfiguration, bool stripAddressable)

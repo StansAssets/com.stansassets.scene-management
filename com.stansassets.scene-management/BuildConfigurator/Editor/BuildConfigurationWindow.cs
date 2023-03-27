@@ -496,6 +496,12 @@ namespace StansAssets.SceneManagement.Build
                 return;
             }
 
+            var hasBuildTargetDuplicates = BuildConfigurationSettingsValidator.HasBuildTargetsDuplicates();
+            if (hasBuildTargetDuplicates)
+            {
+                return;
+            }
+            
             var hasDuplicates = BuildConfigurationSettingsValidator.HasScenesDuplicates();
             if (hasDuplicates)
             {
@@ -780,9 +786,9 @@ namespace StansAssets.SceneManagement.Build
 
         Color LookForBuildTargetFieldColor(BuildTargetRuntime buildTargetRuntime)
         {
-            if (buildTargetRuntime == BuildTargetRuntime.Editor)
+            if (buildTargetRuntime == BuildTargetRuntime.NoTarget)
             {
-                return Color.white;
+                return new Color(1f, 0.95f, 0.7f);
             }
             
             var hasDuplicates = BuildConfigurationSettings.Instance.Configuration
