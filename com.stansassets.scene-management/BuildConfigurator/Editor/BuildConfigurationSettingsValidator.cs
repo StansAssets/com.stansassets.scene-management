@@ -152,7 +152,7 @@ namespace StansAssets.SceneManagement.Build
                 .SelectMany(x => x.BuildTargets)
                 .ToList();
             
-            buildTargets.RemoveAll(runtime => runtime == BuildTargetRuntime.Editor);
+            buildTargets.RemoveAll(runtime => runtime == BuildTargetRuntime.NoTarget);
             
             var duplicates = buildTargets
                 .GroupBy(x => x)
