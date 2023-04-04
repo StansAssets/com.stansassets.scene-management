@@ -161,6 +161,7 @@ namespace StansAssets.SceneManagement.Build
                     {
                         BuildConfigurationSettings.Instance.ActiveConfigurationIndex = index;
                         UpdateActiveConfUI();
+                        CheckNTryAutoSync(true);
                     }
 
                     GUI.enabled = true;
