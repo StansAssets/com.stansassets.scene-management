@@ -187,25 +187,42 @@ namespace StansAssets.SceneManagement.Build
             if (group.HasSchema<BundledAssetGroupSchema>()) {
                 var schema = group.GetSchema<BundledAssetGroupSchema>();
                 List<AssetBundleBuild> bundleInputDefinitions = new List<AssetBundleBuild>();
+                IEnumerable<AddressableAssetEntry> entries = null;
 
+#if UNITY_2021_3_OR_NEWER
+                 entries = BuildScriptPackedMode.PrepGroupBundlePacking(group, bundleInputDefinitions, schema);
+#else
                 var modeType = Type.GetType("UnityEditor.AddressableAssets.Build.DataBuilders.BuildScriptPackedMode,Unity.Addressables.Editor.dll");
                 if (modeType != null) {
                     var methodInfo = modeType.GetMethod("PrepGroupBundlePacking", BindingFlags.NonPublic | BindingFlags.Static);
                     if (methodInfo != null) {
-                        var entries = (IEnumerable<AddressableAssetEntry>) methodInfo.Invoke(null,
+                        entries = (IEnumerable<AddressableAssetEntry>) methodInfo.Invoke(null,
                             new object[] { group, bundleInputDefinitions, schema.BundleMode });
-                        m_assetEntries.AddRange(entries);
-
-                        for (int i = 0; i < bundleInputDefinitions.Count; i++) {
-                            if (m_bundleToAssetGroup.ContainsKey(bundleInputDefinitions[i].assetBundleName))
-                                bundleInputDefinitions[i] = CreateUniqueBundle(bundleInputDefinitions[i]);
-
-                            m_bundleToAssetGroup.Add(bundleInputDefinitions[i].assetBundleName, schema.Group.Guid);
-                        }
-
-                        m_allBundleInputDefs.AddRange(bundleInputDefinitions);
+                    }
+                    else {
+                        Debug.LogWarning("Calculation of cross-reference dependencies in scenes is failed. " +
+                                         "It means that all scene dependencies will be included into scene bundle. " + 
+                                         "Type \"UnityEditor.AddressableAssets.Build.DataBuilders.BuildScriptPackedMode\" not found!");
+                        return;
                     }
                 }
+                else {
+                    Debug.LogWarning("Calculation of cross-reference dependencies in scenes is failed. " +
+                                     "It means that all scene dependencies will be included into scene bundle. " +
+                                     "Method \"UnityEditor.AddressableAssets.Build.DataBuilders.BuildScriptPackedMode.PrepGroupBundlePacking\" not found!");
+                    return;
+                }
+#endif
+                m_assetEntries.AddRange(entries);
+
+                for (int i = 0; i < bundleInputDefinitions.Count; i++) {
+                    if (m_bundleToAssetGroup.ContainsKey(bundleInputDefinitions[i].assetBundleName))
+                        bundleInputDefinitions[i] = CreateUniqueBundle(bundleInputDefinitions[i]);
+
+                    m_bundleToAssetGroup.Add(bundleInputDefinitions[i].assetBundleName, schema.Group.Guid);
+                }
+
+                m_allBundleInputDefs.AddRange(bundleInputDefinitions);
             }
         }
 
