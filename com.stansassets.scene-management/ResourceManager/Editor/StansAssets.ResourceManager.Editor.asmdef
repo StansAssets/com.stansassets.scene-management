@@ -1,0 +1,21 @@
+{
+    "name": "StansAssets.ResourceManager.Editor",
+    "references": [
+        "StansAssets.Foundation.Editor",
+        "StansAssets.Plugins",
+        "StansAssets.Plugins.Editor",
+        "Unity.Addressables",
+        "Unity.Addressables.Editor",
+        "Unity.ScriptableBuildPipeline.Editor",
+        "StansAssets.ResourceManager.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

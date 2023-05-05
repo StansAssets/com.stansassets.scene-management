@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:VisualElement style="flex-grow: 1;">
+        <uie:Toolbar>
+            <uie:ToolbarButton text="Add group" name="add-group-btn" tooltip="Add new group" />
+            <uie:ToolbarSpacer />
+            <uie:ToolbarButton text="Build" name="build-addressables-btn" tooltip="Build Addressables" />
+        </uie:Toolbar>
+        <ui:VisualElement name="resources-list" class="resources-list" style="flex-grow: 1;" />
+    </ui:VisualElement>
+</ui:UXML>

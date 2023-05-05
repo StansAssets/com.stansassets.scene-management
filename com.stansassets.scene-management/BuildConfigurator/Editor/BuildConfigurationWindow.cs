@@ -7,6 +7,7 @@ using UnityEditor;
 using Rotorz.ReorderableList;
 using Rotorz.ReorderableList.Internal;
 using StansAssets.Plugins.Editor;
+using StansAssets.ResourceManager.Editor;
 using StansAssets.SceneManagement.Utilities;
 using UnityEditorInternal;
 
@@ -190,6 +191,12 @@ namespace StansAssets.SceneManagement.Build
                     if (active)
                     {
                         BuildScenesPreprocessor.SetupAddressableScenes(EditorUserBuildSettings.activeBuildTarget);
+                    }
+                    
+                    var resourceManager = GUILayout.Button("Resource Manager", GUILayout.Width(150));
+                    if (resourceManager)
+                    {
+                        ResourceManagerWindow.ShowTowardsInspector();
                     }
                 }
             }

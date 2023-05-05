@@ -1,0 +1,8 @@
+.list-group-root {
+    margin-top: 2px;
+    border-bottom-width: 1px;
+}
+
+.group-elements-list {
+    border-width: 1px;
+}

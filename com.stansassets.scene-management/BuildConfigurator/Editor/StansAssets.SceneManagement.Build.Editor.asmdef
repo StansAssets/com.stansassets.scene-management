@@ -10,7 +10,8 @@
         "Unity.Addressables",
         "Unity.Addressables.Editor",
         "Unity.ScriptableBuildPipeline.Editor",
-        "StansAssets.SceneManagement"
+        "StansAssets.SceneManagement",
+        "StansAssets.ResourceManager.Editor"
     ],
     "includePlatforms": [
         "Editor"

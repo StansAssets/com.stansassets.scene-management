@@ -1,0 +1,4 @@
+.list-group-root, .group-elements-list {
+    background-color: #d5d5d5;
+    border-color: rgb(141, 141, 141);
+}

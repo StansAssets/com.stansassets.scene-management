@@ -1,0 +1,17 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:VisualElement class="window-group-root" style="flex-grow: 1;">
+        <ui:Label text="Enter the name of new group:" style="margin-left: 6px;" />
+        <ui:VisualElement style="flex-grow: 0; flex-direction: row;">
+            <ui:TextField name="name-tf" style="flex-grow: 1; width: 80%;" />
+            <ui:Button text="+" name="add-btn" tooltip="Create new group" style="width: 32px; flex-shrink: 2; -unity-font-style: bold;" />
+        </ui:VisualElement>
+        <ui:VisualElement class="packages-root" style="flex-grow: 1;">
+            <ui:Label text="Or add from existing packages:" style="margin-left: 6px;" />
+            <ui:TextField name="search-tf" tooltip="Search" />
+            <ui:ListView focusable="true" name="packages-list" class="packages-list" />
+            <ui:VisualElement style="align-items: flex-end; justify-content: center;">
+                <ui:Button text="Select" name="select-btn" tooltip="Choose selected group" style="-unity-font-style: bold;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

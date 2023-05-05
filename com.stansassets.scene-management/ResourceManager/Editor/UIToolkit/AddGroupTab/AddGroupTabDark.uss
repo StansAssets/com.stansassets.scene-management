@@ -1,0 +1,12 @@
+.packages-root {
+    background-color: #3f3f3f;
+    border-color: rgb(81, 81, 81);
+}
+
+.packages-list {
+    background-color: #424242;
+}
+
+.packages-item, .packages-list {
+    border-color: rgb(81, 81, 81);
+}

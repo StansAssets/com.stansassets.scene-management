@@ -1,0 +1,5 @@
+.item-root {
+    height: 48px;
+    border-bottom-width: 1px;
+    padding-top: 2px;
+}

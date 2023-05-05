@@ -1,0 +1,20 @@
+.window-group-root {
+    margin-top: 8px;
+}
+
+.packages-list {
+    margin-top: 4px;
+    margin-left: 4px;
+    border-width: 1px;
+}
+
+.packages-root {
+    padding-top: 6px;
+    margin-top: 8px;
+    border-top-width: 1px;
+}
+
+.packages-item {
+    border-bottom-width: 1px;
+    padding-left: 6px;
+}

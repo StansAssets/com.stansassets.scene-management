@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:VisualElement class="list-group-root" style="flex-grow: 1;">
+        <ui:VisualElement style="flex-direction: row; flex-wrap: wrap;">
+            <ui:TextField name="group-name" tooltip="Display name (path) that you&apos;ll use to access resources" />
+            <ui:Label text="Original name" name="group-original-name" style="font-size: 10px; margin-left: 4px; white-space: normal; -unity-text-align: middle-left;" />
+            <ui:Button text="-" tooltip="Remove group" name="remove-group-btn" style="width: 16px; height: 16px;" />
+        </ui:VisualElement>
+        <ui:Foldout text="Resources" name="list-foldout" value="false" class="list-foldout">
+            <ui:ListView name="group-elements-list" class="group-elements-list" style="flex-grow: 1;" />
+            <ui:VisualElement name="toggle-toolbar" class="toggle-toolbar" style="flex-direction: row-reverse; height: 21px; padding-right: 10px;">
+                <ui:Button text="+" name="add-btn" tooltip="Reset name" />
+            </ui:VisualElement>
+        </ui:Foldout>
+    </ui:VisualElement>
+</ui:UXML>

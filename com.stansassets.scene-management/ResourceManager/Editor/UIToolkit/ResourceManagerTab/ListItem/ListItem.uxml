@@ -1,0 +1,14 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:VisualElement class="item-root">
+        <ui:VisualElement style="flex-direction: row;">
+            <ui:TextField picking-mode="Ignore" text="" name="item-name" style="flex-grow: 1;" />
+            <ui:Toggle name="addressable-tgl" tooltip="Mark as addressable" />
+            <ui:VisualElement style="flex-direction: row-reverse; flex-grow: 1;">
+                <ui:Button text="-" tooltip="Remove item" name="rmv-btn" style="height: 16px; width: 16px; -unity-font-style: bold;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement>
+            <uie:ObjectField name="obj-field" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
