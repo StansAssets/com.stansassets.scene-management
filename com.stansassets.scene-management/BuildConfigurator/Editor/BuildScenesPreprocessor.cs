@@ -51,7 +51,6 @@ namespace StansAssets.SceneManagement.Build
                 handler.Invoke(options);
             }
 
-            PrebuildCleanup();
             SetupAddressableScenes(options.target);
             options.scenes = FilterScenesByPath(options.target, options.scenes);
 
@@ -153,7 +152,7 @@ namespace StansAssets.SceneManagement.Build
             }
         }
 
-        static void PrebuildCleanup()
+        internal static void PrebuildCleanup()
         {
             RemoveMissingGroupReferences();
             if (BuildConfigurationSettings.Instance.Configuration.ClearAllAddressablesCache)
@@ -164,12 +163,10 @@ namespace StansAssets.SceneManagement.Build
 
         static void RemoveMissingGroupReferences()
         {
-            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
-            var groups = settings.groups;
-            var missingAddressableAssetGroups = groups.Where(g => g == null).ToList();
-            for (var i = 0; i < missingAddressableAssetGroups.Count; i++)
+            var settings = AddressableAssetSettingsDefaultObject.Settings;
+            foreach (var group in settings.groups.Where(i => i == null).ToArray())
             {
-                settings.RemoveGroup(missingAddressableAssetGroups[i]);
+                settings.RemoveGroup(group);
             }
         }
 
