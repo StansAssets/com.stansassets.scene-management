@@ -108,43 +108,6 @@ namespace StansAssets.SceneManagement.Build
             return configurationSceneGuids.ToList().IndexOf(scene);
         }
 
-        public static void SetupBuildSettings(this BuildConfiguration configuration, BuildTarget buildTarget,
-            bool clearBuildSettings)
-        {
-            var buildSettingsScenes = clearBuildSettings
-                ? new List<EditorBuildSettingsScene>()
-                : EditorBuildSettings.scenes.ToList();
-            var buildSettingsSceneGuids = new HashSet<string>(buildSettingsScenes.Select(s => s.guid.ToString()));
-
-            bool shouldUpdateBuildSettings = false;
-            var configurationSceneGuids = configuration.BuildScenesCollection(new BuildScenesParams(buildTarget, false, false)).Select(s => s.Guid);
-            foreach (var sceneGuid in configurationSceneGuids)
-            {
-                if (buildSettingsSceneGuids.Contains(sceneGuid) == false)
-                {
-                    string scenePath = AssetDatabase.GUIDToAssetPath(sceneGuid);
-                    if (string.IsNullOrEmpty(scenePath))
-                    {
-                        Debug.LogWarning($"Scene with Guid: {sceneGuid} can't be added!");
-                        continue;
-                    }
-
-                    if (!buildSettingsScenes.Any(i => i.guid.ToString().Equals(sceneGuid)))
-                    {
-                        buildSettingsScenes.Add(new EditorBuildSettingsScene(scenePath, true));
-                    }
-
-                    Debug.Log($"{BuildConfigurationSettingsValidator.TAG} Automatically added scene: {scenePath}");
-                    shouldUpdateBuildSettings = true;
-                }
-            }
-
-            if (shouldUpdateBuildSettings)
-            {
-                EditorBuildSettings.scenes = buildSettingsScenes.ToArray();
-            }
-        }
-
         public static void SetupEditorSettings(this BuildConfiguration configuration, BuildTarget buildTarget,
             bool clearBuildSettings)
         {
