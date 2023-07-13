@@ -215,7 +215,9 @@ namespace StansAssets.SceneManagement.Build
         
         void InitializeDefaultSceneConfigurations(BuildConfiguration conf)
         {
-            if (conf.DefaultSceneConfigurations.Count != m_BuildTargetGroupData.ValidPlatforms.Length)
+            // TODO: Poor place, need to rework
+            // Case 1: I uninstalled module and count of valid platforms became -1. It will cause infinite adding platforms becauce 3 configurations != 1 Valid Platform and 1 Default
+            if (conf.DefaultSceneConfigurations.Count != m_ValidPlatformsGUIContent.Length)
             {
                 conf.DefaultSceneConfigurations.Add(new DefaultScenesConfiguration(-1, new SceneAssetInfo()));
                 for (int i = 1; i < m_BuildTargetGroupData.ValidPlatforms.Length; i++)
