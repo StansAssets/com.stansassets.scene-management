@@ -10,6 +10,17 @@ using UnityEngine;
 
 namespace StansAssets.SceneManagement.Build
 {
+    class UIStyleConfig
+    {
+        public Color DuplicateColor { get; } = new Color(1f, 0.78f, 1f);
+        public Color ErrorColor = new Color(1f, 0.8f, 0.0f);
+        public Color OutOfSyncColor= new Color(0.93f, 0.39f, 0.32f);
+        
+        public GUIContent AddressableGuiContent => m_AddressableGuiContent ??= new GUIContent("", "Mark scene Addressable?\nIf true - scene will be added as Addressable asset into \"Scenes\" group, otherwise - scene will be added into build settings.");
+        
+        GUIContent m_AddressableGuiContent;
+    }
+    
     static class DrawingUtility
     {
         public static UIStyleConfig StyleConfig { get; } = new UIStyleConfig();
@@ -85,6 +96,11 @@ namespace StansAssets.SceneManagement.Build
             reorderableList.onRemoveCallback = removeCallbackDelegate;
 
             return reorderableList;
+        }
+        
+        public static void DrawEmptyScene()
+        {
+            GUILayout.Label("Add a scenes", EditorStyles.miniLabel);
         }
         
         static void DrawSceneListItem(Rect rect, int index, ReorderableList reorderableList, bool showBuildIndex)

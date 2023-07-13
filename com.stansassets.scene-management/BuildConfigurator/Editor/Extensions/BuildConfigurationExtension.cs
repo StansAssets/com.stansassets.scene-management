@@ -8,14 +8,14 @@ namespace StansAssets.SceneManagement.Build
 {
     static class BuildConfigurationExtension
     {
-        public static List<SceneAsset> GetAddressableDefaultScenes(this BuildConfiguration configuration)
+        public static List<SceneAsset> GetAddressableDefaultScenes(this BuildConfiguration configuration, BuildTargetGroupRuntime buildTargetGroup)
         {
-            return configuration.DefaultScenes.Where(scene => scene.GetSceneAsset() != null && scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
+            return configuration.DefaultSceneConfigurations.First(conf => conf.BuildTargetGroup == buildTargetGroup).Scenes.Where(scene => scene.GetSceneAsset() != null && scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
         }
 
-        public static List<SceneAsset> GetNonAddressableDefaultScenes(this BuildConfiguration configuration)
+        public static List<SceneAsset> GetNonAddressableDefaultScenes(this BuildConfiguration configuration, BuildTargetGroupRuntime buildTargetGroup)
         {
-            return configuration.DefaultScenes.Where(scene => scene.GetSceneAsset() != null && !scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
+            return configuration.DefaultSceneConfigurations.First(conf => conf.BuildTargetGroup == buildTargetGroup).Scenes.Where(scene => scene.GetSceneAsset() != null && !scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
         }
 
         public static void InitializeBuildData(this BuildConfiguration buildConfiguration, BuildTarget buildTarget)
@@ -28,13 +28,16 @@ namespace StansAssets.SceneManagement.Build
 
         public static void UpdateSceneNames(this BuildConfiguration buildConfiguration)
         {
-            foreach (var scene in buildConfiguration.DefaultScenes)
+            foreach (var defaultSceneConfiguration in buildConfiguration.DefaultSceneConfigurations)
             {
-                if(scene == null)
-                    continue;
+                foreach (var scene in defaultSceneConfiguration.Scenes)
+                {
+                    if(scene == null)
+                        continue;
 
-                var path = AssetDatabase.GUIDToAssetPath(scene.Guid);
-                scene.Name = Path.GetFileNameWithoutExtension(path);
+                    var path = AssetDatabase.GUIDToAssetPath(scene.Guid);
+                    scene.Name = Path.GetFileNameWithoutExtension(path);
+                }
             }
 
             foreach (var platform in buildConfiguration.Platforms)
@@ -52,12 +55,22 @@ namespace StansAssets.SceneManagement.Build
 
         public static IEnumerable<SceneAssetInfo> BuildScenesCollection(this BuildConfiguration configuration, BuildScenesParams buildScenesParams)
         {
+            var buildTargetGroup = buildScenesParams.BuiltTarget.ConvertToBuildTargetGroupRuntime();
             var stripAddressables = buildScenesParams.StripAddressables;
             var scenes = new List<SceneAssetInfo>();
-            var defaultSceneAssets = stripAddressables
-                ? configuration.DefaultScenes.Where(s => !s.Addressable).ToList()
-                : configuration.DefaultScenes;
-
+            
+            List<SceneAssetInfo> defaultSceneAssets = null;
+            if (configuration.DefaultSceneConfigurations.Any())
+            {
+                defaultSceneAssets = stripAddressables
+                    ? configuration.DefaultSceneConfigurations.FirstOrDefault(conf => conf.BuildTargetGroup == buildTargetGroup).Scenes.Where(s => !s.Addressable).ToList()
+                    : configuration.DefaultSceneConfigurations.FirstOrDefault(conf => conf.BuildTargetGroup == buildTargetGroup).Scenes.ToList();
+            }
+            else
+            {
+                defaultSceneAssets = new List<SceneAssetInfo>();
+            }
+            
             if (configuration.DefaultScenesFirst)
             {
                 ProcessPlatforms(ref scenes, configuration.Platforms, buildScenesParams);
@@ -100,7 +113,8 @@ namespace StansAssets.SceneManagement.Build
                     .Any(t => t == BuildTargetRuntime.Editor));
         }
         
-        public static int GetSceneIndex(this BuildConfiguration configuration, SceneAssetInfo scene, BuildTarget builtTarget)
+        public static int GetSceneIndex(this BuildConfiguration configuration, SceneAssetInfo scene, 
+            BuildTarget builtTarget)
         {
             var configurationSceneGuids =
                 configuration.BuildScenesCollection(new BuildScenesParams(builtTarget, false, true));
@@ -204,8 +218,7 @@ namespace StansAssets.SceneManagement.Build
             }
         }
 
-        internal static bool CheckIntersectScenesWhBuildSettings(
-            this BuildConfiguration configuration,
+        internal static bool CheckIntersectScenesWhBuildSettings(this BuildConfiguration configuration,
             BuildTarget buildTarget)
         {
             if (!BuildConfigurationSettings.Instance.HasValidConfiguration)
@@ -267,7 +280,8 @@ namespace StansAssets.SceneManagement.Build
                 i.Guid.Equals(sceneGuid) ||
                 AssetDatabase.GUIDToAssetPath(i.Guid).Equals(scenePath);
 
-            var buildInPlatform = GetDefaultInPlatformsDuplicateScenes(configuration);
+            var buildInPlatform = GetDefaultInPlatformsDuplicateScenes(configuration, 
+                buildTarget.ConvertToBuildTargetGroupRuntime());
             if (buildInPlatform.Any(IsSceneEqual))
             {
                 return true;
@@ -356,9 +370,12 @@ namespace StansAssets.SceneManagement.Build
             return duplicates;
         }
         
-        internal static IEnumerable<SceneAssetInfo> GetDefaultInPlatformsDuplicateScenes(this BuildConfiguration configuration)
+        internal static IEnumerable<SceneAssetInfo> GetDefaultInPlatformsDuplicateScenes(this BuildConfiguration configuration, 
+            BuildTargetGroupRuntime buildTargetGroup)
         {
-            var defaultScenesGuids = configuration.DefaultScenes
+            var defaultScenesGuids = configuration.DefaultSceneConfigurations
+                .First(conf => conf.BuildTargetGroup == buildTargetGroup)
+                .Scenes
                 .Where(g => g != null && !string.IsNullOrEmpty(g.Guid))
                 .ToArray();
             
@@ -388,7 +405,7 @@ namespace StansAssets.SceneManagement.Build
         {
             bool FindMissingScene(SceneAssetInfo i) => i == null || string.IsNullOrEmpty(i.Guid);
 
-            configuration.DefaultScenes.RemoveAll(FindMissingScene);
+            configuration.DefaultSceneConfigurations.ForEach(conf => conf.Scenes.RemoveAll(FindMissingScene));
             configuration.Platforms.ForEach(p => p.Scenes.RemoveAll(FindMissingScene));
         }
 
@@ -428,6 +445,15 @@ namespace StansAssets.SceneManagement.Build
             BuiltTarget = builtTarget;
             StripAddressables = stripAddressables;
             IncludeEditorScene = includeEditorScene;
+        }
+    }
+
+    static class BuildTargetExtensions
+    {
+        public static BuildTargetGroupRuntime ConvertToBuildTargetGroupRuntime(this BuildTarget @this)
+        {
+            var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(@this);
+            return (BuildTargetGroupRuntime)(int) buildTargetGroup;
         }
     }
 }

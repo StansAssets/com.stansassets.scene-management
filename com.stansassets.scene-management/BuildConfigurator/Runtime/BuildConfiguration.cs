@@ -13,9 +13,9 @@ namespace StansAssets.SceneManagement.Build
     {
         public string Guid;
         public string Name = string.Empty;
-        public bool DefaultScenesFirst = false;
-        public List<SceneAssetInfo> DefaultScenes = new List<SceneAssetInfo>();
-        public List<PlatformsConfiguration> Platforms = new List<PlatformsConfiguration>();
+        public bool DefaultScenesFirst;
+        public List<DefaultScenesConfiguration> DefaultSceneConfigurations = new();
+        public List<PlatformsConfiguration> Platforms = new();
 
         const string k_UseAddressablesInEditorKey = "_user-addressables-in-editor";
         const string k_ClearAllAddressableCacheKey = "_user-clear-all-addressable-cache";
@@ -37,7 +37,7 @@ namespace StansAssets.SceneManagement.Build
                     }
                 }
 
-                return DefaultScenes.Count == 0;
+                return DefaultSceneConfigurations.Count == 0;
             }
         }
 
@@ -84,9 +84,9 @@ namespace StansAssets.SceneManagement.Build
             var copy = new BuildConfiguration();
             copy.Name = Name + " Copy";
 
-            foreach (var scene in DefaultScenes)
+            foreach (var sceneConfiguration in DefaultSceneConfigurations)
             {
-                copy.DefaultScenes.Add(scene);
+                copy.DefaultSceneConfigurations.Add(sceneConfiguration);
             }
 
             foreach (var platformsConfiguration in Platforms)
@@ -111,11 +111,14 @@ namespace StansAssets.SceneManagement.Build
         // TODO we might need to cache this data once
         internal bool IsSceneAddressable(string sceneName)
         {
-            foreach (var scene in DefaultScenes)
+            foreach (var sceneConfiguration in DefaultSceneConfigurations)
             {
-                if (sceneName.Equals(scene.Name))
+                foreach (var scene in sceneConfiguration.Scenes)
                 {
-                    return scene.Addressable;
+                    if (sceneName.Equals(scene.Name))
+                    {
+                        return scene.Addressable;
+                    }
                 }
             }
 
@@ -182,8 +185,8 @@ namespace StansAssets.SceneManagement.Build
         
         internal bool HasScene(string sceneName)
         {
-            return DefaultScenes.Any(i => i.Name.Equals(sceneName)) || 
-                   Platforms.Any( p => p.Scenes.Any(i => i.Name.Equals(sceneName)));
+            return DefaultSceneConfigurations.Any(c => c.Scenes.Any(s => s.Name.Equals(sceneName)))
+                || Platforms.Any( p => p.Scenes.Any(i => i.Name.Equals(sceneName)));
         }
     }
 }

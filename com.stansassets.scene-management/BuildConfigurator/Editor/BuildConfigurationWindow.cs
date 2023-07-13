@@ -17,6 +17,7 @@ namespace StansAssets.SceneManagement.Build
         PlatformsView m_PlatformsView;
         
         int m_SelectionIndex;
+        const int k_DefaultBuildTarget = -1;
 
         BuildConfigurationContext Context => m_Context ??= new BuildConfigurationContext();
 
@@ -232,7 +233,7 @@ namespace StansAssets.SceneManagement.Build
                 {
                     var sceneAssetInfo = new SceneAssetInfo();
                     sceneAssetInfo.SetSceneAsset(scene);
-                    conf.DefaultScenes.Add(sceneAssetInfo);
+                    conf.DefaultSceneConfigurations.Add(new DefaultScenesConfiguration(k_DefaultBuildTarget, sceneAssetInfo));
                 }
 
                 BuildConfigurationSettings.Save();

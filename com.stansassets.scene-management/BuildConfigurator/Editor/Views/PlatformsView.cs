@@ -12,7 +12,6 @@ namespace StansAssets.SceneManagement.Build
         readonly BuildConfigurationContext m_Context;
         readonly Dictionary<PlatformsConfiguration, (ReorderableList platforms, ReorderableList scenes)> m_ReorderableLists = new();
 
-
         public PlatformsView(BuildConfigurationContext context)
         {
             m_Context = context;
