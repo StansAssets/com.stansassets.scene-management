@@ -45,10 +45,6 @@ namespace StansAssets.SceneManagement.Build
             {
                 AddBuildConfigurationTab(conf.Name);
             }
-            
-            m_SettingsView = new SettingsView(Context);
-            m_DefaultSceneView = new DefaultScenesView(Context);
-            m_PlatformsView = new PlatformsView(Context);
 
             UpdateActiveConfUI();
             UpdateStatus();
@@ -180,6 +176,13 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
 
+            if (m_SettingsView == null)
+            {
+                m_SettingsView = new SettingsView(Context);
+                m_DefaultSceneView = new DefaultScenesView(Context);
+                m_PlatformsView = new PlatformsView(Context);
+            }
+            
             m_SettingsView.DrawSettings();
             
             if (conf.DefaultScenesFirst)
