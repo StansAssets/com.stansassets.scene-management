@@ -43,12 +43,12 @@ namespace StansAssets.SceneManagement.Build
                 }
             }
 
-            m_Context.ShowBuildIndex = true;
+            DrawingUtility.ShowBuildIndex = true;
         } 
         
         void DrawPlatform(BuildConfiguration conf, PlatformsConfiguration platform)
         {
-            m_Context.ShowBuildIndex = conf.IsActive(platform);
+            DrawingUtility.ShowBuildIndex = conf.IsActive(platform);
             
             var reorderableList = GetPlatformReorderableList(platform);
 
@@ -94,11 +94,11 @@ namespace StansAssets.SceneManagement.Build
         {
             if (m_ReorderableLists.ContainsKey(platform)) return m_ReorderableLists[platform];
 
-            var platforms = DrawingUtility.CreatePlatformsReorderableList(platform.BuildTargets, m_Context.ShowBuildIndex,
+            var platforms = DrawingUtility.CreatePlatformsReorderableList(platform.BuildTargets,
                 _ => { m_Context.CheckNTryAutoSync(true); },
                 _ => { m_Context.CheckNTryAutoSync(true); });
             
-            var scenes = DrawingUtility.CreateScenesReorderableList(platform.Scenes, false,
+            var scenes = DrawingUtility.CreateScenesReorderableList(platform.Scenes,
                 _ => { m_Context.CheckNTryAutoSync(); },
                 _ => { m_Context.CheckNTryAutoSync(); },
                 _ => { m_Context.CheckNTryAutoSync(true); });

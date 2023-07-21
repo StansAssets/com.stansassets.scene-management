@@ -8,14 +8,14 @@ namespace StansAssets.SceneManagement.Build
 {
     static class BuildConfigurationExtension
     {
-        public static List<SceneAsset> GetAddressableDefaultScenes(this BuildConfiguration configuration, BuildTargetGroupRuntime buildTargetGroup)
+        public static List<SceneAsset> GetAddressableDefaultScenes(this BuildConfiguration configuration, BuildTargetGroup buildTargetGroup)
         {
-            return configuration.DefaultSceneConfigurations.First(conf => conf.BuildTargetGroup == buildTargetGroup).Scenes.Where(scene => scene.GetSceneAsset() != null && scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
+            return configuration.DefaultSceneConfigurations.First(conf => conf.BuildTargetGroup == (int)buildTargetGroup).Scenes.Where(scene => scene.GetSceneAsset() != null && scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
         }
 
-        public static List<SceneAsset> GetNonAddressableDefaultScenes(this BuildConfiguration configuration, BuildTargetGroupRuntime buildTargetGroup)
+        public static List<SceneAsset> GetNonAddressableDefaultScenes(this BuildConfiguration configuration, BuildTargetGroup buildTargetGroup)
         {
-            return configuration.DefaultSceneConfigurations.First(conf => conf.BuildTargetGroup == buildTargetGroup).Scenes.Where(scene => scene.GetSceneAsset() != null && !scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
+            return configuration.DefaultSceneConfigurations.First(conf => conf.BuildTargetGroup == (int)buildTargetGroup).Scenes.Where(scene => scene.GetSceneAsset() != null && !scene.Addressable).Select(addressableScene => addressableScene.GetSceneAsset()).ToList();
         }
 
         public static void InitializeBuildData(this BuildConfiguration buildConfiguration, BuildTarget buildTarget)
@@ -55,16 +55,16 @@ namespace StansAssets.SceneManagement.Build
 
         public static IEnumerable<SceneAssetInfo> BuildScenesCollection(this BuildConfiguration configuration, BuildScenesParams buildScenesParams)
         {
-            var buildTargetGroup = buildScenesParams.BuiltTarget.ConvertToBuildTargetGroupRuntime();
             var stripAddressables = buildScenesParams.StripAddressables;
             var scenes = new List<SceneAssetInfo>();
             
-            List<SceneAssetInfo> defaultSceneAssets = null;
-            if (configuration.DefaultSceneConfigurations.Any())
+            List<SceneAssetInfo> defaultSceneAssets;
+            var defaultScenesConfiguration = configuration.GetDefaultScenesConfiguration(buildScenesParams.BuiltTarget);
+            if (defaultScenesConfiguration != null)
             {
                 defaultSceneAssets = stripAddressables
-                    ? configuration.DefaultSceneConfigurations.FirstOrDefault(conf => conf.BuildTargetGroup == buildTargetGroup).Scenes.Where(s => !s.Addressable).ToList()
-                    : configuration.DefaultSceneConfigurations.FirstOrDefault(conf => conf.BuildTargetGroup == buildTargetGroup).Scenes.ToList();
+                    ? defaultScenesConfiguration.Scenes.Where(s => !s.Addressable).ToList()
+                    : defaultScenesConfiguration.Scenes.ToList();
             }
             else
             {
@@ -280,8 +280,7 @@ namespace StansAssets.SceneManagement.Build
                 i.Guid.Equals(sceneGuid) ||
                 AssetDatabase.GUIDToAssetPath(i.Guid).Equals(scenePath);
 
-            var buildInPlatform = GetDefaultInPlatformsDuplicateScenes(configuration, 
-                buildTarget.ConvertToBuildTargetGroupRuntime());
+            var buildInPlatform = GetDefaultInPlatformsDuplicateScenes(configuration, buildTarget);
             if (buildInPlatform.Any(IsSceneEqual))
             {
                 return true;
@@ -371,11 +370,13 @@ namespace StansAssets.SceneManagement.Build
         }
         
         internal static IEnumerable<SceneAssetInfo> GetDefaultInPlatformsDuplicateScenes(this BuildConfiguration configuration, 
-            BuildTargetGroupRuntime buildTargetGroup)
+            BuildTarget buildTarget)
         {
-            var defaultScenesGuids = configuration.DefaultSceneConfigurations
-                .First(conf => conf.BuildTargetGroup == buildTargetGroup)
-                .Scenes
+            var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
+            var defaultSceneConf = configuration.DefaultSceneConfigurations
+                .FirstOrDefault(conf => conf.BuildTargetGroup == (int)buildTargetGroup);
+            
+            var defaultScenesGuids = defaultSceneConf?.Scenes
                 .Where(g => g != null && !string.IsNullOrEmpty(g.Guid))
                 .ToArray();
             
@@ -385,17 +386,20 @@ namespace StansAssets.SceneManagement.Build
                 .ToArray();
 
             var duplicates = new List<SceneAssetInfo>();
-            foreach (var sceneAssetInfo in defaultScenesGuids)
+            if (defaultScenesGuids != null)
             {
-                var scenePath = AssetDatabase.GUIDToAssetPath(sceneAssetInfo.Guid);
-                var inConfig = platformsScenesGuids
-                    .Where(s => AssetDatabase.GUIDToAssetPath(s.Guid).Equals(scenePath))
-                    .ToArray();
+                foreach (var sceneAssetInfo in defaultScenesGuids)
+                {
+                    var scenePath = AssetDatabase.GUIDToAssetPath(sceneAssetInfo.Guid);
+                    var inConfig = platformsScenesGuids
+                        .Where(s => AssetDatabase.GUIDToAssetPath(s.Guid).Equals(scenePath))
+                        .ToArray();
 
-                if (!inConfig.Any()) continue;
+                    if (!inConfig.Any()) continue;
                 
-                duplicates.Add(sceneAssetInfo);
-                duplicates.AddRange(inConfig);
+                    duplicates.Add(sceneAssetInfo);
+                    duplicates.AddRange(inConfig);
+                }
             }
 
             return duplicates;
@@ -427,6 +431,14 @@ namespace StansAssets.SceneManagement.Build
 
             return false;
         }
+
+        internal static DefaultScenesConfiguration GetDefaultScenesConfiguration(this BuildConfiguration @this, BuildTarget buildTarget)
+        {
+            var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
+            // If we don't have special configuration - use default one
+            var configuration = @this.DefaultSceneConfigurations.FirstOrDefault(conf => conf.BuildTargetGroup == (int) buildTargetGroup) ?? @this.DefaultSceneConfigurations.First();
+            return configuration;
+        } 
     }
 
     struct BuildScenesParams
@@ -445,15 +457,6 @@ namespace StansAssets.SceneManagement.Build
             BuiltTarget = builtTarget;
             StripAddressables = stripAddressables;
             IncludeEditorScene = includeEditorScene;
-        }
-    }
-
-    static class BuildTargetExtensions
-    {
-        public static BuildTargetGroupRuntime ConvertToBuildTargetGroupRuntime(this BuildTarget @this)
-        {
-            var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(@this);
-            return (BuildTargetGroupRuntime)(int) buildTargetGroup;
         }
     }
 }

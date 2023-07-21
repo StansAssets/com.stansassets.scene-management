@@ -10,47 +10,20 @@ using UnityEngine;
 
 namespace StansAssets.SceneManagement.Build
 {
-    class UIStyleConfig
+    struct SceneFieldStatus
     {
-        public Color DuplicateColor { get; } = new Color(1f, 0.78f, 1f);
-        public Color ErrorColor = new Color(1f, 0.8f, 0.0f);
-        public Color OutOfSyncColor= new Color(0.93f, 0.39f, 0.32f);
-
-        public GUIStyle FrameBox {
-            get
-            {
-                if (m_FrameBox == null)
-                {
-                    m_FrameBox = "FrameBox";
-                    m_FrameBox.padding = new RectOffset(-2, -2, -2, -2);
-                }
-                return m_FrameBox;
-            }
-        }
-        public GUIStyle ToolbarButton {
-            get
-            {
-                if (m_ToolbarButton == null)
-                {
-                    m_ToolbarButton = GUI.skin.button;
-                    m_ToolbarButton.margin = new RectOffset(0, 0, 0, 0);
-                    m_ToolbarButton.border = new RectOffset(1, 1, 1, 0);
-                }
-                return m_ToolbarButton;
-            }
-        }
-        public GUIContent AddressableGuiContent => m_AddressableGuiContent ??= new GUIContent("", "Mark scene Addressable?\nIf true - scene will be added as Addressable asset into \"Scenes\" group, otherwise - scene will be added into build settings.");
-        
-        GUIContent m_AddressableGuiContent;
-        GUIStyle m_FrameBox;
-        GUIStyle m_ToolbarButton;
+        public Color Color;
+        public string Tooltip;
     }
-    
+
     static class DrawingUtility
     {
         public static UIStyleConfig StyleConfig { get; } = new();
+        public static bool ShowBuildIndex { get; set; }
 
-        public static ReorderableList CreateScenesReorderableList(IList elementsList, bool showBuildIndex,
+        static GUIContent s_TempGUIContent = new GUIContent();
+
+        public static ReorderableList CreateScenesReorderableList(IList elementsList,
             ReorderableList.ChangedCallbackDelegate changedCallbackDelegate, 
             ReorderableList.ReorderCallbackDelegate reorderCallbackDelegate,
             ReorderableList.RemoveCallbackDelegate removeCallbackDelegate
@@ -69,14 +42,14 @@ namespace StansAssets.SceneManagement.Build
                 rect => EditorGUI.LabelField(rect, "Add a scene", EditorStyles.miniLabel);
             
             reorderableList.drawElementCallback = (rect, index, active, focused) =>
-                DrawSceneListItem(rect, index, reorderableList, showBuildIndex);
+                DrawSceneListItem(rect, index, reorderableList, ShowBuildIndex);
             
             reorderableList.drawElementBackgroundCallback = (rect, i, b, focused) =>
                 DrawListItemBackground(rect, i, focused, reorderableList);
 
             // Head/foot
             reorderableList.drawHeaderCallback = rect =>
-                DrawListHeaderCallback(rect, "Scenes", showBuildIndex);
+                DrawListHeaderCallback(rect, "Scenes", ShowBuildIndex);
             
             reorderableList.drawFooterCallback = rect => DrawListFooterCallback(rect, reorderableList);
 
@@ -88,7 +61,7 @@ namespace StansAssets.SceneManagement.Build
             return reorderableList;
         }
         
-        public static ReorderableList CreatePlatformsReorderableList(IList elementsList, bool showBuildIndex,
+        public static ReorderableList CreatePlatformsReorderableList(IList elementsList,
             ReorderableList.ChangedCallbackDelegate changedCallbackDelegate, 
             ReorderableList.RemoveCallbackDelegate removeCallbackDelegate)
         {
@@ -112,7 +85,7 @@ namespace StansAssets.SceneManagement.Build
 
             // Head/foot
             reorderableList.drawHeaderCallback =
-                rect => DrawListHeaderCallback(rect, "Build Targets", showBuildIndex);
+                rect => DrawListHeaderCallback(rect, "Build Targets", ShowBuildIndex);
             
             reorderableList.drawFooterCallback = rect => DrawListFooterCallback(rect, reorderableList);
 
@@ -163,14 +136,16 @@ namespace StansAssets.SceneManagement.Build
                 if (showBuildIndex)
                 {
                     var sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue, EditorUserBuildSettings.activeBuildTarget);
-                    GUI.Label(sceneIndexRect, sceneIndex.ToString());
+                    if(sceneIndex >= 0)
+                        GUI.Label(sceneIndexRect, sceneIndex.ToString());
                 }
 
                 var sceneAsset = itemValue.GetSceneAsset();
                 var sceneSynced = BuildConfigurationSettings.Instance.Configuration
                     .CheckIntersectSceneWhBuildSettings(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
 
-                GUI.color = LookForFieldColor(sceneAsset, sceneSynced, itemValue, reorderableList);
+                var fieldStatus = GetFieldStatus(sceneAsset, sceneSynced, itemValue, reorderableList);
+                GUI.color = fieldStatus.Color;
 
                 EditorGUI.indentLevel = 0;
                 EditorGUI.BeginChangeCheck();
@@ -180,6 +155,14 @@ namespace StansAssets.SceneManagement.Build
                 {
                     itemValue.SetSceneAsset(newSceneAsset);
                     reorderableList.onChangedCallback?.Invoke(reorderableList);
+                }
+                
+                // Scene ObjectField tooltip
+                if (!string.IsNullOrEmpty(fieldStatus.Tooltip))
+                {
+                    s_TempGUIContent.tooltip = fieldStatus.Tooltip;
+                    GUI.Label(objectFieldRect, s_TempGUIContent);
+                    s_TempGUIContent.tooltip = null;
                 }
 
                 GUI.color = Color.white;
@@ -241,7 +224,7 @@ namespace StansAssets.SceneManagement.Build
             }
         }
         
-        static Color LookForFieldColor(SceneAsset sceneAsset, bool scenesSynced, SceneAssetInfo itemValue,
+        static SceneFieldStatus GetFieldStatus(SceneAsset sceneAsset, bool scenesSynced, SceneAssetInfo itemValue,
             ReorderableList reorderableList)
         {
             var sceneDuplicate = BuildConfigurationSettings.Instance.Configuration
@@ -258,22 +241,28 @@ namespace StansAssets.SceneManagement.Build
             }
             
             var sceneWithError = sceneAsset == null;
-            var color = Color.white;
+            var status = new SceneFieldStatus()
+            {
+                Color = Color.white
+            };
             
             if (sceneDuplicate)
             {
-                color = StyleConfig.DuplicateColor;
+                status.Color = StyleConfig.DuplicateColor;
+                status.Tooltip = "This scene duplicated in configuration, it should be fixed manually.";
             }
             else if (sceneWithError)
             {
-                color = StyleConfig.ErrorColor;
+                status.Color = StyleConfig.ErrorColor;
+                status.Tooltip = "Please assign the scene or remove this item.";
             }
             else if (!scenesSynced)
             {
-                color = StyleConfig.OutOfSyncColor;
+                status.Color = StyleConfig.OutOfSyncColor;
+                status.Tooltip = "Scenes in configuration and Build Settings are our of sync. Please click button above to sync.";
             }
-            
-            return color;
+
+            return status;
         }
         
         static void DrawListFooterCallback(Rect rect, ReorderableList reorderableList)

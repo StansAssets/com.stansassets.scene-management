@@ -185,6 +185,9 @@ namespace StansAssets.SceneManagement.Build
             
             m_SettingsView.DrawSettings();
             
+            // Make sure Default Scene Configurations are initialized with installed Editor platforms
+            m_DefaultSceneView.InitializeDefaultSceneConfigurations(conf);
+            
             if (conf.DefaultScenesFirst)
             {
                 m_DefaultSceneView.DrawDefaultScenes(conf);

@@ -9,25 +9,19 @@ namespace StansAssets.SceneManagement.Build
     [Serializable]
     public class DefaultScenesConfiguration
     {
-        public BuildTargetGroupRuntime BuildTargetGroup;
-        public List<SceneAssetInfo> Scenes = new List<SceneAssetInfo>();
+        public int BuildTargetGroup;
+        public List<SceneAssetInfo> Scenes = new();
         public bool Override;
 
-        public DefaultScenesConfiguration(int buildTargets, SceneAssetInfo sceneAssetInfo)
+        public DefaultScenesConfiguration(int buildTarget, SceneAssetInfo sceneAssetInfo)
         { 
-            BuildTargetGroup = (BuildTargetGroupRuntime)buildTargets;
+            BuildTargetGroup = buildTarget;
             Scenes.Add(sceneAssetInfo);
         }
 
-        public DefaultScenesConfiguration(BuildTargetGroupRuntime buildTargets, SceneAssetInfo sceneAssetInfo)
-        { 
-            BuildTargetGroup = buildTargets;
-            Scenes.Add(sceneAssetInfo);
-        }
-
-        public DefaultScenesConfiguration(int buildTargets)
+        public DefaultScenesConfiguration(int buildTarget)
         {
-            BuildTargetGroup = (BuildTargetGroupRuntime)buildTargets;
+            BuildTargetGroup = buildTarget;
         }
     }
 }

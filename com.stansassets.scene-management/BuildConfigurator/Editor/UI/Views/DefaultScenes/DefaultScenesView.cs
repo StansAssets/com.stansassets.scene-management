@@ -18,7 +18,7 @@ namespace StansAssets.SceneManagement.Build
         ReorderableList m_DefaultScenesList;
 
         int m_SelectedPlatform;
-        GUIContent[] m_ValidPlatformsGUIContent;
+        readonly GUIContent[] m_ValidPlatformsGUIContent;
         BuildTargetGroupData m_BuildTargetGroupData;
         
         public DefaultScenesView(BuildConfigurationContext context)
@@ -33,19 +33,12 @@ namespace StansAssets.SceneManagement.Build
             {
                 int t = i + 1;
                 m_ValidPlatformsGUIContent[t] = EditorGUIUtility.IconContent($"{m_BuildTargetGroupData.ValidPlatforms[i].IconName}");
+                m_ValidPlatformsGUIContent[t].tooltip = m_BuildTargetGroupData.ValidPlatforms[i].BuildTargetGroup.ToString();
             }
         }
         
         public void DrawDefaultScenes(BuildConfiguration conf)
         {
-            /*if (m_DefaultScenesList == null)
-            {
-                m_DefaultScenesList = DrawingUtility.CreateScenesReorderableList(conf.DefaultScenes, false,
-                    _ => { m_Context.CheckNTryAutoSync(); },
-                    _ => { m_Context.CheckNTryAutoSync(); },
-                    _ => { m_Context.CheckNTryAutoSync(true); });
-            }*/
-
             using (new IMGUIBlockWithIndent(new GUIContent("Default Scenes")))
             {
                 EditorGUILayout.HelpBox(k_DefaultScenesDescription, MessageType.Info);
@@ -56,18 +49,17 @@ namespace StansAssets.SceneManagement.Build
                     {
                         m_SelectedPlatform = GUILayout.Toolbar(m_SelectedPlatform, m_ValidPlatformsGUIContent, DrawingUtility.StyleConfig.ToolbarButton);
                         
-                        InitializeDefaultSceneConfigurations(conf);
-
                         bool defaultTab = m_SelectedPlatform == 0;
                         if (defaultTab)
                         {
-                            GUILayout.BeginHorizontal();
+                            if (m_DefaultScenesList == null)
                             {
-                                GUILayout.Space(1f);
-                                ReorderableListGUI.ListField(conf.DefaultSceneConfigurations[0].Scenes, ContentTypeListItem, DrawingUtility.DrawEmptyScene);
-                                GUILayout.Space(-5f);
+                                m_DefaultScenesList = DrawingUtility.CreateScenesReorderableList(conf.DefaultSceneConfigurations[0].Scenes,
+                                    _ => m_Context.CheckNTryAutoSync(),
+                                    _ => m_Context.CheckNTryAutoSync(),
+                                    _ => m_Context.CheckNTryAutoSync(true));
                             }
-                            GUILayout.EndHorizontal();
+                            m_DefaultScenesList.DoLayoutList();
                         }
                         else
                         {
@@ -96,10 +88,10 @@ namespace StansAssets.SceneManagement.Build
                             }
                             GUI.enabled = prevEnableState;
                         }
-                        GUILayout.Space(defaultTab ? -25 : -9);
+                        GUILayout.Space(defaultTab ? -20 : -9);
                     }
                 }
-                GUILayout.Space(10);
+                GUILayout.Space(30);
             }
         }
         
@@ -131,58 +123,21 @@ namespace StansAssets.SceneManagement.Build
             }
         }
         
-        void InitializeDefaultSceneConfigurations(BuildConfiguration conf)
+        public void InitializeDefaultSceneConfigurations(BuildConfiguration conf)
         {
             // TODO: Poor place, need to rework
             // Case 1: I uninstalled module and count of valid platforms became -1. It will cause infinite adding platforms becauce 3 configurations != 1 Valid Platform and 1 Default
             if (conf.DefaultSceneConfigurations.Count != m_ValidPlatformsGUIContent.Length)
             {
                 conf.DefaultSceneConfigurations.Add(new DefaultScenesConfiguration(-1, new SceneAssetInfo()));
-                for (int i = 1; i < m_BuildTargetGroupData.ValidPlatforms.Length; i++)
+                for (int i = 0; i < m_BuildTargetGroupData.ValidPlatforms.Length; i++)
                 {
-                    BuildTargetGroup buildTargetGroup = m_BuildTargetGroupData.ValidPlatforms[i-1].BuildTargetGroup;
+                    BuildTargetGroup buildTargetGroup = m_BuildTargetGroupData.ValidPlatforms[i].BuildTargetGroup;
                     conf.DefaultSceneConfigurations.Add(new DefaultScenesConfiguration((int)buildTargetGroup, new SceneAssetInfo()));
                 }
             }
         }
-        
-        SceneAssetInfo ContentTypeListItem(Rect pos, SceneAssetInfo itemValue)
-        {
-            if (itemValue == null)
-                itemValue = new SceneAssetInfo();
 
-            int indentLevel = EditorGUI.indentLevel;
-            EditorGUI.indentLevel = 0;
-
-            Rect sceneIndexRect = m_Context.ShowBuildIndex ? new Rect(pos.x, pos.y, 20f, pos.height) : new Rect(pos.x, pos.y, 0f, 0f);
-            Rect objectFieldRect = new Rect(pos.x + sceneIndexRect.width, pos.y + 2, pos.width - 20f - sceneIndexRect.width, 16);
-            Rect addressableToggleRect = new Rect(objectFieldRect.x + objectFieldRect.width + 2, pos.y, 20f, pos.height);
-
-            if (m_Context.ShowBuildIndex)
-            {
-                int sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue, EditorUserBuildSettings.activeBuildTarget);
-                GUI.Label(sceneIndexRect, sceneIndex.ToString());
-            }
-
-            var sceneAsset = itemValue.GetSceneAsset();
-            bool sceneWithError = sceneAsset == null;
-            GUI.color = sceneWithError ? DrawingUtility.StyleConfig.ErrorColor : Color.white;
-
-            EditorGUI.BeginChangeCheck();
-            var newSceneAsset = EditorGUI.ObjectField(objectFieldRect, sceneAsset, typeof(SceneAsset), false) as SceneAsset;
-            if (EditorGUI.EndChangeCheck())
-            {
-                itemValue.SetSceneAsset(newSceneAsset);
-            }
-
-            GUI.color = Color.white;
-
-            itemValue.Addressable = GUI.Toggle(addressableToggleRect, itemValue.Addressable, DrawingUtility.StyleConfig.AddressableGuiContent);
-            EditorGUI.indentLevel = indentLevel;
-
-            return itemValue;
-        }
-        
         SceneAssetInfo ImmutableContentTypeListItem(Rect pos, SceneAssetInfo itemValue)
         {
             if (itemValue == null)
@@ -191,11 +146,11 @@ namespace StansAssets.SceneManagement.Build
             int indentLevel = EditorGUI.indentLevel;
             EditorGUI.indentLevel = 0;
 
-            Rect sceneIndexRect = m_Context.ShowBuildIndex ? new Rect(pos.x, pos.y, 20f, pos.height) : new Rect(pos.x, pos.y, 0f, 0f);
+            Rect sceneIndexRect = DrawingUtility.ShowBuildIndex ? new Rect(pos.x, pos.y, 20f, pos.height) : new Rect(pos.x, pos.y, 0f, 0f);
             Rect objectFieldRect = new Rect(pos.x + sceneIndexRect.width, pos.y + 2, pos.width - 20f - sceneIndexRect.width, 16);
             Rect addressableToggleRect = new Rect(objectFieldRect.x + objectFieldRect.width + 2, pos.y, 20f, pos.height);
 
-            if (m_Context.ShowBuildIndex)
+            if (DrawingUtility.ShowBuildIndex)
             {
                 int sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue, EditorUserBuildSettings.activeBuildTarget);
                 GUI.Label(sceneIndexRect, sceneIndex.ToString());

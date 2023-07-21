@@ -12,7 +12,6 @@ namespace StansAssets.SceneManagement.Build
     class BuildConfigurationContext
     {
         public AutoSyncParams AutoSyncParams;
-        public bool ShowBuildIndex;
 
         public void SyncScenes()
         {

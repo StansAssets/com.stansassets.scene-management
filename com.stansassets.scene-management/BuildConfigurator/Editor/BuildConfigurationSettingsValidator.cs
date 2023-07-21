@@ -85,7 +85,7 @@ namespace StansAssets.SceneManagement.Build
                 return true;
             }
 
-            var defaultInPlatform = conf.DefaultSceneConfigurations.Any(defConf => conf.GetDefaultInPlatformsDuplicateScenes(defConf.BuildTargetGroup).Any());
+            var defaultInPlatform = conf.DefaultSceneConfigurations.Any(defConf => conf.GetDefaultInPlatformsDuplicateScenes((BuildTarget)defConf.BuildTargetGroup).Any());
             if (defaultInPlatform) return true;
             
             var inConfig = conf.GetConfigurationRepetitiveScenes(EditorUserBuildSettings.activeBuildTarget).Any();
