@@ -144,6 +144,7 @@ namespace StansAssets.SceneManagement.Build
                 var sceneSynced = BuildConfigurationSettings.Instance.Configuration
                     .CheckIntersectSceneWhBuildSettings(EditorUserBuildSettings.activeBuildTarget, itemValue.Guid);
 
+                var prevColor = GUI.color;
                 var fieldStatus = GetFieldStatus(sceneAsset, sceneSynced, itemValue, reorderableList);
                 GUI.color = fieldStatus.Color;
 
@@ -165,7 +166,7 @@ namespace StansAssets.SceneManagement.Build
                     s_TempGUIContent.tooltip = null;
                 }
 
-                GUI.color = Color.white;
+                GUI.color = prevColor;
 
                 itemValue.Addressable = GUI.Toggle(addressableToggleRect, itemValue.Addressable, StyleConfig.AddressableGuiContent);
 
@@ -308,9 +309,10 @@ namespace StansAssets.SceneManagement.Build
 
             EditorGUI.BeginChangeCheck();
             
-            GUI.color = LookForBuildTargetFieldColor(element);
+            var prevColor = GUI.color;
+            GUI.color = GetBuildTargetFieldColor(element);
             element = (BuildTargetRuntime)EditorGUI.EnumPopup(positionRect, element, style);
-            GUI.color = Color.white;
+            GUI.color = prevColor;
             
             if (EditorGUI.EndChangeCheck())
             {
@@ -326,7 +328,7 @@ namespace StansAssets.SceneManagement.Build
             DrawRemoveButtonOfListElement(removeButtonRect, reorderableList, index);
         }
         
-        static Color LookForBuildTargetFieldColor(BuildTargetRuntime buildTargetRuntime)
+        static Color GetBuildTargetFieldColor(BuildTargetRuntime buildTargetRuntime)
         {
             if (buildTargetRuntime == BuildTargetRuntime.NoTarget)
             {

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Rotorz.ReorderableList;
 using StansAssets.Plugins.Editor;
 using UnityEditor;
@@ -19,7 +20,8 @@ namespace StansAssets.SceneManagement.Build
 
         int m_SelectedPlatform;
         readonly GUIContent[] m_ValidPlatformsGUIContent;
-        BuildTargetGroupData m_BuildTargetGroupData;
+        readonly BuildTargetGroupData m_BuildTargetGroupData;
+        readonly List<SceneAssetInfo> m_TempScenesCollection = new();
         
         public DefaultScenesView(BuildConfigurationContext context)
         {
@@ -52,13 +54,19 @@ namespace StansAssets.SceneManagement.Build
                         bool defaultTab = m_SelectedPlatform == 0;
                         if (defaultTab)
                         {
-                            if (m_DefaultScenesList == null)
-                            {
-                                m_DefaultScenesList = DrawingUtility.CreateScenesReorderableList(conf.DefaultSceneConfigurations[0].Scenes,
-                                    _ => m_Context.CheckNTryAutoSync(),
-                                    _ => m_Context.CheckNTryAutoSync(),
-                                    _ => m_Context.CheckNTryAutoSync(true));
-                            }
+                            m_DefaultScenesList ??= DrawingUtility.CreateScenesReorderableList(conf.DefaultSceneConfigurations[0].Scenes, 
+                                _ =>
+                                {
+                                    SyncDefaultConfigurations(conf);
+                                    m_Context.CheckNTryAutoSync();
+                                },
+                                _ => {
+                                    m_Context.CheckNTryAutoSync();
+                                },
+                                _ => {
+                                    SyncDefaultConfigurations(conf);
+                                    m_Context.CheckNTryAutoSync(true);
+                                });
                             m_DefaultScenesList.DoLayoutList();
                         }
                         else
@@ -70,8 +78,6 @@ namespace StansAssets.SceneManagement.Build
                                 EditorGUILayout.LabelField($"Override for {m_BuildTargetGroupData.ValidPlatforms[m_SelectedPlatform - 1].BuildTargetGroup}");
                             }
                             GUILayout.EndHorizontal();
-
-                            CopyScenesFromDefaultConfiguration(conf, conf.DefaultSceneConfigurations[m_SelectedPlatform].Override);
 
                             var prevEnableState = GUI.enabled;
                             {
@@ -94,35 +100,54 @@ namespace StansAssets.SceneManagement.Build
                 GUILayout.Space(30);
             }
         }
-        
-        void CopyScenesFromDefaultConfiguration(BuildConfiguration conf, bool isOverride)
+
+        void SyncDefaultConfigurations(BuildConfiguration conf)
         {
-            List<SceneAssetInfo> defaultScenes = conf.DefaultSceneConfigurations[0].Scenes;
-            if (defaultScenes.Count == 0) return;
-            List<SceneAssetInfo> selectedPlatformScenes = conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes;
-            if (defaultScenes.Count != selectedPlatformScenes.Count)
+            var defaultConfiguration = conf.DefaultSceneConfigurations.FirstOrDefault(c => c.BuildTargetGroup == -1);
+            var defaultScenes = defaultConfiguration.Scenes;
+            foreach (var c in conf.DefaultSceneConfigurations)
             {
-                selectedPlatformScenes.Clear();
-                for (var i = 0; i < defaultScenes.Count; i++)
+                m_TempScenesCollection.Clear();
+                var scenes = c.Scenes;
+                m_TempScenesCollection.AddRange(scenes);
+                
+                // Remove scenes
+                for (var i = 0; i < m_TempScenesCollection.Count; ++i)
                 {
-                    SceneAssetInfo sceneAssetInfo = defaultScenes[i];
-                    var item = new SceneAssetInfo
+                    var scene = m_TempScenesCollection[i];
+                    if (!defaultScenes.Any(s => s.Guid.Equals(scene.Guid)))
                     {
-                        Name = sceneAssetInfo.Name,
-                        Guid = sceneAssetInfo.Guid
-                    };
-                    if (isOverride)
-                    {
-                        item.Addressable = sceneAssetInfo.Addressable;
+                        scenes.Remove(scene);
                     }
-
-                    selectedPlatformScenes.Add(item);
                 }
-
-                conf.DefaultSceneConfigurations[m_SelectedPlatform].Scenes = selectedPlatformScenes;
+                
+                // Update present and add new scenes
+                for (var i = 0; i < defaultScenes.Count; ++i)
+                {
+                    var defaultScene = defaultScenes[i];
+                    var scene = scenes.FirstOrDefault(s => s.Guid.Equals(defaultScene.Guid));
+                    if (scene == null)
+                    {
+                        scenes.Insert(i, new SceneAssetInfo
+                        {
+                            Name = defaultScene.Name,
+                            Guid = defaultScene.Guid,
+                            Addressable = c.Override ? false : defaultScene.Addressable
+                        });
+                    }
+                    else
+                    {
+                        scenes.Remove(scene);
+                        scenes.Insert(i, scene);
+                        if (!c.Override)
+                        {
+                            scene.Addressable = defaultScene.Addressable;
+                        }
+                    }
+                }
             }
         }
-        
+
         public void InitializeDefaultSceneConfigurations(BuildConfiguration conf)
         {
             // TODO: Poor place, need to rework
@@ -153,7 +178,8 @@ namespace StansAssets.SceneManagement.Build
             if (DrawingUtility.ShowBuildIndex)
             {
                 int sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue, EditorUserBuildSettings.activeBuildTarget);
-                GUI.Label(sceneIndexRect, sceneIndex.ToString());
+                if(sceneIndex >= 0)
+                    GUI.Label(sceneIndexRect, sceneIndex.ToString());
             }
 
             EditorGUI.BeginDisabledGroup(true);

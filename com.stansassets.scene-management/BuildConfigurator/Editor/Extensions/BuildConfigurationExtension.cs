@@ -280,12 +280,12 @@ namespace StansAssets.SceneManagement.Build
                 i.Guid.Equals(sceneGuid) ||
                 AssetDatabase.GUIDToAssetPath(i.Guid).Equals(scenePath);
 
-            var buildInPlatform = GetDefaultInPlatformsDuplicateScenes(configuration, buildTarget);
+            var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
+            var buildInPlatform = GetDefaultInPlatformsDuplicateScenes(configuration, buildTargetGroup);
             if (buildInPlatform.Any(IsSceneEqual))
             {
                 return true;
             }
-
             var inConfig = GetConfigurationRepetitiveScenes(configuration, buildTarget);
             if(inConfig.Any(IsSceneEqual))
             {
@@ -370,9 +370,8 @@ namespace StansAssets.SceneManagement.Build
         }
         
         internal static IEnumerable<SceneAssetInfo> GetDefaultInPlatformsDuplicateScenes(this BuildConfiguration configuration, 
-            BuildTarget buildTarget)
+            BuildTargetGroup buildTargetGroup)
         {
-            var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
             var defaultSceneConf = configuration.DefaultSceneConfigurations
                 .FirstOrDefault(conf => conf.BuildTargetGroup == (int)buildTargetGroup);
             
@@ -436,7 +435,7 @@ namespace StansAssets.SceneManagement.Build
         {
             var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
             // If we don't have special configuration - use default one
-            var configuration = @this.DefaultSceneConfigurations.FirstOrDefault(conf => conf.BuildTargetGroup == (int) buildTargetGroup) ?? @this.DefaultSceneConfigurations.First();
+            var configuration = @this.DefaultSceneConfigurations.FirstOrDefault(conf => conf.Override && conf.BuildTargetGroup == (int) buildTargetGroup) ?? @this.DefaultSceneConfigurations.FirstOrDefault();
             return configuration;
         } 
     }
