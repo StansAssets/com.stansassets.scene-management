@@ -148,17 +148,23 @@ namespace StansAssets.SceneManagement.Build
             }
         }
 
+        // TODO: Move from view into the model
         public void InitializeDefaultSceneConfigurations(BuildConfiguration conf)
         {
-            // TODO: Poor place, need to rework
-            // Case 1: I uninstalled module and count of valid platforms became -1. It will cause infinite adding platforms becauce 3 configurations != 1 Valid Platform and 1 Default
-            if (conf.DefaultSceneConfigurations.Count != m_ValidPlatformsGUIContent.Length)
+            if (conf.DefaultSceneConfigurations.All(c => c.BuildTargetGroup != -1))
             {
-                conf.DefaultSceneConfigurations.Add(new DefaultScenesConfiguration(-1, new SceneAssetInfo()));
+                var defaultPlatform = new DefaultScenesConfiguration(-1, new SceneAssetInfo());
+                if(conf.DefaultSceneConfigurations.Count <= 0)
+                    conf.DefaultSceneConfigurations.Add(defaultPlatform);
+                else
+                    conf.DefaultSceneConfigurations.Insert(0, defaultPlatform);
+                
                 for (int i = 0; i < m_BuildTargetGroupData.ValidPlatforms.Length; i++)
                 {
                     BuildTargetGroup buildTargetGroup = m_BuildTargetGroupData.ValidPlatforms[i].BuildTargetGroup;
-                    conf.DefaultSceneConfigurations.Add(new DefaultScenesConfiguration((int)buildTargetGroup, new SceneAssetInfo()));
+                    var buildTargetGroupInt = (int) buildTargetGroup;
+                    if(conf.DefaultSceneConfigurations.All(c => c.BuildTargetGroup != buildTargetGroupInt))
+                        conf.DefaultSceneConfigurations.Add(new DefaultScenesConfiguration((int)buildTargetGroup));
                 }
             }
         }
