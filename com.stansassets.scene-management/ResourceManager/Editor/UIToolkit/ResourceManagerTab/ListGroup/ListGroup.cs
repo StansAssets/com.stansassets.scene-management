@@ -91,8 +91,8 @@ namespace StansAssets.ResourceManager.Editor
 
         void RefreshList(ListView list)
         {
-            list.Refresh();
-
+            list.RebuildInCompatibleMode();
+            
             SetToggleHeight(list);
             ResourceManagerData.Save();
         }

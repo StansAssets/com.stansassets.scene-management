@@ -57,7 +57,7 @@ namespace StansAssets.ResourceManager.Editor
                 packagesListView.itemsSource = string.IsNullOrEmpty(evt.newValue)
                     ? dependencies
                     : dependencies.FindAll(i => i.Name.ToLower().Contains(evt.newValue.ToLower()));
-                packagesListView.Refresh();
+                packagesListView.RebuildInCompatibleMode();
             });
 
             // Select button
