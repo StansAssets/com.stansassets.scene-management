@@ -89,7 +89,7 @@ namespace StansAssets.SceneManagement.Build
             var group = AddressablesUtility.GetOrCreateGroup(ScenesAddressablesGroupName);
             var configuration = BuildConfigurationSettings.Instance.Configuration;
 
-            AddAddressableScenesIntoGroup(configuration.GetAddressableDefaultScenes(), group);
+            AddAddressableScenesIntoGroup(configuration.GetAddressableDefaultScenes(EditorUserBuildSettings.selectedBuildTargetGroup), group);
 
             foreach (var platformsConfiguration in configuration.Platforms)
             {

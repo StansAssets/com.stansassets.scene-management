@@ -68,10 +68,9 @@ namespace StansAssets.SceneManagement.Build
         {
             if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
 
-            return BuildConfigurationSettings.Instance.Configuration
-                       .DefaultScenes.Any(s => s != null && string.IsNullOrEmpty(s.Guid)) 
-                   || BuildConfigurationSettings.Instance.Configuration
-                       .Platforms.Any(p => p.Scenes.Any(s => s != null && string.IsNullOrEmpty(s.Guid)));
+            return BuildConfigurationSettings.Instance.Configuration.DefaultSceneConfigurations.Any(conf => conf.Scenes.Any(s => s != null && string.IsNullOrEmpty(s.Guid))) 
+                || BuildConfigurationSettings.Instance.Configuration
+                    .Platforms.Any(p => p.Scenes.Any(s => s != null && string.IsNullOrEmpty(s.Guid)));
         }
 
         internal static bool HasScenesDuplicates()
@@ -85,8 +84,8 @@ namespace StansAssets.SceneManagement.Build
             {
                 return true;
             }
-            
-            var defaultInPlatform = conf.GetDefaultInPlatformsDuplicateScenes().Any();
+
+            var defaultInPlatform = conf.DefaultSceneConfigurations.Any(defConf => conf.GetDefaultInPlatformsDuplicateScenes((BuildTargetGroup)defConf.BuildTargetGroup).Any());
             if (defaultInPlatform) return true;
             
             var inConfig = conf.GetConfigurationRepetitiveScenes(EditorUserBuildSettings.activeBuildTarget).Any();
@@ -137,8 +136,7 @@ namespace StansAssets.SceneManagement.Build
         {
             if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return false;
 
-            return BuildConfigurationSettings.Instance.Configuration
-                       .DefaultScenes.Any(i => i != null && !string.IsNullOrEmpty(i.Guid)) 
+            return BuildConfigurationSettings.Instance.Configuration.DefaultSceneConfigurations.Any(conf => conf.Scenes.Any(i => i != null && !string.IsNullOrEmpty(i.Guid)))
                    || BuildConfigurationSettings.Instance.Configuration
                        .Platforms.Any(p => p.Scenes.Any(i => i != null && !string.IsNullOrEmpty(i.Guid)));
         }

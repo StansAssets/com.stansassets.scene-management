@@ -18,17 +18,19 @@ namespace StansAssets.SceneManagement
         public SettingsTab()
             : base($"{SceneManagementPackage.WindowTabsPath}/SettingsTab")
         {
+            var so = new SerializedObject(SceneManagementSettings.Instance);
+            
             var landingSceneField = Root.Q<ObjectField>("landing-scene");
             m_PersistenceEnumField = Root.Q<EnumField>("persistence-enum-field");
             m_PersistenceLabel = Root.Q<Label>("scene-persistence-label");
             landingSceneField.objectType = typeof(SceneAsset);
-            landingSceneField.SetValueWithoutNotify(SceneManagementSettings.Instance.LandingScene);
-
+            
+            var landingSceneProperty = so.FindProperty("LandingScene");
+            landingSceneField.BindProperty(landingSceneProperty);
+            
             landingSceneField.RegisterValueChangedCallback((e) =>
             {
                 SceneAsset newSceneAsset = (SceneAsset)e.newValue;
-                SceneManagementSettings.Instance.LandingScene = newSceneAsset;
-                SceneManagementSettings.Save();
                 DisplayPersistenceEnumField(newSceneAsset != null);
             });
 
