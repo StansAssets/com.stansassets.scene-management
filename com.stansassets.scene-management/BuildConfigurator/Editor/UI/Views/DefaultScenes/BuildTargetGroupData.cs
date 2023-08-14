@@ -68,9 +68,11 @@ namespace StansAssets.SceneManagement.Build
                 new BuildTargetGroupModel(
                     BuildTargetGroup.Switch,
                     new BuildTarget[] { BuildTarget.Switch }, "BuildSettings.Switch.Small"),
+#if !UNITY_2022_2_OR_NEWER
                 new BuildTargetGroupModel(
                     BuildTargetGroup.Lumin,
                     new BuildTarget[] { BuildTarget.Lumin }, "BuildSettings.Lumin.small"),
+#endif
                 new BuildTargetGroupModel(
                     BuildTargetGroup.Stadia,
                     new BuildTarget[] { BuildTarget.Stadia }, "BuildSettings.Stadia.small"),
