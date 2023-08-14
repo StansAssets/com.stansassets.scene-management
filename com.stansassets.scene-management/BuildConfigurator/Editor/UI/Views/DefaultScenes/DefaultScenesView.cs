@@ -154,25 +154,30 @@ namespace StansAssets.SceneManagement.Build
             if (conf.DefaultSceneConfigurations.All(c => c.BuildTargetGroup != -1))
             {
                 var defaultPlatform = new DefaultScenesConfiguration(-1, new SceneAssetInfo());
-                if(conf.DefaultSceneConfigurations.Count <= 0)
+                if (conf.DefaultSceneConfigurations.Count <= 0)
+                {
                     conf.DefaultSceneConfigurations.Add(defaultPlatform);
+                }
                 else
+                {
                     conf.DefaultSceneConfigurations.Insert(0, defaultPlatform);
+                }
                 
                 for (int i = 0; i < m_BuildTargetGroupData.ValidPlatforms.Length; i++)
                 {
                     BuildTargetGroup buildTargetGroup = m_BuildTargetGroupData.ValidPlatforms[i].BuildTargetGroup;
                     var buildTargetGroupInt = (int) buildTargetGroup;
-                    if(conf.DefaultSceneConfigurations.All(c => c.BuildTargetGroup != buildTargetGroupInt))
+                    if (conf.DefaultSceneConfigurations.All(c => c.BuildTargetGroup != buildTargetGroupInt))
+                    {
                         conf.DefaultSceneConfigurations.Add(new DefaultScenesConfiguration((int)buildTargetGroup));
+                    }
                 }
             }
         }
 
         SceneAssetInfo ImmutableContentTypeListItem(Rect pos, SceneAssetInfo itemValue)
         {
-            if (itemValue == null)
-                itemValue = new SceneAssetInfo();
+            itemValue ??= new SceneAssetInfo();
 
             int indentLevel = EditorGUI.indentLevel;
             EditorGUI.indentLevel = 0;
@@ -184,8 +189,10 @@ namespace StansAssets.SceneManagement.Build
             if (DrawingUtility.ShowBuildIndex)
             {
                 int sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue, EditorUserBuildSettings.activeBuildTarget);
-                if(sceneIndex >= 0)
+                if (sceneIndex >= 0)
+                {
                     GUI.Label(sceneIndexRect, sceneIndex.ToString());
+                }
             }
 
             EditorGUI.BeginDisabledGroup(true);

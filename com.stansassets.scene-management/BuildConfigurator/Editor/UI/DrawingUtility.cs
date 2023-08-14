@@ -10,10 +10,25 @@ using UnityEngine;
 
 namespace StansAssets.SceneManagement.Build
 {
-    struct SceneFieldStatus
+    struct SceneFieldStatus : IEquatable<SceneFieldStatus>
     {
         public Color Color;
         public string Tooltip;
+
+        public bool Equals(SceneFieldStatus other)
+        {
+            return Color.Equals(other.Color) && Tooltip == other.Tooltip;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is SceneFieldStatus other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Color, Tooltip);
+        }
     }
 
     static class DrawingUtility
@@ -136,8 +151,10 @@ namespace StansAssets.SceneManagement.Build
                 if (showBuildIndex)
                 {
                     var sceneIndex = BuildConfigurationSettings.Instance.Configuration.GetSceneIndex(itemValue, EditorUserBuildSettings.activeBuildTarget);
-                    if(sceneIndex >= 0)
+                    if (sceneIndex >= 0)
+                    {
                         GUI.Label(sceneIndexRect, sceneIndex.ToString());
+                    }
                 }
 
                 var sceneAsset = itemValue.GetSceneAsset();

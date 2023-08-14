@@ -92,7 +92,10 @@ namespace StansAssets.SceneManagement.Build
         
         (ReorderableList platforms, ReorderableList scenes) GetPlatformReorderableList(PlatformsConfiguration platform)
         {
-            if (m_ReorderableLists.ContainsKey(platform)) return m_ReorderableLists[platform];
+            if (m_ReorderableLists.ContainsKey(platform))
+            {
+                return m_ReorderableLists[platform];
+            }
 
             var platforms = DrawingUtility.CreatePlatformsReorderableList(platform.BuildTargets,
                 _ => { m_Context.CheckNTryAutoSync(true); },

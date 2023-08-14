@@ -108,11 +108,6 @@ namespace StansAssets.SceneManagement.Build
 
         void DrawConfiguration(int index)
         {
-            // TODO: Bug?
-            // Try to comment this code and ReorderableListResources won't work!
-            var ap = ReorderableListStyles.Title;
-            // ~ bug
-
             var conf = BuildConfigurationSettings.Instance.BuildConfigurations[index];
             using (new IMGUIBlockWithIndent(new GUIContent("Settings")))
             {

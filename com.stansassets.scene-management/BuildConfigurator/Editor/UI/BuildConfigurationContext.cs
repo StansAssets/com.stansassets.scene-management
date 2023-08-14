@@ -1,12 +1,28 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using UnityEditor;
 
 namespace StansAssets.SceneManagement.Build
 {
-    struct AutoSyncParams
+    struct AutoSyncParams : IEquatable<AutoSyncParams>
     {
         public bool Synced;
         public bool NeedScenesSync;
+
+        public bool Equals(AutoSyncParams other)
+        {
+            return Synced == other.Synced && NeedScenesSync == other.NeedScenesSync;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is AutoSyncParams other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Synced, NeedScenesSync);
+        }
     }
 
     class BuildConfigurationContext
@@ -15,14 +31,15 @@ namespace StansAssets.SceneManagement.Build
 
         public void SyncScenes()
         {
-            if (!BuildConfigurationSettings.Instance.HasValidConfiguration) return;
+            if (BuildConfigurationSettings.Instance.HasValidConfiguration)
+            {
+                BuildConfigurationSettings.Instance.Configuration.ClearMissingScenes();
             
-            BuildConfigurationSettings.Instance.Configuration.ClearMissingScenes();
+                BuildConfigurationSettings.Instance.Configuration
+                    .SetupEditorSettings(EditorUserBuildSettings.activeBuildTarget, true);
             
-            BuildConfigurationSettings.Instance.Configuration
-                .SetupEditorSettings(EditorUserBuildSettings.activeBuildTarget, true);
-            
-            AutoSyncParams.Synced = true;
+                AutoSyncParams.Synced = true;
+            }
         }
         
         public void CheckNTryAutoSync(bool ignoreCollectionsSize = false)
