@@ -99,7 +99,8 @@ namespace StansAssets.SceneManagement.Build
 
             var platforms = DrawingUtility.CreatePlatformsReorderableList(platform.BuildTargets,
                 _ => { m_Context.CheckNTryAutoSync(true); },
-                _ => { m_Context.CheckNTryAutoSync(true); });
+                _ => { m_Context.CheckNTryAutoSync(true); },
+                );
             
             var scenes = DrawingUtility.CreateScenesReorderableList(platform.Scenes,
                 _ => { m_Context.CheckNTryAutoSync(); },

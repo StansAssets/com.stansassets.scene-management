@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using Rotorz.ReorderableList;
 using Rotorz.ReorderableList.Internal;
@@ -10,6 +11,8 @@ using UnityEngine;
 
 namespace StansAssets.SceneManagement.Build
 {
+    delegate void FillContextMenuDelegate(GenericMenu menu);
+    
     struct SceneFieldStatus : IEquatable<SceneFieldStatus>
     {
         public Color Color;
@@ -78,7 +81,8 @@ namespace StansAssets.SceneManagement.Build
         
         public static ReorderableList CreatePlatformsReorderableList(IList elementsList,
             ReorderableList.ChangedCallbackDelegate changedCallbackDelegate, 
-            ReorderableList.RemoveCallbackDelegate removeCallbackDelegate)
+            ReorderableList.RemoveCallbackDelegate removeCallbackDelegate,
+            FillContextMenuDelegate dropdownClickDelegate)
         {
             var reorderableList = new ReorderableList(elementsList, typeof(BuildTargetRuntime),
                 true, true, true, false)
@@ -93,7 +97,7 @@ namespace StansAssets.SceneManagement.Build
                 EditorGUI.LabelField(rect, "Add a build target", EditorStyles.miniLabel);
             
             reorderableList.drawElementCallback = (rect, index, active, focused) =>
-                DrawBuildTargetListItem(rect, index, reorderableList);
+                DrawBuildTargetListItem(rect, index, reorderableList, dropdownClickDelegate);
             
             reorderableList.drawElementBackgroundCallback = (rect, i, b, focused) =>
                 DrawListItemBackground(rect, i, focused, reorderableList);
@@ -301,7 +305,8 @@ namespace StansAssets.SceneManagement.Build
             }
         }
         
-        static void DrawBuildTargetListItem(Rect rect, int index, ReorderableList reorderableList)
+        static void DrawBuildTargetListItem(Rect rect, int index, ReorderableList reorderableList,
+            FillContextMenuDelegate dropdownClickDelegate)
         {
             var element = (BuildTargetRuntime)reorderableList.list[index];
 
@@ -328,7 +333,39 @@ namespace StansAssets.SceneManagement.Build
             
             var prevColor = GUI.color;
             GUI.color = GetBuildTargetFieldColor(element);
-            element = (BuildTargetRuntime)EditorGUI.EnumPopup(positionRect, element, style);
+            if (GUI.Button(positionRect, element.ToString(), style))
+            {
+                // var allTargets = Enum.GetValues(typeof(BuildTargetRuntime)).Cast<BuildTargetRuntime>();
+                // var selectedTargets = reorderableList.list.Cast<BuildTargetRuntime>();
+                var menu = new GenericMenu();
+
+                dropdownClickDelegate.Invoke(menu);
+                menu.DropDown(positionRect);
+                
+                /*foreach (var target in allTargets)
+                {
+                    if (target == element)
+                    {
+                        menu.AddItem(new GUIContent(target.ToString()), true, () => { });
+                    }
+                    else
+                    {
+                        if(selectedTargets.Contains())
+                        menu.AddItem(new GUIContent(target.ToString()), false, () =>
+                        {
+                            element = target;
+                        });
+                    }
+                }
+                
+
+                foreach (BuildTargetRuntime buildTarget in reorderableList.list)
+                {
+                    
+                }*/
+            }
+            
+            // element = (BuildTargetRuntime)EditorGUI.EnumPopup(positionRect, element, style);
             GUI.color = prevColor;
             
             if (EditorGUI.EndChangeCheck())
